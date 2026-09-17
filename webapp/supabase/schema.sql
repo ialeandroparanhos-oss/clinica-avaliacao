@@ -175,6 +175,35 @@ $$;
 
 grant execute on function save_anamnese(uuid, text, date, jsonb, text, jsonb) to anon, authenticated;
 
+-- ----------------------------------------------------------------------------
+-- Histórico de avaliações: um registro por vez que o avaliador salva
+-- física/postural/funcional, permitindo comparar ANTES -> ATUAL -> META
+-- ao longo do tempo (Etapa 11 - Reavaliação). A coluna correspondente em
+-- "pacientes" continua guardando só o valor mais recente (usado pelo
+-- Perfil Integrado); esta tabela guarda a série temporal completa.
+-- ----------------------------------------------------------------------------
+create table if not exists avaliacoes_historico (
+  id uuid primary key default gen_random_uuid(),
+  paciente_id uuid not null references pacientes(id) on delete cascade,
+  tipo text not null check (tipo in ('fisica', 'postural', 'funcional')),
+  dados jsonb not null,
+  avaliador text,
+  criado_em timestamptz not null default now()
+);
+
+create index if not exists avaliacoes_historico_paciente_tipo_idx
+  on avaliacoes_historico (paciente_id, tipo, criado_em);
+
+alter table avaliacoes_historico enable row level security;
+
+drop policy if exists "avaliadores_select_historico" on avaliacoes_historico;
+create policy "avaliadores_select_historico" on avaliacoes_historico
+  for select using (auth.role() = 'authenticated');
+
+drop policy if exists "avaliadores_insert_historico" on avaliacoes_historico;
+create policy "avaliadores_insert_historico" on avaliacoes_historico
+  for insert with check (auth.role() = 'authenticated');
+
 -- ============================================================================
 -- PRÓXIMO PASSO NO PAINEL DO SUPABASE (fora deste script):
 -- Authentication -> Users -> Add user -> crie um login (e-mail + senha)

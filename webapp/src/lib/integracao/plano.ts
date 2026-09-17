@@ -33,6 +33,7 @@ export type Encaminhamento = {
 export type Plano = {
   itens: ItemPlano[];
   encaminhamentos: Encaminhamento[];
+  metas?: Record<string, string>;
   avaliador?: string | null;
   atualizado_em?: string;
 };

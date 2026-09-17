@@ -11,8 +11,9 @@ import { AlertBanner, Field, TextArea, TextInput } from "@/components/forms";
 import { perguntasParQ } from "@/lib/anamnese/questionnaires";
 import { calcularPerfilIntegrado, type Classificacao, type DomainResult } from "@/lib/integracao/perfil";
 import { HORIZONTES, sugerirPlano, type Encaminhamento, type Horizonte, type ItemPlano, type Plano } from "@/lib/integracao/plano";
+import { INDICADORES, extrairSerie, type LinhaHistorico } from "@/lib/integracao/historico";
 
-type Aba = "perfil" | "plano" | "anamnese" | "fisica" | "postural" | "funcional";
+type Aba = "perfil" | "plano" | "reavaliacao" | "anamnese" | "fisica" | "postural" | "funcional";
 
 export default function DetalhePaciente() {
   const { id } = useParams<{ id: string }>();
@@ -76,6 +77,7 @@ export default function DetalhePaciente() {
           [
             ["perfil", "Perfil Integrado"],
             ["plano", "Plano de Intervenção"],
+            ["reavaliacao", "Reavaliação"],
             ["anamnese", "Anamnese"],
             ["fisica", "Física e Antropométrica"],
             ["postural", "Postural e Biomecânica"],
@@ -96,6 +98,7 @@ export default function DetalhePaciente() {
 
       {aba === "perfil" && <AbaPerfilIntegrado paciente={paciente} />}
       {aba === "plano" && <AbaPlano paciente={paciente} onSalvo={carregar} />}
+      {aba === "reavaliacao" && <AbaReavaliacao paciente={paciente} onSalvo={carregar} />}
       {aba === "anamnese" && <AbaAnamnese anamnese={anamnese} status={paciente.anamnese_status} />}
       {aba === "fisica" && <AbaFisica pacienteId={paciente.id} dados={paciente.fisica} onSalvo={carregar} />}
       {aba === "postural" && <AbaPostural pacienteId={paciente.id} dados={paciente.postural} onSalvo={carregar} />}
@@ -421,6 +424,125 @@ function AbaPlano({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo: () =>
 }
 
 // ---------------------------------------------------------------------------
+// Aba Reavaliação (Etapa 11) - ANTES -> ATUAL -> META por indicador
+// ---------------------------------------------------------------------------
+function formatarData(iso: string) {
+  return new Date(iso).toLocaleDateString("pt-BR");
+}
+
+function AbaReavaliacao({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo: () => void }) {
+  const supabase = useMemo(() => createClient(), []);
+  const [historico, setHistorico] = useState<LinhaHistorico[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [metas, setMetas] = useState<Record<string, string>>((paciente.plano as Plano | undefined)?.metas ?? {});
+  const [salvandoMetas, setSalvandoMetas] = useState(false);
+  const [ok, setOk] = useState(false);
+
+  useEffect(() => {
+    supabase
+      .from("avaliacoes_historico")
+      .select("*")
+      .eq("paciente_id", paciente.id)
+      .order("criado_em", { ascending: true })
+      .then(({ data }) => {
+        setHistorico((data as LinhaHistorico[]) ?? []);
+        setCarregando(false);
+      });
+  }, [paciente.id]);
+
+  async function salvarMetas() {
+    setSalvandoMetas(true);
+    const planoAtual = (paciente.plano as Plano | undefined) ?? { itens: [], encaminhamentos: [] };
+    await supabase
+      .from("pacientes")
+      .update({ plano: { ...planoAtual, metas } })
+      .eq("id", paciente.id);
+    setSalvandoMetas(false);
+    setOk(true);
+    setTimeout(() => setOk(false), 2500);
+    onSalvo();
+  }
+
+  if (carregando) return <p className="text-sm text-muted">Carregando histórico...</p>;
+
+  const indicadoresComDados = INDICADORES.map((ind) => ({ ind, serie: extrairSerie(historico, ind) })).filter(
+    (x) => x.serie.length > 0
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-border bg-surface p-5">
+        <h3 className="font-display text-lg text-ink mb-1">Reavaliação — evolução ao longo do tempo</h3>
+        <p className="text-xs text-muted">
+          Cada vez que a aba Física ou Funcional é salva, um novo ponto entra no histórico automaticamente — nada
+          é sobrescrito. Defina uma meta por indicador para acompanhar ANTES → ATUAL → META.
+        </p>
+      </div>
+
+      {indicadoresComDados.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted">
+          Ainda não há histórico suficiente. Assim que a Física ou a Avaliação Funcional forem salvas mais de uma
+          vez, a evolução aparece aqui.
+        </div>
+      ) : (
+        indicadoresComDados.map(({ ind, serie }) => {
+          const antes = serie[0];
+          const atual = serie[serie.length - 1];
+          return (
+            <div key={ind.chave} className="rounded-2xl border border-border bg-surface p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-display text-base text-ink">
+                  {ind.titulo} {ind.unidade && <span className="text-muted text-sm">({ind.unidade})</span>}
+                </h4>
+                <span className="text-xs text-muted">{serie.length} registro(s)</span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="rounded-lg bg-bg p-3 text-center">
+                  <p className="text-xs text-muted mb-1">Antes</p>
+                  <p className="font-mono text-lg text-ink tabular-nums">{antes.valor.toFixed(1)}</p>
+                  <p className="text-xs text-muted">{formatarData(antes.data)}</p>
+                </div>
+                <div className="rounded-lg bg-accent-soft p-3 text-center">
+                  <p className="text-xs text-accent-dark mb-1">Atual</p>
+                  <p className="font-mono text-lg text-accent-dark tabular-nums">{atual.valor.toFixed(1)}</p>
+                  <p className="text-xs text-accent-dark/70">{formatarData(atual.data)}</p>
+                </div>
+                <div className="rounded-lg border-2 border-dashed border-border p-3 text-center">
+                  <p className="text-xs text-muted mb-1">Meta</p>
+                  <input
+                    value={metas[ind.chave] ?? ""}
+                    onChange={(e) => setMetas((prev) => ({ ...prev, [ind.chave]: e.target.value }))}
+                    placeholder="—"
+                    className="w-full text-center font-mono text-lg bg-transparent outline-none text-ink"
+                  />
+                </div>
+              </div>
+
+              {serie.length > 1 && (
+                <details className="text-xs text-muted">
+                  <summary className="cursor-pointer">Ver todos os {serie.length} registros</summary>
+                  <ul className="mt-2 space-y-1">
+                    {serie.map((p, i) => (
+                      <li key={i}>
+                        {formatarData(p.data)}: <strong className="text-ink">{p.valor.toFixed(1)}</strong>{" "}
+                        {p.avaliador && <span>— {p.avaliador}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </div>
+          );
+        })
+      )}
+
+      <SalvarBar salvando={salvandoMetas} ok={ok} onSalvar={salvarMetas} />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Aba Anamnese - somente leitura, organizada por capítulo
 // ---------------------------------------------------------------------------
 function Linha({ label, value }: { label: string; value: any }) {
@@ -589,15 +711,24 @@ function useSalvarSecao(pacienteId: string, secao: "fisica" | "postural" | "func
     setSalvando(true);
     setOk(false);
     const { data: userData } = await supabase.auth.getUser();
+    const avaliador = userData.user?.email ?? null;
     const payload = {
       ...dados,
-      avaliador: userData.user?.email ?? null,
+      avaliador,
       atualizado_em: new Date().toISOString(),
     };
     await supabase
       .from("pacientes")
       .update({ [secao]: payload, atualizado_em: new Date().toISOString() })
       .eq("id", pacienteId);
+    // Guarda também no histórico, para permitir comparar ANTES -> ATUAL ->
+    // META nas reavaliações (Etapa 11) sem perder o registro anterior.
+    await supabase.from("avaliacoes_historico").insert({
+      paciente_id: pacienteId,
+      tipo: secao,
+      dados,
+      avaliador,
+    });
     setSalvando(false);
     setOk(true);
     setTimeout(() => setOk(false), 2500);
