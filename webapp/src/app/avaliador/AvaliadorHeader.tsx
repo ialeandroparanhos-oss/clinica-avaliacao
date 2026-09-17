@@ -24,7 +24,7 @@ export default function AvaliadorHeader() {
   if (pathname === "/avaliador/login") return null;
 
   return (
-    <header className="border-b border-border bg-surface">
+    <header className="border-b border-border bg-surface print:hidden">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
         <Link href="/avaliador" className="font-display text-lg text-ink">
           Avaliação Integrada <span className="text-accent">· Avaliador</span>

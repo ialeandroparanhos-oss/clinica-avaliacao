@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import type { Anamnese, PacienteRow } from "@/lib/anamnese/types";
@@ -38,11 +39,19 @@ export default function DetalhePaciente() {
 
   return (
     <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-      <div className="mb-6">
-        <h1 className="font-display text-2xl text-ink">{paciente.nome}</h1>
-        <p className="text-muted text-sm mt-1">
-          {new Date(paciente.data_nascimento).toLocaleDateString("pt-BR")} · {paciente.telefone || "sem telefone"}
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl text-ink">{paciente.nome}</h1>
+          <p className="text-muted text-sm mt-1">
+            {new Date(paciente.data_nascimento).toLocaleDateString("pt-BR")} · {paciente.telefone || "sem telefone"}
+          </p>
+        </div>
+        <Link
+          href={`/avaliador/paciente/${paciente.id}/relatorio`}
+          className="text-sm font-medium text-accent hover:underline whitespace-nowrap pt-1"
+        >
+          Ver relatório técnico →
+        </Link>
       </div>
 
       {paciente.alertas?.length > 0 && (
