@@ -9,8 +9,9 @@ import { escorePSS10, somaSemNulos, rotuloNivel } from "@/lib/anamnese/alerts";
 import { AlertBanner, Field, TextArea, TextInput } from "@/components/forms";
 import { perguntasParQ } from "@/lib/anamnese/questionnaires";
 import { calcularPerfilIntegrado, type Classificacao, type DomainResult } from "@/lib/integracao/perfil";
+import { HORIZONTES, sugerirPlano, type Encaminhamento, type Horizonte, type ItemPlano, type Plano } from "@/lib/integracao/plano";
 
-type Aba = "perfil" | "anamnese" | "fisica" | "postural" | "funcional";
+type Aba = "perfil" | "plano" | "anamnese" | "fisica" | "postural" | "funcional";
 
 export default function DetalhePaciente() {
   const { id } = useParams<{ id: string }>();
@@ -65,6 +66,7 @@ export default function DetalhePaciente() {
         {(
           [
             ["perfil", "Perfil Integrado"],
+            ["plano", "Plano de Intervenção"],
             ["anamnese", "Anamnese"],
             ["fisica", "Física e Antropométrica"],
             ["postural", "Postural e Biomecânica"],
@@ -84,6 +86,7 @@ export default function DetalhePaciente() {
       </div>
 
       {aba === "perfil" && <AbaPerfilIntegrado paciente={paciente} />}
+      {aba === "plano" && <AbaPlano paciente={paciente} onSalvo={carregar} />}
       {aba === "anamnese" && <AbaAnamnese anamnese={anamnese} status={paciente.anamnese_status} />}
       {aba === "fisica" && <AbaFisica pacienteId={paciente.id} dados={paciente.fisica} onSalvo={carregar} />}
       {aba === "postural" && <AbaPostural pacienteId={paciente.id} dados={paciente.postural} onSalvo={carregar} />}
@@ -208,6 +211,202 @@ function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
           na hora de montar o plano — a IA não faz essa conexão fina automaticamente.
         </p>
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Aba Plano de Intervenção (Agente 7) - horizontes 30/90/180/365 dias
+// ---------------------------------------------------------------------------
+function gerarIdLocal(): string {
+  return Math.random().toString(36).slice(2, 10);
+}
+
+function AbaPlano({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo: () => void }) {
+  const supabase = useMemo(() => createClient(), []);
+  const planoSalvo = paciente.plano as Plano | undefined;
+  const [itens, setItens] = useState<ItemPlano[]>(planoSalvo?.itens ?? []);
+  const [encaminhamentos, setEncaminhamentos] = useState<Encaminhamento[]>(planoSalvo?.encaminhamentos ?? []);
+  const [novoItem, setNovoItem] = useState("");
+  const [novoHorizonte, setNovoHorizonte] = useState<Horizonte>("30");
+  const [novaEspecialidade, setNovaEspecialidade] = useState("");
+  const [novoMotivo, setNovoMotivo] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const [ok, setOk] = useState(false);
+
+  function sugerir() {
+    const perfil = calcularPerfilIntegrado(paciente);
+    const sugestao = sugerirPlano(perfil);
+    setItens((prev) => {
+      const existentes = new Set(prev.map((i) => i.descricao));
+      return [...prev, ...sugestao.itens.filter((i) => !existentes.has(i.descricao))];
+    });
+    setEncaminhamentos((prev) => {
+      const existentes = new Set(prev.map((e) => e.especialidade + e.motivo));
+      return [...prev, ...sugestao.encaminhamentos.filter((e) => !existentes.has(e.especialidade + e.motivo))];
+    });
+  }
+
+  function adicionarItem() {
+    if (!novoItem.trim()) return;
+    setItens((prev) => [...prev, { id: gerarIdLocal(), horizonte: novoHorizonte, descricao: novoItem.trim(), origem: "Adicionado manualmente pelo avaliador" }]);
+    setNovoItem("");
+  }
+
+  function adicionarEncaminhamento() {
+    if (!novaEspecialidade.trim()) return;
+    setEncaminhamentos((prev) => [...prev, { id: gerarIdLocal(), especialidade: novaEspecialidade.trim(), motivo: novoMotivo.trim() }]);
+    setNovaEspecialidade("");
+    setNovoMotivo("");
+  }
+
+  async function salvar() {
+    setSalvando(true);
+    const { data: userData } = await supabase.auth.getUser();
+    const payload: Plano = {
+      itens,
+      encaminhamentos,
+      avaliador: userData.user?.email ?? null,
+      atualizado_em: new Date().toISOString(),
+    };
+    await supabase.from("pacientes").update({ plano: payload, atualizado_em: new Date().toISOString() }).eq("id", paciente.id);
+    setSalvando(false);
+    setOk(true);
+    setTimeout(() => setOk(false), 2500);
+    onSalvo();
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-border bg-surface p-5">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-display text-lg text-ink">Plano de Intervenção</h3>
+          <button
+            type="button"
+            onClick={sugerir}
+            className="text-sm font-medium text-accent hover:underline"
+          >
+            Sugerir a partir do Perfil Integrado
+          </button>
+        </div>
+        <p className="text-xs text-muted">
+          Riscos entram sugeridos em 30 dias; limitações em 90 dias (Seção 3.1 do Agente 7) — ajuste os horizontes
+          conforme seu julgamento clínico. Todo item deve ter origem rastreável.
+        </p>
+      </div>
+
+      {HORIZONTES.map((h) => {
+        const itensDoHorizonte = itens.filter((i) => i.horizonte === h.chave);
+        return (
+          <div key={h.chave} className="rounded-2xl border border-border bg-surface p-5">
+            <h4 className="font-display text-base text-ink mb-3">{h.titulo}</h4>
+            {itensDoHorizonte.length === 0 ? (
+              <p className="text-sm text-muted">Nenhum item neste horizonte ainda.</p>
+            ) : (
+              <ul className="space-y-2">
+                {itensDoHorizonte.map((item) => (
+                  <li key={item.id} className="flex items-start gap-2 text-sm border-b border-border pb-2 last:border-0">
+                    <div className="flex-1">
+                      <p className="text-ink">{item.descricao}</p>
+                      <p className="text-xs text-muted">Origem: {item.origem}</p>
+                    </div>
+                    <select
+                      value={item.horizonte}
+                      onChange={(e) =>
+                        setItens((prev) => prev.map((i) => (i.id === item.id ? { ...i, horizonte: e.target.value as Horizonte } : i)))
+                      }
+                      className="text-xs rounded-lg border border-border bg-surface px-2 py-1"
+                    >
+                      {HORIZONTES.map((opt) => (
+                        <option key={opt.chave} value={opt.chave}>
+                          {opt.chave} dias
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setItens((prev) => prev.filter((i) => i.id !== item.id))}
+                      className="text-xs text-muted hover:text-danger"
+                    >
+                      remover
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        );
+      })}
+
+      <div className="rounded-2xl border border-border bg-surface p-5 space-y-3">
+        <h4 className="font-display text-base text-ink">Adicionar item manualmente</h4>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <TextInput
+            value={novoItem}
+            onChange={(e) => setNovoItem(e.target.value)}
+            placeholder="Descrição do item do plano"
+            className="flex-1"
+          />
+          <select
+            value={novoHorizonte}
+            onChange={(e) => setNovoHorizonte(e.target.value as Horizonte)}
+            className="text-sm rounded-lg border border-border bg-surface px-3 py-2"
+          >
+            {HORIZONTES.map((opt) => (
+              <option key={opt.chave} value={opt.chave}>
+                {opt.chave} dias
+              </option>
+            ))}
+          </select>
+          <button type="button" onClick={adicionarItem} className="text-sm font-medium text-accent hover:underline whitespace-nowrap">
+            + Adicionar
+          </button>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-surface p-5 space-y-3">
+        <h4 className="font-display text-base text-ink">Encaminhamentos sugeridos</h4>
+        {encaminhamentos.length === 0 ? (
+          <p className="text-sm text-muted">Nenhum encaminhamento registrado.</p>
+        ) : (
+          <ul className="space-y-2">
+            {encaminhamentos.map((enc) => (
+              <li key={enc.id} className="flex items-start gap-2 text-sm border-b border-border pb-2 last:border-0">
+                <div className="flex-1">
+                  <p className="text-ink font-medium">{enc.especialidade}</p>
+                  <p className="text-xs text-muted">{enc.motivo}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEncaminhamentos((prev) => prev.filter((e) => e.id !== enc.id))}
+                  className="text-xs text-muted hover:text-danger"
+                >
+                  remover
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-border">
+          <TextInput
+            value={novaEspecialidade}
+            onChange={(e) => setNovaEspecialidade(e.target.value)}
+            placeholder="Especialidade (ex.: Nutrição)"
+            className="flex-1"
+          />
+          <TextInput
+            value={novoMotivo}
+            onChange={(e) => setNovoMotivo(e.target.value)}
+            placeholder="Motivo"
+            className="flex-1"
+          />
+          <button type="button" onClick={adicionarEncaminhamento} className="text-sm font-medium text-accent hover:underline whitespace-nowrap">
+            + Adicionar
+          </button>
+        </div>
+      </div>
+
+      <SalvarBar salvando={salvando} ok={ok} onSalvar={salvar} />
     </div>
   );
 }

@@ -49,6 +49,7 @@ create table if not exists pacientes (
   fisica jsonb not null default '{}'::jsonb,
   postural jsonb not null default '{}'::jsonb,
   funcional jsonb not null default '{}'::jsonb,
+  plano jsonb not null default '{}'::jsonb,
 
   criado_em timestamptz not null default now(),
   atualizado_em timestamptz not null default now()

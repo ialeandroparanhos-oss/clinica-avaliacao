@@ -149,6 +149,7 @@ export type PacienteRow = PacienteIdentificacao & {
   fisica: Record<string, any>;
   postural: Record<string, any>;
   funcional: Record<string, any>;
+  plano: Record<string, any>;
   criado_em: string;
   atualizado_em: string;
 };
