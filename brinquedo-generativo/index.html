@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vitral</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400&family=Sora:wght@400;500;600&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0a0a13;
+    --panel: rgba(21, 17, 31, 0.72);
+    --panel-border: rgba(201, 168, 255, 0.16);
+    --ink: #f2eefc;
+    --muted: #9089ac;
+    --accent: #c9a8ff;
+    --accent-2: #f0b23c;
+    --btn-bg: rgba(255, 255, 255, 0.06);
+    --btn-bg-hover: rgba(255, 255, 255, 0.12);
+    --btn-border: rgba(255, 255, 255, 0.10);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: var(--bg);
+    height: 100%;
+    width: 100%;
+    touch-action: none;
+    font-family: "Sora", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--ink);
+  }
+
+  canvas {
+    display: block;
+    cursor: crosshair;
+  }
+
+  #title {
+    position: fixed;
+    top: 26px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    pointer-events: none;
+    text-align: center;
+    transition: opacity 0.4s ease;
+  }
+  #title.hidden { opacity: 0; }
+  #title h1 {
+    margin: 0;
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 500;
+    font-style: italic;
+    font-size: 22px;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    text-shadow: 0 2px 24px rgba(201, 168, 255, 0.25);
+  }
+  #title p {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.03em;
+  }
+
+  #ui {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--panel);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--panel-border);
+    border-radius: 18px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+    z-index: 10;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  #ui.hidden {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px);
+    pointer-events: none;
+  }
+
+  .divider {
+    width: 1px;
+    height: 20px;
+    background: var(--panel-border);
+    margin: 0 2px;
+  }
+
+  .btn {
+    background: var(--btn-bg);
+    border: 1px solid var(--btn-border);
+    color: var(--ink);
+    border-radius: 11px;
+    padding: 9px 13px;
+    font-family: "Sora", sans-serif;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, transform 0.1s ease, border-color 0.15s ease;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--btn-bg-hover); }
+  .btn:active { transform: scale(0.94); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn.icon {
+    padding: 9px 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .btn.primary {
+    background: var(--accent-2);
+    border-color: var(--accent-2);
+    color: #221604;
+    font-weight: 600;
+  }
+  .btn.primary:hover { background: #f5bf5a; }
+  .btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  #symLabel {
+    color: var(--muted);
+    font-size: 12px;
+    min-width: 60px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #toggleUi {
+    position: fixed;
+    top: 22px;
+    right: 22px;
+    z-index: 11;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--panel);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--panel-border);
+    color: var(--muted);
+    font-size: 16px;
+    cursor: pointer;
+  }
+  #toggleUi:hover { color: var(--ink); }
+
+  @media (max-width: 640px) {
+    #ui { flex-wrap: wrap; justify-content: center; max-width: 92vw; }
+    #title h1 { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="title">
+  <h1>Vitral</h1>
+  <p>desenhe com o mouse ou o dedo — o espelho faz o resto</p>
+</div>
+
+<div id="ui">
+  <button class="btn icon" id="symMinus" aria-label="menos fatias">−</button>
+  <span id="symLabel">8 fatias</span>
+  <button class="btn icon" id="symPlus" aria-label="mais fatias">+</button>
+  <div class="divider"></div>
+  <button class="btn active" id="mirrorBtn">espelho</button>
+  <button class="btn active" id="rainbowBtn">arco-íris</button>
+  <div class="divider"></div>
+  <button class="btn" id="clearBtn">limpar</button>
+  <button class="btn primary" id="saveBtn">salvar PNG</button>
+</div>
+<button id="toggleUi" aria-label="mostrar/ocultar controles">⋯</button>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy;
+
+const BG = '#0a0a13';
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  cx = W / 2;
+  cy = H / 2;
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
+}
+window.addEventListener('resize', resize);
+resize();
+
+let segments = 8;
+let mirror = true;
+let rainbow = true;
+let hue = 265;
+const fixedColor = '#c9a8ff';
+let drawing = false;
+let last = null;
+
+const symLabel = document.getElementById('symLabel');
+const mirrorBtn = document.getElementById('mirrorBtn');
+const rainbowBtn = document.getElementById('rainbowBtn');
+const ui = document.getElementById('ui');
+const title = document.getElementById('title');
+const toggleUi = document.getElementById('toggleUi');
+
+document.getElementById('symPlus').addEventListener('click', () => {
+  segments = Math.min(24, segments + 1);
+  symLabel.textContent = segments + ' fatias';
+});
+document.getElementById('symMinus').addEventListener('click', () => {
+  segments = Math.max(1, segments - 1);
+  symLabel.textContent = segments + ' fatias';
+});
+mirrorBtn.addEventListener('click', () => {
+  mirror = !mirror;
+  mirrorBtn.classList.toggle('active', mirror);
+});
+rainbowBtn.addEventListener('click', () => {
+  rainbow = !rainbow;
+  rainbowBtn.classList.toggle('active', rainbow);
+  rainbowBtn.textContent = rainbow ? 'arco-íris' : 'cor fixa';
+});
+document.getElementById('clearBtn').addEventListener('click', () => {
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
+});
+let downloads = null;
+if (window.claude && window.claude.use) {
+  window.claude.use('downloads').then((d) => { downloads = d; });
+}
+
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  if (!downloads) return;
+  canvas.toBlob(async (blob) => {
+    if (!blob) return;
+    try {
+      await downloads.save({ filename: 'vitral.png', data: blob });
+    } catch (err) {
+      // viewer declined or save unavailable — nothing to do
+    }
+  }, 'image/png');
+});
+toggleUi.addEventListener('click', () => {
+  ui.classList.toggle('hidden');
+  title.classList.toggle('hidden');
+});
+
+function pos(e) {
+  const t = e.touches ? e.touches[0] : e;
+  const rect = canvas.getBoundingClientRect();
+  return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+}
+
+function drawDot(x, y, color, size) {
+  ctx.beginPath();
+  ctx.arc(x, y, size, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.shadowBlur = 12;
+  ctx.shadowColor = color;
+  ctx.fill();
+}
+
+function stamp(x, y, color, size) {
+  const dx = x - cx;
+  const dy = y - cy;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  const angle = Math.atan2(dy, dx);
+  const slice = (Math.PI * 2) / segments;
+
+  for (let i = 0; i < segments; i++) {
+    const a = angle + slice * i;
+    const px = cx + Math.cos(a) * dist;
+    const py = cy + Math.sin(a) * dist;
+    drawDot(px, py, color, size);
+
+    if (mirror) {
+      const ma = -angle + slice * i;
+      const mx = cx + Math.cos(ma) * dist;
+      const my = cy + Math.sin(ma) * dist;
+      drawDot(mx, my, color, size);
+    }
+  }
+}
+
+function currentColor() {
+  if (rainbow) {
+    hue = (hue + 0.6) % 360;
+    return `hsl(${hue}, 85%, 66%)`;
+  }
+  return fixedColor;
+}
+
+function pointerDown(e) {
+  drawing = true;
+  last = pos(e);
+  stamp(last.x, last.y, currentColor(), 3);
+}
+
+function pointerMove(e) {
+  if (!drawing) return;
+  const p = pos(e);
+  const steps = Math.max(1, Math.hypot(p.x - last.x, p.y - last.y) / 5);
+  for (let s = 0; s <= steps; s++) {
+    const ix = last.x + (p.x - last.x) * (s / steps);
+    const iy = last.y + (p.y - last.y) * (s / steps);
+    stamp(ix, iy, currentColor(), 3);
+  }
+  last = p;
+}
+
+function pointerUp() {
+  drawing = false;
+  last = null;
+}
+
+canvas.addEventListener('mousedown', pointerDown);
+canvas.addEventListener('mousemove', pointerMove);
+window.addEventListener('mouseup', pointerUp);
+
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); pointerDown(e); }, { passive: false });
+canvas.addEventListener('touchmove', (e) => { e.preventDefault(); pointerMove(e); }, { passive: false });
+canvas.addEventListener('touchend', (e) => { e.preventDefault(); pointerUp(); }, { passive: false });
+
+// slow ambient fade so trails don't build up forever
+setInterval(() => {
+  ctx.fillStyle = 'rgba(10, 10, 19, 0.025)';
+  ctx.fillRect(0, 0, W, H);
+}, 60);
+</script>
+</body>
+</html>
