@@ -1,5 +1,7 @@
 # Avaliação Integrada — site da clínica
 
+> Publicado automaticamente via GitHub + Vercel a partir deste repositório (pasta `webapp/`).
+
 Site com dois papéis, um único domínio:
 
 - **`/paciente`** — link público. O paciente se identifica (nome + data de
