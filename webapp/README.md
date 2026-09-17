@@ -86,15 +86,38 @@ nossa arquitetura (ver `../00-Arquitetura-Geral-dos-Agentes.md`):
 | `fisica` | preenchido pelo avaliador: sinais vitais, antropometria |
 | `postural` | preenchido pelo avaliador: observações posturais |
 | `funcional` | preenchido pelo avaliador: resultados dos testes funcionais |
+| `plano` | plano de intervenção (30/90/180/365 dias), encaminhamentos e metas |
+
+Mais a tabela `avaliacoes_historico` — uma linha por vez que Física ou
+Funcional são salvas, para permitir comparar ANTES → ATUAL → META ao longo
+do tempo (a coluna em `pacientes` sempre guarda só o valor mais recente).
 
 Segurança: pacientes anônimos nunca leem a tabela diretamente - só através de
 duas funções (`get_or_create_paciente`, `save_anamnese`) que reconfirmam
 nome + data de nascimento a cada chamada. Só avaliadores autenticados
 enxergam a lista completa de pacientes.
 
+## Abas da ficha do paciente (avaliador)
+
+1. **Perfil Integrado** (Agente 6) — 10 domínios classificados automaticamente
+   (adequado/atenção/prioridade/investigar), com potencialidades, riscos e
+   prioridades.
+2. **Plano de Intervenção** (Agente 7) — horizontes 30/90/180/365 dias,
+   sugeridos a partir do Perfil Integrado.
+3. **Reavaliação** (Etapa 11) — evolução dos indicadores objetivos ao longo
+   do tempo, com meta editável por indicador.
+4. **Anamnese, Física, Postural, Funcional** — coleta e leitura dos dados
+   brutos.
+5. **Relatório técnico** (Agente 8), acessível pelo link no topo da ficha —
+   documento único para imprimir ou salvar em PDF.
+
 ## O que ainda falta (próximos passos possíveis)
 
 - Recuperação de senha para avaliadores (hoje é só e-mail/senha simples).
-- Exportar relatório em PDF a partir dos dados (Agente 8 da metodologia).
-- Cálculo automático do Perfil Integrado / Painel de Saúde (Agente 6) a
-  partir dos dados já coletados aqui.
+- Ativar a proteção de senhas vazadas no Supabase Auth (Authentication →
+  Policies → Password Security → "Leaked password protection") — recomendação
+  do próprio linter de segurança do Supabase, ainda não ativada.
+- Conectar a "conexão fina" entre Prioridades e o objetivo declarado pelo
+  paciente na hora de montar o Plano (hoje é uma leitura manual do
+  avaliador, por design do Agente 7).
+- Upload de fotos posturais (a avaliação postural hoje é só texto).
