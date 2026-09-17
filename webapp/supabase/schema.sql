@@ -204,6 +204,33 @@ drop policy if exists "avaliadores_insert_historico" on avaliacoes_historico;
 create policy "avaliadores_insert_historico" on avaliacoes_historico
   for insert with check (auth.role() = 'authenticated');
 
+-- ----------------------------------------------------------------------------
+-- Licença da clínica: um único registro (id=1) que liga/desliga o acesso
+-- de pacientes e avaliadores ao site. Controlado pela página
+-- /avaliador/admin, restrita aos e-mails em OWNER_EMAILS (src/lib/config.ts).
+-- ----------------------------------------------------------------------------
+create table if not exists licenca_clinica (
+  id int primary key default 1,
+  ativo boolean not null default true,
+  motivo text,
+  atualizado_em timestamptz not null default now(),
+  atualizado_por text,
+  constraint licenca_clinica_singleton check (id = 1)
+);
+
+insert into licenca_clinica (id, ativo) values (1, true)
+on conflict (id) do nothing;
+
+alter table licenca_clinica enable row level security;
+
+drop policy if exists "todos_podem_ler_licenca" on licenca_clinica;
+create policy "todos_podem_ler_licenca" on licenca_clinica
+  for select using (true);
+
+drop policy if exists "avaliadores_podem_atualizar_licenca" on licenca_clinica;
+create policy "avaliadores_podem_atualizar_licenca" on licenca_clinica
+  for update using (auth.role() = 'authenticated');
+
 -- ============================================================================
 -- PRÓXIMO PASSO NO PAINEL DO SUPABASE (fora deste script):
 -- Authentication -> Users -> Add user -> crie um login (e-mail + senha)

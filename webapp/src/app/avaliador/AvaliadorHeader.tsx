@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { OWNER_EMAILS } from "@/lib/config";
 
 export default function AvaliadorHeader() {
   const supabase = useMemo(() => createClient(), []);
@@ -31,6 +32,11 @@ export default function AvaliadorHeader() {
         </Link>
         <div className="flex items-center gap-4 text-sm">
           {email && <span className="text-muted hidden sm:inline">{email}</span>}
+          {email && OWNER_EMAILS.includes(email) && (
+            <Link href="/avaliador/admin" className="font-medium text-muted hover:text-ink transition">
+              Licença
+            </Link>
+          )}
           <button onClick={sair} className="font-medium text-muted hover:text-danger transition">
             Sair
           </button>
