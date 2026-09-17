@@ -8,14 +8,15 @@ import type { Anamnese, PacienteRow } from "@/lib/anamnese/types";
 import { escorePSS10, somaSemNulos, rotuloNivel } from "@/lib/anamnese/alerts";
 import { AlertBanner, Field, TextArea, TextInput } from "@/components/forms";
 import { perguntasParQ } from "@/lib/anamnese/questionnaires";
+import { calcularPerfilIntegrado, type Classificacao, type DomainResult } from "@/lib/integracao/perfil";
 
-type Aba = "anamnese" | "fisica" | "postural" | "funcional";
+type Aba = "perfil" | "anamnese" | "fisica" | "postural" | "funcional";
 
 export default function DetalhePaciente() {
   const { id } = useParams<{ id: string }>();
   const supabase = useMemo(() => createClient(), []);
   const [paciente, setPaciente] = useState<PacienteRow | null>(null);
-  const [aba, setAba] = useState<Aba>("anamnese");
+  const [aba, setAba] = useState<Aba>("perfil");
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
@@ -63,6 +64,7 @@ export default function DetalhePaciente() {
       <div className="flex gap-1 border-b border-border mb-6">
         {(
           [
+            ["perfil", "Perfil Integrado"],
             ["anamnese", "Anamnese"],
             ["fisica", "Física e Antropométrica"],
             ["postural", "Postural e Biomecânica"],
@@ -81,11 +83,132 @@ export default function DetalhePaciente() {
         ))}
       </div>
 
+      {aba === "perfil" && <AbaPerfilIntegrado paciente={paciente} />}
       {aba === "anamnese" && <AbaAnamnese anamnese={anamnese} status={paciente.anamnese_status} />}
       {aba === "fisica" && <AbaFisica pacienteId={paciente.id} dados={paciente.fisica} onSalvo={carregar} />}
       {aba === "postural" && <AbaPostural pacienteId={paciente.id} dados={paciente.postural} onSalvo={carregar} />}
       {aba === "funcional" && <AbaFuncional pacienteId={paciente.id} dados={paciente.funcional} onSalvo={carregar} />}
     </main>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Aba Perfil Integrado (Agente 6) - cruza anamnese + física + postural +
+// funcional em potencialidades/limitações/riscos/prioridades
+// ---------------------------------------------------------------------------
+const ESTILO_CLASSIFICACAO: Record<Classificacao, { rotulo: string; classe: string }> = {
+  adequado: { rotulo: "Adequado", classe: "bg-accent-soft text-accent-dark border-accent/30" },
+  atencao: { rotulo: "Atenção", classe: "bg-warn-soft text-warn border-warn/30" },
+  prioridade: { rotulo: "Prioridade de intervenção", classe: "bg-danger-soft text-danger border-danger/30" },
+  investigar: { rotulo: "Necessita investigação", classe: "bg-info-soft text-info border-info/30" },
+};
+
+function CartaoDominio({ dominio }: { dominio: DomainResult }) {
+  const estilo = ESTILO_CLASSIFICACAO[dominio.classificacao];
+  return (
+    <div className={`rounded-xl border p-4 ${estilo.classe}`}>
+      <div className="flex items-center justify-between mb-1">
+        <span className="font-medium text-sm">{dominio.titulo}</span>
+        <span className="text-xs font-semibold uppercase tracking-wide">{estilo.rotulo}</span>
+      </div>
+      <p className="text-xs opacity-90 leading-relaxed">{dominio.justificativa}</p>
+    </div>
+  );
+}
+
+function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
+  const perfil = useMemo(() => calcularPerfilIntegrado(paciente), [paciente]);
+  const confiancaLabel = { alta: "Alta", media: "Média", baixa: "Baixa" }[perfil.confianca];
+  const confiancaClasse = {
+    alta: "bg-accent-soft text-accent-dark",
+    media: "bg-warn-soft text-warn",
+    baixa: "bg-danger-soft text-danger",
+  }[perfil.confianca];
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-border bg-surface p-5">
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="font-display text-lg text-ink">Painel Integrado de Saúde</h3>
+          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${confiancaClasse}`}>
+            Confiança do perfil: {confiancaLabel}
+          </span>
+        </div>
+        <p className="text-xs text-muted mb-4">
+          Calculado automaticamente a partir dos dados coletados. Critérios explícitos por domínio — nunca um
+          diagnóstico. Sempre cruzar com o julgamento clínico do profissional.
+        </p>
+        <div className="grid sm:grid-cols-2 gap-3">
+          {perfil.dominios.map((d) => (
+            <CartaoDominio key={d.chave} dominio={d} />
+          ))}
+        </div>
+      </div>
+
+      {perfil.riscos.length > 0 && (
+        <div className="rounded-2xl border border-danger/30 bg-danger-soft p-5">
+          <h4 className="font-display text-base text-danger mb-2">Riscos / Prioridade de intervenção</h4>
+          <ul className="space-y-1 text-sm text-danger">
+            {perfil.riscos.map((d) => (
+              <li key={d.chave}>
+                <strong>{d.titulo}:</strong> {d.justificativa}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="grid sm:grid-cols-2 gap-5">
+        <div className="rounded-2xl border border-accent/30 bg-accent-soft p-5">
+          <h4 className="font-display text-base text-accent-dark mb-2">Potencialidades</h4>
+          {perfil.potencialidades.length === 0 ? (
+            <p className="text-sm text-accent-dark/70">Nenhum domínio classificado como adequado ainda.</p>
+          ) : (
+            <ul className="space-y-1 text-sm text-accent-dark">
+              {perfil.potencialidades.map((d) => (
+                <li key={d.chave}>
+                  <strong>{d.titulo}</strong>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-warn/30 bg-warn-soft p-5">
+          <h4 className="font-display text-base text-warn mb-2">Limitações</h4>
+          {perfil.limitacoes.length === 0 ? (
+            <p className="text-sm text-warn/70">Nenhum domínio classificado como atenção no momento.</p>
+          ) : (
+            <ul className="space-y-1 text-sm text-warn">
+              {perfil.limitacoes.map((d) => (
+                <li key={d.chave}>
+                  <strong>{d.titulo}:</strong> {d.justificativa}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-surface p-5">
+        <h4 className="font-display text-base text-ink mb-2">Prioridades sugeridas (ordem)</h4>
+        {perfil.prioridades.length === 0 ? (
+          <p className="text-sm text-muted">Nenhuma prioridade identificada com os dados atuais.</p>
+        ) : (
+          <ol className="space-y-1 text-sm text-ink list-decimal list-inside">
+            {perfil.prioridades.map((d) => (
+              <li key={d.chave}>
+                <strong>{d.titulo}</strong> — {d.justificativa}
+              </li>
+            ))}
+          </ol>
+        )}
+        <p className="text-xs text-muted mt-3">
+          Conecte estas prioridades ao objetivo declarado pelo paciente (capítulo "Motivo da procura" da anamnese)
+          na hora de montar o plano — a IA não faz essa conexão fina automaticamente.
+        </p>
+      </div>
+    </div>
   );
 }
 
