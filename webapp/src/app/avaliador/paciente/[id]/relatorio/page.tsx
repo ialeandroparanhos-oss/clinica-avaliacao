@@ -162,6 +162,38 @@ export default function RelatorioTecnico() {
             <L label="Velocidade de marcha" value={paciente.funcional?.velocidade_marcha_ms ? `${paciente.funcional.velocidade_marcha_ms} m/s` : null} />
             <L label="TC6" value={paciente.funcional?.tc6_metros ? `${paciente.funcional.tc6_metros} m` : null} />
             <L label="Dinamometria D/E" value={paciente.funcional?.dinamometria_d_kg ? `${paciente.funcional.dinamometria_d_kg} / ${paciente.funcional.dinamometria_e_kg || "–"} kgf` : null} />
+            <L
+              label="RM submáximo (estimado)"
+              value={
+                paciente.funcional?.rm_carga_kg && paciente.funcional?.rm_repeticoes
+                  ? `${paciente.funcional.rm_exercicio || "Exercício"}: ${paciente.funcional.rm_carga_kg}kg x ${paciente.funcional.rm_repeticoes} reps`
+                  : null
+              }
+            />
+            <L
+              label="Repetições até a falha (carga fixa)"
+              value={
+                paciente.funcional?.falha_carga_kg
+                  ? `${paciente.funcional.falha_exercicio || "Exercício"}: ${paciente.funcional.falha_carga_kg}kg x ${paciente.funcional.falha_repeticoes || "–"} reps até a falha`
+                  : null
+              }
+            />
+            <L
+              label="Amplitude articular (goniometria)"
+              value={
+                Array.isArray(paciente.funcional?.goniometria) && paciente.funcional.goniometria.length > 0
+                  ? paciente.funcional.goniometria
+                      .map((g: any) => `${g.articulacao || "–"}${g.lado ? ` (${g.lado})` : ""}: ${g.graus || "–"}°`)
+                      .join("; ")
+                  : null
+              }
+            />
+            <L label="Agachamento livre - observações" value={paciente.funcional?.agachamento_livre_obs} />
+            <L
+              label="Estabilidade do core - prancha"
+              value={paciente.funcional?.core_prancha_seg ? `${paciente.funcional.core_prancha_seg} s` : null}
+            />
+            <L label="Estabilidade do core - observações" value={paciente.funcional?.core_estabilidade_obs} />
             <L label="Observações" value={paciente.funcional?.observacoes} />
           </dl>
         </Secao>

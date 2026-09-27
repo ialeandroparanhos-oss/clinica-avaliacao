@@ -885,6 +885,23 @@ function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string; dados
   );
 }
 
+type LinhaGoniometria = { id: string; articulacao: string; lado: string; graus: string };
+
+function novoIdLocal(): string {
+  return Math.random().toString(36).slice(2, 10);
+}
+
+// Estimativa de 1RM pela fórmula de Brzycki - referência de campo comumente
+// usada, válida sobretudo até ~10 repetições; é uma estimativa, nunca um
+// valor medido diretamente.
+function estimarRM(cargaKg: string, repeticoes: string): string | null {
+  const carga = Number(cargaKg);
+  const reps = Number(repeticoes);
+  if (!carga || !reps || reps <= 0 || reps >= 37) return null;
+  const rm = (carga * 36) / (37 - reps);
+  return rm.toFixed(1);
+}
+
 function AbaFuncional({ pacienteId, dados, onSalvo }: { pacienteId: string; dados: any; onSalvo: () => void }) {
   const [d, setD] = useState<Record<string, string>>({
     chair_stand_reps: dados?.chair_stand_reps ?? "",
@@ -896,10 +913,32 @@ function AbaFuncional({ pacienteId, dados, onSalvo }: { pacienteId: string; dado
     tc6_metros: dados?.tc6_metros ?? "",
     dinamometria_d_kg: dados?.dinamometria_d_kg ?? "",
     dinamometria_e_kg: dados?.dinamometria_e_kg ?? "",
+    rm_exercicio: dados?.rm_exercicio ?? "",
+    rm_carga_kg: dados?.rm_carga_kg ?? "",
+    rm_repeticoes: dados?.rm_repeticoes ?? "",
+    falha_exercicio: dados?.falha_exercicio ?? "",
+    falha_carga_kg: dados?.falha_carga_kg ?? "",
+    falha_repeticoes: dados?.falha_repeticoes ?? "",
+    agachamento_livre_obs: dados?.agachamento_livre_obs ?? "",
+    core_prancha_seg: dados?.core_prancha_seg ?? "",
+    core_estabilidade_obs: dados?.core_estabilidade_obs ?? "",
     observacoes: dados?.observacoes ?? "",
   });
+  const [goniometria, setGoniometria] = useState<LinhaGoniometria[]>(dados?.goniometria ?? []);
   const { salvar, salvando, ok } = useSalvarSecao(pacienteId, "funcional");
   const set = (k: string, v: string) => setD((prev) => ({ ...prev, [k]: v }));
+
+  const rmEstimado = estimarRM(d.rm_carga_kg, d.rm_repeticoes);
+
+  function adicionarGoniometria() {
+    setGoniometria((prev) => [...prev, { id: novoIdLocal(), articulacao: "", lado: "", graus: "" }]);
+  }
+  function atualizarGoniometria(id: string, patch: Partial<LinhaGoniometria>) {
+    setGoniometria((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+  }
+  function removerGoniometria(id: string) {
+    setGoniometria((prev) => prev.filter((l) => l.id !== id));
+  }
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-5 space-y-5">
@@ -914,10 +953,104 @@ function AbaFuncional({ pacienteId, dados, onSalvo }: { pacienteId: string; dado
         <NumField label="Dinamometria D" suffix="kgf" value={d.dinamometria_d_kg} onChange={(v) => set("dinamometria_d_kg", v)} />
         <NumField label="Dinamometria E" suffix="kgf" value={d.dinamometria_e_kg} onChange={(v) => set("dinamometria_e_kg", v)} />
       </div>
-      <Field label="Observações do avaliador">
+
+      <div className="pt-4 border-t border-border">
+        <h4 className="font-display text-base text-ink mb-1">RM submáximo (estimado)</h4>
+        <p className="text-xs text-muted mb-3">
+          Fórmula de Brzycki - estimativa de campo, mais confiável até ~10 repetições. Nunca substitui um teste
+          direto de 1RM.
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <Field label="Exercício">
+            <TextInput value={d.rm_exercicio} onChange={(e) => set("rm_exercicio", e.target.value)} placeholder="Ex.: Supino, Leg press" />
+          </Field>
+          <NumField label="Carga utilizada" suffix="kg" value={d.rm_carga_kg} onChange={(v) => set("rm_carga_kg", v)} />
+          <NumField label="Repetições realizadas" value={d.rm_repeticoes} onChange={(v) => set("rm_repeticoes", v)} />
+          <Field label="1RM estimado">
+            <div className="rounded-lg border border-border bg-bg px-3.5 py-2.5 text-[15px] font-mono tabular-nums">
+              {rmEstimado ? `${rmEstimado} kg` : "–"}
+            </div>
+          </Field>
+        </div>
+      </div>
+
+      <div className="pt-4 border-t border-border">
+        <h4 className="font-display text-base text-ink mb-1">Repetições até a falha (carga fixa)</h4>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <Field label="Exercício">
+            <TextInput value={d.falha_exercicio} onChange={(e) => set("falha_exercicio", e.target.value)} />
+          </Field>
+          <NumField label="Carga fixa" suffix="kg" value={d.falha_carga_kg} onChange={(v) => set("falha_carga_kg", v)} />
+          <NumField label="Repetições até a falha" value={d.falha_repeticoes} onChange={(v) => set("falha_repeticoes", v)} />
+        </div>
+      </div>
+
+      <div className="pt-4 border-t border-border">
+        <div className="flex items-center justify-between mb-1">
+          <h4 className="font-display text-base text-ink">Amplitude articular (goniometria)</h4>
+          <button type="button" onClick={adicionarGoniometria} className="text-sm font-medium text-accent hover:underline">
+            + Adicionar articulação
+          </button>
+        </div>
+        {goniometria.length === 0 ? (
+          <p className="text-sm text-muted">Nenhuma medida registrada ainda.</p>
+        ) : (
+          <div className="space-y-2">
+            {goniometria.map((linha) => (
+              <div key={linha.id} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-end">
+                <Field label="Articulação/movimento">
+                  <TextInput
+                    value={linha.articulacao}
+                    onChange={(e) => atualizarGoniometria(linha.id, { articulacao: e.target.value })}
+                    placeholder="Ex.: Flexão de ombro"
+                  />
+                </Field>
+                <Field label="Lado">
+                  <TextInput
+                    value={linha.lado}
+                    onChange={(e) => atualizarGoniometria(linha.id, { lado: e.target.value })}
+                    placeholder="D/E"
+                    className="w-16"
+                  />
+                </Field>
+                <Field label="Graus">
+                  <TextInput
+                    inputMode="decimal"
+                    value={linha.graus}
+                    onChange={(e) => atualizarGoniometria(linha.id, { graus: e.target.value })}
+                    className="w-20"
+                  />
+                </Field>
+                <button
+                  type="button"
+                  onClick={() => removerGoniometria(linha.id)}
+                  className="text-xs text-muted hover:text-danger pb-2.5"
+                >
+                  remover
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="pt-4 border-t border-border space-y-4">
+        <h4 className="font-display text-base text-ink">Testes funcionais observacionais</h4>
+        <Field label="Agachamento livre - observações (profundidade, valgo dinâmico, compensações...)">
+          <TextArea value={d.agachamento_livre_obs} onChange={(e) => set("agachamento_livre_obs", e.target.value)} />
+        </Field>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <NumField label="Estabilidade do core - prancha" suffix="s" value={d.core_prancha_seg} onChange={(v) => set("core_prancha_seg", v)} />
+        </div>
+        <Field label="Estabilidade do core - observações">
+          <TextArea value={d.core_estabilidade_obs} onChange={(e) => set("core_estabilidade_obs", e.target.value)} />
+        </Field>
+      </div>
+
+      <Field label="Observações gerais do avaliador">
         <TextArea value={d.observacoes} onChange={(e) => set("observacoes", e.target.value)} />
       </Field>
-      <SalvarBar salvando={salvando} ok={ok} onSalvar={() => salvar(d).then(onSalvo)} />
+      <SalvarBar salvando={salvando} ok={ok} onSalvar={() => salvar({ ...d, goniometria }).then(onSalvo)} />
     </div>
   );
 }
