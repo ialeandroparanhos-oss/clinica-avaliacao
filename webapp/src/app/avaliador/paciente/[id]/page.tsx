@@ -579,6 +579,7 @@ function AbaAnamnese({ anamnese, status }: { anamnese: Anamnese; status: string 
         <Linha label="Profissão" value={anamnese.contexto.profissao} />
         <Linha label="Rotina" value={anamnese.contexto.rotina} />
         <Linha label="Jornada (h)" value={anamnese.contexto.jornada_horas} />
+        <Linha label="Exige esforço físico" value={anamnese.contexto.exige_esforco_fisico === null ? null : anamnese.contexto.exige_esforco_fisico ? "Sim" : "Não"} />
         <Linha label="Demanda física no trabalho" value={anamnese.contexto.demanda_fisica_trabalho} />
         <Linha label="Horas sentado/dia" value={anamnese.contexto.tempo_sentado_horas} />
         <Linha label="Atividades diárias" value={anamnese.contexto.atividades_diarias} />
@@ -646,15 +647,18 @@ function AbaAnamnese({ anamnese, status }: { anamnese: Anamnese; status: string 
       </Capitulo>
 
       <Capitulo titulo="Estilo de vida">
-        <Linha label="Alimentação" value={anamnese.estilo_vida.alimentacao_geral} />
+        <Linha label="Alimentação (1-5)" value={anamnese.estilo_vida.alimentacao_avaliacao} />
+        <Linha label="Alimentação (detalhe)" value={anamnese.estilo_vida.alimentacao_geral} />
         <Linha label="Hidratação (L/dia)" value={anamnese.estilo_vida.hidratacao_litros_dia} />
         <Linha label="Álcool" value={anamnese.estilo_vida.alcool_frequencia} />
         <Linha label="Tabagismo" value={anamnese.estilo_vida.tabagismo} />
-        <Linha label="Lazer" value={anamnese.estilo_vida.lazer} />
+        <Linha label="Lazer" value={anamnese.estilo_vida.lazer_opcoes} />
+        <Linha label="Lazer (outro)" value={anamnese.estilo_vida.lazer} />
         <Linha label="Estresse percebido (0-10)" value={anamnese.estilo_vida.estresse_percebido} />
         <Linha label="Barreiras a exercício" value={anamnese.estilo_vida.barreiras_exercicio} />
         <Linha label="Disponibilidade de tempo" value={anamnese.estilo_vida.disponibilidade_tempo} />
-        <Linha label="Rede de apoio" value={anamnese.estilo_vida.rede_apoio} />
+        <Linha label="Conta com apoio" value={anamnese.estilo_vida.conta_com_apoio === null ? null : anamnese.estilo_vida.conta_com_apoio ? "Sim" : "Não"} />
+        <Linha label="Rede de apoio (detalhe)" value={anamnese.estilo_vida.rede_apoio} />
       </Capitulo>
 
       {anamnese.dor.tem_dor && (

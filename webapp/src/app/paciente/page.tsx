@@ -27,6 +27,15 @@ import {
   caracteristicasDor,
   bandeirasVermelhasDor,
   barreirasExercicioOpcoes,
+  opcoesJornadaHoras,
+  opcoesHorasSentado,
+  opcoesFrequenciaMedicamento,
+  opcoesTempoUsoMedicamento,
+  opcoesHidratacao,
+  opcoesAlcool,
+  opcoesTabagismo,
+  opcoesLazer,
+  opcoesDisponibilidadeTempo,
 } from "@/lib/anamnese/questionnaires";
 
 type Stage = "identificacao" | "wizard" | "concluido";
@@ -242,21 +251,33 @@ export default function PacientePage() {
                 />
               </Field>
               <Field label="Quantas horas por dia você trabalha, em média?">
-                <TextInput
-                  value={anamnese.contexto.jornada_horas}
-                  onChange={(e) => set("contexto", { jornada_horas: e.target.value })}
+                <ChoiceGroup
+                  columns={3}
+                  options={opcoesJornadaHoras.map((o) => ({ value: o, label: o }))}
+                  value={anamnese.contexto.jornada_horas || null}
+                  onChange={(v) => set("contexto", { jornada_horas: v })}
                 />
               </Field>
-              <Field label="Seu trabalho exige esforço físico? De que tipo?">
-                <TextArea
-                  value={anamnese.contexto.demanda_fisica_trabalho}
-                  onChange={(e) => set("contexto", { demanda_fisica_trabalho: e.target.value })}
+              <Field label="Seu trabalho exige esforço físico?">
+                <YesNo
+                  value={anamnese.contexto.exige_esforco_fisico}
+                  onChange={(v) => set("contexto", { exige_esforco_fisico: v })}
                 />
               </Field>
+              {anamnese.contexto.exige_esforco_fisico && (
+                <Field label="De que tipo?">
+                  <TextArea
+                    value={anamnese.contexto.demanda_fisica_trabalho}
+                    onChange={(e) => set("contexto", { demanda_fisica_trabalho: e.target.value })}
+                  />
+                </Field>
+              )}
               <Field label="Quantas horas por dia você passa sentado(a), aproximadamente?">
-                <TextInput
-                  value={anamnese.contexto.tempo_sentado_horas}
-                  onChange={(e) => set("contexto", { tempo_sentado_horas: e.target.value })}
+                <ChoiceGroup
+                  columns={3}
+                  options={opcoesHorasSentado.map((o) => ({ value: o, label: o }))}
+                  value={anamnese.contexto.tempo_sentado_horas || null}
+                  onChange={(v) => set("contexto", { tempo_sentado_horas: v })}
                 />
               </Field>
               <Field label="Quais atividades fazem parte do seu dia a dia?">
@@ -312,23 +333,50 @@ export default function PacientePage() {
           {step === 2 && (
             <StepShell title="Histórico de saúde">
               <Field label="Você tem alguma doença diagnosticada?">
-                <TextArea value={anamnese.historico_saude.doencas} onChange={(e) => set("historico_saude", { doencas: e.target.value })} />
+                <YesNo value={anamnese.historico_saude.tem_doencas} onChange={(v) => set("historico_saude", { tem_doencas: v })} />
               </Field>
+              {anamnese.historico_saude.tem_doencas && (
+                <Field label="Qual(is)?">
+                  <TextArea value={anamnese.historico_saude.doencas} onChange={(e) => set("historico_saude", { doencas: e.target.value })} />
+                </Field>
+              )}
+
               <Field label="Já realizou alguma cirurgia?">
-                <TextArea value={anamnese.historico_saude.cirurgias} onChange={(e) => set("historico_saude", { cirurgias: e.target.value })} />
+                <YesNo value={anamnese.historico_saude.tem_cirurgias} onChange={(v) => set("historico_saude", { tem_cirurgias: v })} />
               </Field>
+              {anamnese.historico_saude.tem_cirurgias && (
+                <Field label="Qual(is)? Quando?">
+                  <TextArea value={anamnese.historico_saude.cirurgias} onChange={(e) => set("historico_saude", { cirurgias: e.target.value })} />
+                </Field>
+              )}
+
               <Field label="Já teve alguma hospitalização relevante?">
-                <TextArea
-                  value={anamnese.historico_saude.hospitalizacoes}
-                  onChange={(e) => set("historico_saude", { hospitalizacoes: e.target.value })}
+                <YesNo
+                  value={anamnese.historico_saude.tem_hospitalizacoes}
+                  onChange={(v) => set("historico_saude", { tem_hospitalizacoes: v })}
                 />
               </Field>
+              {anamnese.historico_saude.tem_hospitalizacoes && (
+                <Field label="Pode contar mais?">
+                  <TextArea
+                    value={anamnese.historico_saude.hospitalizacoes}
+                    onChange={(e) => set("historico_saude", { hospitalizacoes: e.target.value })}
+                  />
+                </Field>
+              )}
+
               <Field label="Já teve lesões ou fraturas?">
-                <TextArea
-                  value={anamnese.historico_saude.lesoes_fraturas}
-                  onChange={(e) => set("historico_saude", { lesoes_fraturas: e.target.value })}
-                />
+                <YesNo value={anamnese.historico_saude.tem_lesoes} onChange={(v) => set("historico_saude", { tem_lesoes: v })} />
               </Field>
+              {anamnese.historico_saude.tem_lesoes && (
+                <Field label="Qual(is)? Onde?">
+                  <TextArea
+                    value={anamnese.historico_saude.lesoes_fraturas}
+                    onChange={(e) => set("historico_saude", { lesoes_fraturas: e.target.value })}
+                  />
+                </Field>
+              )}
+
               <Field label="Você sofreu alguma queda nos últimos 12 meses?">
                 <YesNo
                   value={anamnese.historico_saude.quedas_12m}
@@ -343,24 +391,51 @@ export default function PacientePage() {
                   />
                 </Field>
               )}
+
               <Field label="Já fez algum tratamento anterior relevante (fisioterapia, outros)?">
-                <TextArea
-                  value={anamnese.historico_saude.tratamentos_anteriores}
-                  onChange={(e) => set("historico_saude", { tratamentos_anteriores: e.target.value })}
+                <YesNo
+                  value={anamnese.historico_saude.fez_tratamentos_anteriores}
+                  onChange={(v) => set("historico_saude", { fez_tratamentos_anteriores: v })}
                 />
               </Field>
+              {anamnese.historico_saude.fez_tratamentos_anteriores && (
+                <Field label="Qual(is)?">
+                  <TextArea
+                    value={anamnese.historico_saude.tratamentos_anteriores}
+                    onChange={(e) => set("historico_saude", { tratamentos_anteriores: e.target.value })}
+                  />
+                </Field>
+              )}
+
               <Field label="Você tem acompanhamento médico atual?">
-                <TextArea
-                  value={anamnese.historico_saude.acompanhamento_medico}
-                  onChange={(e) => set("historico_saude", { acompanhamento_medico: e.target.value })}
+                <YesNo
+                  value={anamnese.historico_saude.tem_acompanhamento_medico}
+                  onChange={(v) => set("historico_saude", { tem_acompanhamento_medico: v })}
                 />
               </Field>
+              {anamnese.historico_saude.tem_acompanhamento_medico && (
+                <Field label="Com quem? Para quê?">
+                  <TextArea
+                    value={anamnese.historico_saude.acompanhamento_medico}
+                    onChange={(e) => set("historico_saude", { acompanhamento_medico: e.target.value })}
+                  />
+                </Field>
+              )}
+
               <Field label="Outras condições de saúde que considere relevantes?">
-                <TextArea
-                  value={anamnese.historico_saude.outras_condicoes}
-                  onChange={(e) => set("historico_saude", { outras_condicoes: e.target.value })}
+                <YesNo
+                  value={anamnese.historico_saude.tem_outras_condicoes}
+                  onChange={(v) => set("historico_saude", { tem_outras_condicoes: v })}
                 />
               </Field>
+              {anamnese.historico_saude.tem_outras_condicoes && (
+                <Field label="Qual(is)?">
+                  <TextArea
+                    value={anamnese.historico_saude.outras_condicoes}
+                    onChange={(e) => set("historico_saude", { outras_condicoes: e.target.value })}
+                  />
+                </Field>
+              )}
             </StepShell>
           )}
 
@@ -371,71 +446,67 @@ export default function PacientePage() {
               </Field>
               {anamnese.medicamentos.usa_medicamentos && (
                 <div className="space-y-4">
-                  {anamnese.medicamentos.lista.map((med, i) => (
-                    <div key={i} className="rounded-lg border border-border p-4 space-y-3 relative">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          set("medicamentos", { lista: anamnese.medicamentos.lista.filter((_, idx) => idx !== i) })
-                        }
-                        className="absolute top-3 right-3 text-xs text-muted hover:text-danger"
-                      >
-                        remover
-                      </button>
-                      <Field label="Nome do medicamento">
-                        <TextInput
-                          value={med.nome}
-                          onChange={(e) => {
-                            const lista = [...anamnese.medicamentos.lista];
-                            lista[i] = { ...lista[i], nome: e.target.value };
-                            set("medicamentos", { lista });
-                          }}
-                        />
-                      </Field>
-                      <div className="grid grid-cols-2 gap-3">
+                  {anamnese.medicamentos.lista.map((med, i) => {
+                    const atualizar = (patch: Partial<(typeof anamnese.medicamentos.lista)[number]>) => {
+                      const lista = [...anamnese.medicamentos.lista];
+                      lista[i] = { ...lista[i], ...patch };
+                      set("medicamentos", { lista });
+                    };
+                    return (
+                      <div key={i} className="rounded-lg border border-border p-4 space-y-3 relative">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            set("medicamentos", { lista: anamnese.medicamentos.lista.filter((_, idx) => idx !== i) })
+                          }
+                          className="absolute top-3 right-3 text-xs text-muted hover:text-danger"
+                        >
+                          remover
+                        </button>
+                        <Field label="Nome do medicamento">
+                          <TextInput value={med.nome} onChange={(e) => atualizar({ nome: e.target.value })} />
+                        </Field>
                         <Field label="Dose">
-                          <TextInput
-                            value={med.dose}
-                            onChange={(e) => {
-                              const lista = [...anamnese.medicamentos.lista];
-                              lista[i] = { ...lista[i], dose: e.target.value };
-                              set("medicamentos", { lista });
-                            }}
-                          />
+                          <TextInput value={med.dose} onChange={(e) => atualizar({ dose: e.target.value })} placeholder="Ex.: 50mg" />
                         </Field>
                         <Field label="Frequência">
-                          <TextInput
-                            value={med.frequencia}
-                            onChange={(e) => {
-                              const lista = [...anamnese.medicamentos.lista];
-                              lista[i] = { ...lista[i], frequencia: e.target.value };
-                              set("medicamentos", { lista });
-                            }}
+                          <ChoiceGroup
+                            columns={2}
+                            options={opcoesFrequenciaMedicamento.map((o) => ({ value: o, label: o }))}
+                            value={opcoesFrequenciaMedicamento.includes(med.frequencia) ? med.frequencia : med.frequencia ? "Outra" : null}
+                            onChange={(v) => atualizar({ frequencia: v === "Outra" ? "" : v })}
                           />
+                          {!opcoesFrequenciaMedicamento.includes(med.frequencia) && (
+                            <TextInput
+                              className="mt-2"
+                              value={med.frequencia}
+                              onChange={(e) => atualizar({ frequencia: e.target.value })}
+                              placeholder="Descreva a frequência"
+                            />
+                          )}
+                        </Field>
+                        <Field label="Para quê você toma?">
+                          <TextInput value={med.motivo} onChange={(e) => atualizar({ motivo: e.target.value })} />
+                        </Field>
+                        <Field label="Há quanto tempo usa?">
+                          <ChoiceGroup
+                            columns={2}
+                            options={opcoesTempoUsoMedicamento.map((o) => ({ value: o, label: o }))}
+                            value={opcoesTempoUsoMedicamento.includes(med.tempo_uso) ? med.tempo_uso : med.tempo_uso ? "Outro" : null}
+                            onChange={(v) => atualizar({ tempo_uso: v === "Outro" ? "" : v })}
+                          />
+                          {!opcoesTempoUsoMedicamento.includes(med.tempo_uso) && (
+                            <TextInput
+                              className="mt-2"
+                              value={med.tempo_uso}
+                              onChange={(e) => atualizar({ tempo_uso: e.target.value })}
+                              placeholder="Descreva há quanto tempo"
+                            />
+                          )}
                         </Field>
                       </div>
-                      <Field label="Para quê você toma?">
-                        <TextInput
-                          value={med.motivo}
-                          onChange={(e) => {
-                            const lista = [...anamnese.medicamentos.lista];
-                            lista[i] = { ...lista[i], motivo: e.target.value };
-                            set("medicamentos", { lista });
-                          }}
-                        />
-                      </Field>
-                      <Field label="Há quanto tempo usa?">
-                        <TextInput
-                          value={med.tempo_uso}
-                          onChange={(e) => {
-                            const lista = [...anamnese.medicamentos.lista];
-                            lista[i] = { ...lista[i], tempo_uso: e.target.value };
-                            set("medicamentos", { lista });
-                          }}
-                        />
-                      </Field>
-                    </div>
-                  ))}
+                    );
+                  })}
                   <button
                     type="button"
                     onClick={() =>
@@ -626,28 +697,54 @@ export default function PacientePage() {
 
           {step === 7 && (
             <StepShell title="Estilo de vida">
-              <Field label="Como você descreveria sua alimentação, de forma geral?">
+              <Field label="Como você avalia sua alimentação, de forma geral?">
+                <ChoiceGroup
+                  columns={5}
+                  options={[1, 2, 3, 4, 5].map((n) => ({ value: n, label: String(n) }))}
+                  value={anamnese.estilo_vida.alimentacao_avaliacao}
+                  onChange={(v) => set("estilo_vida", { alimentacao_avaliacao: v })}
+                />
+                <p className="text-xs text-muted mt-1">1 = muito ruim · 5 = muito boa</p>
+              </Field>
+              <Field label="Quer detalhar? (opcional)">
                 <TextArea
                   value={anamnese.estilo_vida.alimentacao_geral}
                   onChange={(e) => set("estilo_vida", { alimentacao_geral: e.target.value })}
                 />
               </Field>
               <Field label="Quantos litros de água você bebe por dia, aproximadamente?">
-                <TextInput
-                  value={anamnese.estilo_vida.hidratacao_litros_dia}
-                  onChange={(e) => set("estilo_vida", { hidratacao_litros_dia: e.target.value })}
+                <ChoiceGroup
+                  columns={3}
+                  options={opcoesHidratacao.map((o) => ({ value: o, label: o }))}
+                  value={anamnese.estilo_vida.hidratacao_litros_dia || null}
+                  onChange={(v) => set("estilo_vida", { hidratacao_litros_dia: v })}
                 />
               </Field>
               <Field label="Com que frequência você consome bebida alcoólica?">
-                <TextInput
-                  value={anamnese.estilo_vida.alcool_frequencia}
-                  onChange={(e) => set("estilo_vida", { alcool_frequencia: e.target.value })}
+                <ChoiceGroup
+                  columns={2}
+                  options={opcoesAlcool.map((o) => ({ value: o, label: o }))}
+                  value={anamnese.estilo_vida.alcool_frequencia || null}
+                  onChange={(v) => set("estilo_vida", { alcool_frequencia: v })}
                 />
               </Field>
               <Field label="Você fuma?">
-                <TextInput value={anamnese.estilo_vida.tabagismo} onChange={(e) => set("estilo_vida", { tabagismo: e.target.value })} />
+                <ChoiceGroup
+                  columns={2}
+                  options={opcoesTabagismo.map((o) => ({ value: o, label: o }))}
+                  value={anamnese.estilo_vida.tabagismo || null}
+                  onChange={(v) => set("estilo_vida", { tabagismo: v })}
+                />
               </Field>
-              <Field label="O que você costuma fazer no seu tempo de lazer?">
+              <Field label="O que você costuma fazer no seu tempo de lazer? (pode marcar mais de um)">
+                <CheckboxGroup
+                  columns={2}
+                  options={opcoesLazer}
+                  values={anamnese.estilo_vida.lazer_opcoes}
+                  onChange={(v) => set("estilo_vida", { lazer_opcoes: v })}
+                />
+              </Field>
+              <Field label="Outro, não listado acima? (opcional)">
                 <TextInput value={anamnese.estilo_vida.lazer} onChange={(e) => set("estilo_vida", { lazer: e.target.value })} />
               </Field>
               <Field label="De 0 a 10, o quanto você se sente estressado(a) atualmente?">
@@ -669,17 +766,24 @@ export default function PacientePage() {
                 />
               </Field>
               <Field label="Quanto tempo você teria disponível por semana para se dedicar a isso?">
-                <TextInput
-                  value={anamnese.estilo_vida.disponibilidade_tempo}
-                  onChange={(e) => set("estilo_vida", { disponibilidade_tempo: e.target.value })}
+                <ChoiceGroup
+                  columns={2}
+                  options={opcoesDisponibilidadeTempo.map((o) => ({ value: o, label: o }))}
+                  value={anamnese.estilo_vida.disponibilidade_tempo || null}
+                  onChange={(v) => set("estilo_vida", { disponibilidade_tempo: v })}
                 />
               </Field>
               <Field label="Você conta com apoio de familiares/amigos para cuidar da sua saúde?">
-                <TextInput
-                  value={anamnese.estilo_vida.rede_apoio}
-                  onChange={(e) => set("estilo_vida", { rede_apoio: e.target.value })}
-                />
+                <YesNo value={anamnese.estilo_vida.conta_com_apoio} onChange={(v) => set("estilo_vida", { conta_com_apoio: v })} />
               </Field>
+              {anamnese.estilo_vida.conta_com_apoio && (
+                <Field label="Quer contar mais? (opcional)">
+                  <TextInput
+                    value={anamnese.estilo_vida.rede_apoio}
+                    onChange={(e) => set("estilo_vida", { rede_apoio: e.target.value })}
+                  />
+                </Field>
+              )}
             </StepShell>
           )}
 

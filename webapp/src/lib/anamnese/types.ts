@@ -15,6 +15,7 @@ export type Anamnese = {
     profissao: string;
     rotina: string;
     jornada_horas: string;
+    exige_esforco_fisico: boolean | null;
     demanda_fisica_trabalho: string;
     tempo_sentado_horas: string;
     atividades_diarias: string;
@@ -28,15 +29,22 @@ export type Anamnese = {
     expectativas: string;
   };
   historico_saude: {
+    tem_doencas: boolean | null;
     doencas: string;
+    tem_cirurgias: boolean | null;
     cirurgias: string;
+    tem_hospitalizacoes: boolean | null;
     hospitalizacoes: string;
+    tem_lesoes: boolean | null;
     lesoes_fraturas: string;
     quedas_12m: boolean | null;
     quedas_detalhe: string;
+    fez_tratamentos_anteriores: boolean | null;
     tratamentos_anteriores: string;
+    tem_acompanhamento_medico: boolean | null;
     acompanhamento_medico: string;
     fisioterapia_previa: string;
+    tem_outras_condicoes: boolean | null;
     outras_condicoes: string;
   };
   medicamentos: {
@@ -78,14 +86,17 @@ export type Anamnese = {
     sensacao_ao_acordar: number | null; // 1-5
   };
   estilo_vida: {
+    alimentacao_avaliacao: number | null; // 1-5
     alimentacao_geral: string;
     hidratacao_litros_dia: string;
     alcool_frequencia: string;
     tabagismo: string;
+    lazer_opcoes: string[];
     lazer: string;
     estresse_percebido: number | null; // 0-10
     barreiras_exercicio: string[];
     disponibilidade_tempo: string;
+    conta_com_apoio: boolean | null;
     rede_apoio: string;
   };
   dor: {

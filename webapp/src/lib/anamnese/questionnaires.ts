@@ -103,3 +103,40 @@ export const barreirasExercicioOpcoes = [
   "Não sabe por onde começar",
   "Já tentou antes e não conseguiu manter",
 ];
+
+// Opções clicáveis para acelerar o preenchimento - sempre com espaço para
+// detalhar em texto quando a resposta pedir.
+export const opcoesJornadaHoras = ["Até 4h", "4-6h", "6-8h", "8-10h", "Mais de 10h"];
+
+export const opcoesHorasSentado = ["Até 2h", "2-4h", "4-6h", "6-8h", "Mais de 8h"];
+
+export const opcoesFrequenciaMedicamento = [
+  "1x ao dia",
+  "2x ao dia",
+  "3x ao dia",
+  "A cada 8h",
+  "A cada 12h",
+  "Quando necessário",
+  "Semanal",
+];
+
+export const opcoesTempoUsoMedicamento = ["Menos de 1 mês", "1-6 meses", "6-12 meses", "Mais de 1 ano", "Não sei"];
+
+export const opcoesHidratacao = ["Menos de 1L", "1-1,5L", "1,5-2L", "2-3L", "Mais de 3L"];
+
+export const opcoesAlcool = ["Não bebo", "Raramente", "1-2x por semana", "3-4x por semana", "Todos os dias"];
+
+export const opcoesTabagismo = ["Não fumo", "Já fumei, parei", "Fumo ocasionalmente", "Fumo diariamente"];
+
+export const opcoesLazer = [
+  "Caminhada/ar livre",
+  "Leitura",
+  "TV/streaming",
+  "Redes sociais",
+  "Esportes",
+  "Viagens",
+  "Tempo com a família",
+  "Jogos",
+];
+
+export const opcoesDisponibilidadeTempo = ["Menos de 1h/semana", "1-2h/semana", "3-5h/semana", "Mais de 5h/semana"];
