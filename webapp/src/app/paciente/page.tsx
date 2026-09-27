@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { anamneseVazia, mesclarComPadrao } from "@/lib/anamnese/defaults";
 import type { Anamnese } from "@/lib/anamnese/types";
@@ -46,6 +46,7 @@ export default function PacientePage() {
   const [anamnese, setAnamnese] = useState<Anamnese>(anamneseVazia);
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [salvandoFundo, setSalvandoFundo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   function set<K extends keyof Anamnese>(capitulo: K, patch: Partial<Anamnese[K]>) {
@@ -83,10 +84,13 @@ export default function PacientePage() {
     }
   }
 
-  async function salvar(status: "em_andamento" | "concluida") {
-    if (!pacienteId) return;
-    setLoading(true);
-    setErro(null);
+  // Salva sem travar a navegação - Sofia (anamnese) não faz o paciente
+  // esperar a rede para virar a página. Sempre envia o objeto completo da
+  // anamnese, então uma tentativa que falhar é coberta pela próxima que
+  // tiver sucesso (nenhum dado se perde, só o indicador visual atrasa).
+  async function salvarSilencioso(status: "em_andamento" | "concluida") {
+    if (!pacienteId) return false;
+    setSalvandoFundo(true);
     try {
       const alertas = calcularAlertas(anamnese);
       const { error } = await supabase.rpc("save_anamnese", {
@@ -98,19 +102,19 @@ export default function PacientePage() {
         p_alertas: alertas,
       });
       if (error) throw error;
+      setErro(null);
       return true;
     } catch {
-      setErro("Não foi possível salvar agora. Verifique sua conexão e tente novamente.");
+      setErro("Não foi possível salvar a última resposta agora - suas respostas continuam aqui na tela e tentaremos de novo ao avançar.");
       return false;
     } finally {
-      setLoading(false);
+      setSalvandoFundo(false);
     }
   }
 
-  async function proximo() {
-    const ok = await salvar("em_andamento");
-    if (!ok) return;
+  function proximo() {
     if (step < TOTAL_STEPS - 1) setStep(step + 1);
+    salvarSilencioso("em_andamento");
   }
 
   function voltar() {
@@ -118,9 +122,28 @@ export default function PacientePage() {
   }
 
   async function enviarFinal() {
-    const ok = await salvar("concluida");
+    setLoading(true);
+    const ok = await salvarSilencioso("concluida");
+    setLoading(false);
     if (ok) setStage("concluido");
   }
+
+  // Atalho de teclado: Enter avança para a próxima etapa (exceto dentro de
+  // um campo de texto multilinha, onde Enter deve só quebrar a linha).
+  useEffect(() => {
+    if (stage !== "wizard") return;
+    function aoTeclar(e: KeyboardEvent) {
+      if (e.key !== "Enter") return;
+      const alvo = e.target as HTMLElement;
+      if (alvo.tagName === "TEXTAREA") return;
+      e.preventDefault();
+      if (step < TOTAL_STEPS - 1) proximo();
+      else enviarFinal();
+    }
+    window.addEventListener("keydown", aoTeclar);
+    return () => window.removeEventListener("keydown", aoTeclar);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage, step, anamnese, pacienteId]);
 
   if (stage === "identificacao") {
     return (
@@ -836,31 +859,34 @@ export default function PacientePage() {
             <button
               type="button"
               onClick={voltar}
-              disabled={step === 0 || loading}
+              disabled={step === 0}
               className="text-sm font-medium text-muted hover:text-ink disabled:opacity-40"
             >
               ← Voltar
             </button>
-            {step < TOTAL_STEPS - 1 ? (
-              <button
-                type="button"
-                onClick={proximo}
-                disabled={loading}
-                className="rounded-lg bg-accent text-white font-medium px-6 py-2.5 hover:bg-accent-dark transition disabled:opacity-60"
-              >
-                {loading ? "Salvando..." : "Próximo →"}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={enviarFinal}
-                disabled={loading}
-                className="rounded-lg bg-accent text-white font-medium px-6 py-2.5 hover:bg-accent-dark transition disabled:opacity-60"
-              >
-                {loading ? "Enviando..." : "Enviar anamnese"}
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {salvandoFundo && <span className="text-xs text-muted/70">salvando...</span>}
+              {step < TOTAL_STEPS - 1 ? (
+                <button
+                  type="button"
+                  onClick={proximo}
+                  className="rounded-lg bg-accent text-white font-medium px-6 py-2.5 hover:bg-accent-dark transition"
+                >
+                  Próximo →
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={enviarFinal}
+                  disabled={loading}
+                  className="rounded-lg bg-accent text-white font-medium px-6 py-2.5 hover:bg-accent-dark transition disabled:opacity-60"
+                >
+                  {loading ? "Enviando..." : "Enviar anamnese"}
+                </button>
+              )}
+            </div>
           </div>
+          <p className="text-xs text-muted/70 text-center mt-3">Dica: aperte Enter para avançar mais rápido.</p>
         </div>
       </div>
     </main>

@@ -1,0 +1,230 @@
+<title>Time da Avaliação Integrada</title>
+<meta name="description" content="Organograma dos 8 agentes de IA da metodologia, com nomes, papéis e como os dados fluem entre eles.">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap">
+
+<style>
+  :root {
+    --bg: #F3F5F2;
+    --surface: #FFFFFF;
+    --ink: #182420;
+    --muted: #5B6B63;
+    --muted-soft: #8A968F;
+    --border: #DEE6E0;
+    --accent: #2F6F5E;
+    --accent-soft: #E4EFEA;
+    --accent-dark: #1F4E41;
+    --gold: #A9832F;
+    --gold-soft: #F6EFE0;
+    --shadow: 0 1px 2px rgba(24,36,32,0.04), 0 8px 24px -12px rgba(24,36,32,0.12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101814; --surface: #172420; --ink: #EDF3F0; --muted: #9AACA3; --muted-soft: #6E8078;
+      --border: #2A3B35; --accent: #4E9782; --accent-soft: #1E3830; --accent-dark: #8CC9B6;
+      --gold: #D9B96A; --gold-soft: #33291A;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101814; --surface: #172420; --ink: #EDF3F0; --muted: #9AACA3; --muted-soft: #6E8078;
+    --border: #2A3B35; --accent: #4E9782; --accent-soft: #1E3830; --accent-dark: #8CC9B6;
+    --gold: #D9B96A; --gold-soft: #33291A;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+  }
+
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); font-family: 'Manrope', system-ui, sans-serif; padding-inline: 20px; padding-block: 44px; }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+  h1, h2 { font-family: 'Fraunces', Georgia, serif; text-wrap: balance; margin: 0; }
+  .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin: 0 0 10px; }
+
+  .hero { padding-bottom: 30px; margin-bottom: 28px; border-bottom: 1px solid var(--border); }
+  .hero h1 { font-size: clamp(26px, 4.5vw, 38px); font-weight: 600; }
+  .hero p { font-size: 16px; color: var(--muted); max-width: 66ch; line-height: 1.55; margin-top: 12px; }
+
+  figure { margin: 0 0 36px; }
+  .diagram-shell {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+    padding: 18px 12px; box-shadow: var(--shadow);
+  }
+  svg.orgchart { display: block; width: 100%; height: auto; color: var(--ink); }
+  figcaption { font-size: 13px; color: var(--muted); margin-top: 12px; text-align: center; }
+
+  .section { margin-bottom: 36px; }
+  .section h2 { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+  .section p.intro { color: var(--muted); font-size: 14px; max-width: 68ch; line-height: 1.55; margin-bottom: 16px; }
+
+  .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+  table.time { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 640px; }
+  table.time th, table.time td { padding: 11px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.time th { font-weight: 700; color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.03em; background: var(--bg); }
+  table.time tr:last-child td { border-bottom: none; }
+  .nome { font-family: 'Fraunces'; font-weight: 600; font-size: 15px; }
+  .papel { color: var(--muted); font-size: 12.5px; }
+  .humano { color: var(--gold); font-weight: 700; font-size: 11px; letter-spacing: 0.02em; text-transform: uppercase; }
+
+  .fine-print { border-top: 1px solid var(--border); padding-top: 18px; font-size: 12.5px; color: var(--muted-soft); line-height: 1.6; }
+</style>
+
+<div class="wrap">
+
+  <div class="hero">
+    <p class="eyebrow">Como o sistema pensa</p>
+    <h1>O time por trás da Avaliação Integrada</h1>
+    <p>
+      Oito agentes de IA, cada um com uma função só sua, organizados por um coordenador — todos a serviço do
+      profissional, que é quem recebe o paciente, decide e assina a conduta. Nenhum agente conversa com o
+      paciente diretamente.
+    </p>
+  </div>
+
+  <figure>
+    <div class="diagram-shell">
+      <svg class="orgchart" viewBox="0 0 1000 900" role="img" aria-label="Organograma: o profissional aciona Nina, a coordenadora, que direciona Sofia, Marco, Léo e Rita a coletar dados no RIP; Íris integra tudo para Theo montar o plano e Clara preparar a devolutiva ao paciente, que reinicia o ciclo na reavaliação.">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+          </marker>
+        </defs>
+
+        <!-- Conectores -->
+        <g stroke="currentColor" stroke-width="1.6" fill="none" opacity="0.55">
+          <line x1="500" y1="80" x2="500" y2="128" marker-end="url(#arrow)" />
+          <line x1="500" y1="200" x2="135" y2="248" marker-end="url(#arrow)" />
+          <line x1="500" y1="200" x2="379" y2="248" marker-end="url(#arrow)" />
+          <line x1="500" y1="200" x2="623" y2="248" marker-end="url(#arrow)" />
+          <line x1="500" y1="200" x2="867" y2="248" marker-end="url(#arrow)" />
+          <line x1="135" y1="350" x2="135" y2="398" marker-end="url(#arrow)" />
+          <line x1="379" y1="350" x2="379" y2="398" marker-end="url(#arrow)" />
+          <line x1="623" y1="350" x2="623" y2="398" marker-end="url(#arrow)" />
+          <line x1="867" y1="350" x2="867" y2="398" marker-end="url(#arrow)" />
+          <line x1="500" y1="470" x2="500" y2="518" marker-end="url(#arrow)" />
+          <line x1="440" y1="590" x2="300" y2="638" marker-end="url(#arrow)" />
+          <line x1="560" y1="590" x2="700" y2="638" marker-end="url(#arrow)" />
+          <line x1="420" y1="685" x2="578" y2="685" marker-end="url(#arrow)" />
+          <line x1="700" y1="730" x2="540" y2="788" marker-end="url(#arrow)" />
+        </g>
+
+        <path d="M 630 830 C 970 830, 970 165, 654 165" fill="none" stroke="var(--gold)" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#arrow)" opacity="0.85" />
+        <text x="835" y="152" text-anchor="middle" font-size="12" font-weight="700" fill="var(--gold)">reavaliação — novo ciclo</text>
+
+        <!-- Rótulos de conexão -->
+        <text x="514" y="108" font-size="11.5" fill="var(--muted)">define o protocolo</text>
+        <text x="700" y="222" text-anchor="middle" font-size="11.5" fill="var(--muted)">aciona conforme o perfil do paciente</text>
+        <text x="514" y="497" font-size="11.5" fill="var(--muted)">lê o histórico completo</text>
+        <text x="330" y="618" font-size="11.5" fill="var(--muted)">prioridades</text>
+        <text x="655" y="618" font-size="11.5" fill="var(--muted)">perfil integrado</text>
+        <text x="500" y="675" text-anchor="middle" font-size="11.5" fill="var(--muted)">plano</text>
+        <text x="655" y="758" font-size="11.5" fill="var(--muted)">devolutiva</text>
+
+        <!-- Você — Profissional -->
+        <rect x="370" y="20" width="260" height="60" rx="14" style="fill:var(--surface);stroke:var(--gold);stroke-width:1.8;stroke-dasharray:5 4" />
+        <text x="500" y="42" text-anchor="middle" font-family="Fraunces" font-weight="600" font-size="16" fill="var(--ink)">Você</text>
+        <text x="500" y="60" text-anchor="middle" font-size="11" fill="var(--gold)">PROFISSIONAL · RECEBE E DECIDE</text>
+        <text x="500" y="73" text-anchor="middle" font-size="10.5" fill="var(--muted)">humano — nenhum agente decide por você</text>
+
+        <!-- Nina — Coordenador -->
+        <rect x="350" y="130" width="300" height="70" rx="14" style="fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.6" />
+        <text x="500" y="154" text-anchor="middle" font-family="Fraunces" font-weight="600" font-size="17" fill="var(--accent-dark)">Nina</text>
+        <text x="500" y="172" text-anchor="middle" font-size="11" fill="var(--accent-dark)">AGENTE 1 · COORDENADORA</text>
+        <text x="500" y="187" text-anchor="middle" font-size="10.5" fill="var(--accent-dark)">organiza a sequência e escala alertas</text>
+
+        <!-- Linha de coleta: Sofia, Marco, Léo, Rita -->
+        <g>
+          <rect x="30" y="250" width="210" height="100" rx="14" style="fill:var(--surface);stroke:var(--border)" />
+          <text x="135" y="278" text-anchor="middle" font-family="Fraunces" font-weight="600" font-size="16" fill="var(--ink)">Sofia</text>
+          <text x="135" y="295" text-anchor="middle" font-size="10.5" fill="var(--muted)">AGENTE 2 · ANAMNESE</text>
+          <text x="135" y="312" text-anchor="middle" font-size="10" fill="var(--muted-soft)">conversa e aplica os</text>
+          <text x="135" y="325" text-anchor="middle" font-size="10" fill="var(--muted-soft)">questionários</text>
+        </g>
+
+        <g>
+          <rect x="274" y="250" width="210" height="100" rx="14" style="fill:var(--surface);stroke:var(--border)" />
+          <text x="379" y="278" text-anchor="middle" font-family="Fraunces" font-weight="600" font-size="16" fill="var(--ink)">Marco</text>
+          <text x="379" y="295" text-anchor="middle" font-size="10.5" fill="var(--muted)">AGENTE 3 · FÍSICA</text>
+          <text x="379" y="312" text-anchor="middle" font-size="10" fill="var(--muted-soft)">sinais vitais e</text>
+          <text x="379" y="325" text-anchor="middle" font-size="10" fill="var(--muted-soft)">antropometria</text>
+        </g>
+
+        <g>
+          <rect x="518" y="250" width="210" height="100" rx="14" style="fill:var(--surface);stroke:var(--border)" />
+          <text x="623" y="278" text-anchor="middle" font-family="Fraunces" font-weight="600" font-size="16" fill="var(--ink)">Léo</text>
+          <text x="623" y="295" text-anchor="middle" font-size="10.5" fill="var(--muted)">AGENTE 4 · POSTURAL</text>
+          <text x="623" y="312" text-anchor="middle" font-size="10" fill="var(--muted-soft)">observa postura e</text>
+          <text x="623" y="325" text-anchor="middle" font-size="10" fill="var(--muted-soft)">padrões de movimento</text>
+        </g>
+
+        <g>
+          <rect x="762" y="250" width="210" height="100" rx="14" style="fill:var(--surface);stroke:var(--border)" />
+          <text x="867" y="278" text-anchor="middle" font-family="Fraunces" font-weight="600" font-size="16" fill="var(--ink)">Rita</text>
+          <text x="867" y="295" text-anchor="middle" font-size="10.5" fill="var(--muted)">AGENTE 5 · FUNCIONAL</text>
+          <text x="867" y="312" text-anchor="middle" font-size="10" fill="var(--muted-soft)">força, equilíbrio e</text>
+          <text x="867" y="325" text-anchor="middle" font-size="10" fill="var(--muted-soft)">testes funcionais</text>
+        </g>
+
+        <!-- RIP -->
+        <rect x="30" y="400" width="940" height="70" rx="16" style="fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.4" />
+        <text x="500" y="426" text-anchor="middle" font-family="Fraunces" font-weight="600" font-size="15" fill="var(--accent-dark)">RIP — Registro Integrado do Paciente</text>
+        <text x="500" y="445" text-anchor="middle" font-size="11" fill="var(--accent-dark)">cada agente grava e lê seus dados aqui — ninguém pergunta a mesma coisa duas vezes</text>
+
+        <!-- Íris — Integração -->
+        <rect x="350" y="520" width="300" height="70" rx="14" style="fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.6" />
+        <text x="500" y="544" text-anchor="middle" font-family="Fraunces" font-weight="600" font-size="17" fill="var(--accent-dark)">Íris</text>
+        <text x="500" y="562" text-anchor="middle" font-size="11" fill="var(--accent-dark)">AGENTE 6 · INTEGRAÇÃO</text>
+        <text x="500" y="577" text-anchor="middle" font-size="10.5" fill="var(--accent-dark)">cruza tudo em um Perfil Integrado</text>
+
+        <!-- Theo — Plano -->
+        <rect x="140" y="640" width="280" height="90" rx="14" style="fill:var(--surface);stroke:var(--border)" />
+        <text x="280" y="668" text-anchor="middle" font-family="Fraunces" font-weight="600" font-size="16" fill="var(--ink)">Theo</text>
+        <text x="280" y="686" text-anchor="middle" font-size="10.5" fill="var(--muted)">AGENTE 7 · PLANO DE INTERVENÇÃO</text>
+        <text x="280" y="703" text-anchor="middle" font-size="10" fill="var(--muted-soft)">prioridades em 30/90/180/365 dias</text>
+
+        <!-- Clara — Relatório -->
+        <rect x="580" y="640" width="280" height="90" rx="14" style="fill:var(--surface);stroke:var(--border)" />
+        <text x="720" y="668" text-anchor="middle" font-family="Fraunces" font-weight="600" font-size="16" fill="var(--ink)">Clara</text>
+        <text x="720" y="686" text-anchor="middle" font-size="10.5" fill="var(--muted)">AGENTE 8 · RELATÓRIO E DEVOLUTIVA</text>
+        <text x="720" y="703" text-anchor="middle" font-size="10" fill="var(--muted-soft)">traduz os achados para o paciente</text>
+
+        <!-- Paciente -->
+        <rect x="370" y="790" width="260" height="60" rx="14" style="fill:var(--surface);stroke:var(--gold);stroke-width:1.8;stroke-dasharray:5 4" />
+        <text x="500" y="812" text-anchor="middle" font-family="Fraunces" font-weight="600" font-size="16" fill="var(--ink)">Paciente</text>
+        <text x="500" y="830" text-anchor="middle" font-size="11" fill="var(--gold)">RECEBE A DEVOLUTIVA</text>
+        <text x="500" y="843" text-anchor="middle" font-size="10.5" fill="var(--muted)">humano — entende seu estado e o plano</text>
+      </svg>
+    </div>
+    <figcaption>Fluxo: você aciona Nina, que direciona Sofia, Marco, Léo e Rita a coletar dados no RIP; Íris integra tudo para Theo montar o plano e Clara preparar a devolutiva — a reavaliação reinicia o ciclo.</figcaption>
+  </figure>
+
+  <div class="section">
+    <h2>Ficha de cada agente</h2>
+    <p class="intro">Nenhum agente diagnostica, decide conduta ou fala com o paciente sem você. Eles organizam, calculam e sugerem — a palavra final é sempre sua.</p>
+    <div class="table-scroll">
+      <table class="time">
+        <thead>
+          <tr><th>Nome</th><th>Papel</th><th>O que faz</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="humano">Humano</span></td><td class="papel">Você — profissional</td><td>Recebe o paciente, conduz a conversa, interpreta clinicamente e decide a conduta.</td></tr>
+          <tr><td class="nome">Nina</td><td class="papel">Agente 1 · Coordenadora</td><td>Decide a ordem das etapas, controla o que falta, bloqueia avanço quando há alerta de segurança.</td></tr>
+          <tr><td class="nome">Sofia</td><td class="papel">Agente 2 · Anamnese e Questionários</td><td>Organiza a entrevista, sugere perguntas e aplica IPAQ, PSS-10, GAD-7, PHQ-9 e PAR-Q+.</td></tr>
+          <tr><td class="nome">Marco</td><td class="papel">Agente 3 · Física e Antropométrica</td><td>Sinais vitais, peso, altura, circunferências e composição corporal.</td></tr>
+          <tr><td class="nome">Léo</td><td class="papel">Agente 4 · Postural e Biomecânica</td><td>Protocolo fotográfico e observação de padrões de movimento — sem apontar causa de dor.</td></tr>
+          <tr><td class="nome">Rita</td><td class="papel">Agente 5 · Avaliação Funcional</td><td>Seleciona e organiza testes de força, equilíbrio e capacidade funcional conforme o perfil.</td></tr>
+          <tr><td class="nome">Íris</td><td class="papel">Agente 6 · Integração e Interpretação</td><td>Cruza todos os dados no Perfil Integrado: potencialidades, limitações, riscos e prioridades.</td></tr>
+          <tr><td class="nome">Theo</td><td class="papel">Agente 7 · Plano de Intervenção</td><td>Organiza as prioridades em horizontes de 30, 90, 180 e 365 dias.</td></tr>
+          <tr><td class="nome">Clara</td><td class="papel">Agente 8 · Relatório e Devolutiva</td><td>Prepara o relatório técnico e o roteiro de conversa para você devolver ao paciente.</td></tr>
+          <tr><td><span class="humano">Humano</span></td><td class="papel">Paciente</td><td>Recebe a devolutiva, entende seu estado atual e o plano — e retorna na reavaliação.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="fine-print">
+    Os nomes são uma forma de apresentar a arquitetura de forma memorável em reuniões e demonstrações — no sistema,
+    cada um corresponde a uma função de software bem definida (ver metodologia completa,
+    00-Arquitetura-Geral-dos-Agentes.md a 07-Agente8-Relatorio-e-Devolutiva.md), não a uma pessoa ou a uma
+    inteligência artificial separada rodando de forma independente.
+  </div>
+
+</div>
