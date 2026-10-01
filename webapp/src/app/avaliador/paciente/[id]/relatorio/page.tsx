@@ -278,6 +278,14 @@ export default function RelatorioTecnico() {
                   : null
               }
             />
+            <L
+              label="Flexibilidade (sentar/alcançar · cadeira · back scratch D/E)"
+              value={
+                paciente.funcional?.sit_and_reach_cm || paciente.funcional?.chair_sit_reach_cm || paciente.funcional?.back_scratch_d_cm
+                  ? `${paciente.funcional?.sit_and_reach_cm ?? "–"}cm · ${paciente.funcional?.chair_sit_reach_cm ?? "–"}cm · ${paciente.funcional?.back_scratch_d_cm ?? "–"}/${paciente.funcional?.back_scratch_e_cm ?? "–"}cm`
+                  : null
+              }
+            />
             <L label="Agachamento livre - observações" value={paciente.funcional?.agachamento_livre_obs} />
             <L
               label="Estabilidade do core - prancha"

@@ -25,6 +25,7 @@ import {
   faixaGorduraSugerida,
   SITIOS_JP3,
   SITIOS_JP7,
+  SITIOS_FAULKNER,
   TODOS_SITIOS_DOBRA,
   type ProtocoloDobras,
 } from "@/lib/avaliacao/composicaoCorporal";
@@ -1144,7 +1145,16 @@ function AbaFisica({ pacienteId, dados, paciente, onSalvo }: { pacienteId: strin
       ? massaMagraKg / (1 - percentualIdealEfetivo / 100)
       : null;
 
-  const sitiosProtocolo = d.protocolo_dobras === "jp3" ? (sexoNorm !== "desconhecido" ? SITIOS_JP3[sexoNorm] : []) : d.protocolo_dobras === "jp7" ? SITIOS_JP7 : [];
+  const sitiosProtocolo =
+    d.protocolo_dobras === "jp3"
+      ? sexoNorm !== "desconhecido"
+        ? SITIOS_JP3[sexoNorm]
+        : []
+      : d.protocolo_dobras === "jp7"
+        ? SITIOS_JP7
+        : d.protocolo_dobras === "faulkner4"
+          ? SITIOS_FAULKNER
+          : [];
   const chavesProtocolo = new Set(sitiosProtocolo.map((s) => s.chave));
 
   const regioesParaAvatar = useMemo(() => {
@@ -1207,6 +1217,7 @@ function AbaFisica({ pacienteId, dados, paciente, onSalvo }: { pacienteId: strin
             opcoes={[
               { value: "jp3", label: "Jackson & Pollock - 3 dobras" },
               { value: "jp7", label: "Jackson & Pollock - 7 dobras" },
+              { value: "faulkner4", label: "Faulkner - 4 dobras" },
               { value: "outro", label: "Outro protocolo (informar %G manualmente)" },
             ]}
           />
@@ -1222,11 +1233,15 @@ function AbaFisica({ pacienteId, dados, paciente, onSalvo }: { pacienteId: strin
             />
           ))}
         </div>
-        {(d.protocolo_dobras === "jp3" || d.protocolo_dobras === "jp7") && (
+        {(d.protocolo_dobras === "jp3" || d.protocolo_dobras === "jp7" || d.protocolo_dobras === "faulkner4") && (
           <div className="mt-3 rounded-lg bg-bg p-3 text-sm flex items-center justify-between">
             <span>
-              %G calculado por dobras ({d.protocolo_dobras === "jp3" ? "3 sítios" : "7 sítios"}):{" "}
-              <strong className="font-mono">{percentualDobrasCalc !== null ? `${percentualDobrasCalc.toFixed(1)}%` : "— faltam dobras, idade ou sexo"}</strong>
+              %G calculado por dobras (
+              {d.protocolo_dobras === "jp3" ? "3 sítios, Pollock" : d.protocolo_dobras === "jp7" ? "7 sítios, Pollock" : "4 sítios, Faulkner"}
+              ):{" "}
+              <strong className="font-mono">
+                {percentualDobrasCalc !== null ? `${percentualDobrasCalc.toFixed(1)}%` : "— faltam dobras, idade ou sexo"}
+              </strong>
             </span>
             {percentualDobrasCalc !== null && (
               <button
@@ -1564,6 +1579,12 @@ const INSTRUCOES_TESTE: Record<string, string> = {
     "Peça para o paciente agachar livremente, sem carga, até onde conseguir com conforto. Observe profundidade, alinhamento do joelho (valgo/varo), compensações no tronco e nos tornozelos.",
   core_prancha:
     "Paciente em posição de prancha (apoio nos antebraços e pés, corpo alinhado da cabeça aos calcanhares). Cronometre até ele perder a postura correta (quadril cair ou subir, tremores excessivos).",
+  sit_and_reach:
+    "Sentado no chão ou no banco de Wells, pernas estendidas e pés apoiados na caixa. Com os joelhos esticados, o paciente se inclina à frente o máximo possível, mãos sobrepostas. Meça a distância alcançada em relação à ponta dos pés (positivo = além dos pés, negativo = aquém).",
+  chair_sit_reach:
+    "Sentado na ponta de uma cadeira, uma perna estendida com o calcanhar no chão, a outra dobrada. Ele se inclina à frente tentando tocar a ponta do pé da perna estendida. Meça a distância entre a ponta dos dedos e a ponta do pé (negativo se não alcançar, positivo se ultrapassar) - adaptação para idosos (Senior Fitness Test, Rikli & Jones).",
+  back_scratch:
+    "Uma mão por cima do ombro (palma nas costas, dedos para baixo) e a outra por trás da cintura (palma para fora, dedos para cima), tentando tocar os dedos das duas mãos atrás das costas. Meça a distância entre os dedos médios (negativo = não se tocam, positivo = sobrepõem). Repita dos dois lados (Senior Fitness Test, Rikli & Jones).",
 };
 
 function InfoPopover({ texto }: { texto: string }) {
@@ -1662,6 +1683,10 @@ function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacienteId: st
     agachamento_livre_obs: dados?.agachamento_livre_obs ?? "",
     core_prancha_seg: dados?.core_prancha_seg ?? "",
     core_estabilidade_obs: dados?.core_estabilidade_obs ?? "",
+    sit_and_reach_cm: dados?.sit_and_reach_cm ?? "",
+    chair_sit_reach_cm: dados?.chair_sit_reach_cm ?? "",
+    back_scratch_d_cm: dados?.back_scratch_d_cm ?? "",
+    back_scratch_e_cm: dados?.back_scratch_e_cm ?? "",
     observacoes: dados?.observacoes ?? "",
   });
   const [goniometria, setGoniometria] = useState<LinhaGoniometria[]>(dados?.goniometria ?? []);
@@ -1790,6 +1815,17 @@ function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacienteId: st
             ))}
           </div>
         )}
+      </div>
+
+      <div className="pt-4 border-t border-border">
+        <h4 className="font-display text-base text-ink mb-1">Flexibilidade e mobilidade</h4>
+        <p className="text-xs text-muted mb-3">Testes de referência - medida em cm, negativo quando não alcança o ponto de referência.</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <NumField label={<RotuloComInfo texto="Sentar e alcançar" chave="sit_and_reach" />} suffix="cm" value={d.sit_and_reach_cm} onChange={(v) => set("sit_and_reach_cm", v)} />
+          <NumField label={<RotuloComInfo texto="Sentar e alcançar na cadeira" chave="chair_sit_reach" />} suffix="cm" value={d.chair_sit_reach_cm} onChange={(v) => set("chair_sit_reach_cm", v)} />
+          <NumField label={<RotuloComInfo texto="Back Scratch D" chave="back_scratch" />} suffix="cm" value={d.back_scratch_d_cm} onChange={(v) => set("back_scratch_d_cm", v)} />
+          <NumField label={<RotuloComInfo texto="Back Scratch E" chave="back_scratch" />} suffix="cm" value={d.back_scratch_e_cm} onChange={(v) => set("back_scratch_e_cm", v)} />
+        </div>
       </div>
 
       <div className="pt-4 border-t border-border space-y-4">

@@ -19,7 +19,7 @@ export function sexoNormalizado(sexo?: string | null): SexoComp {
 // ---------------------------------------------------------------------------
 // Protocolos de dobras cutâneas
 // ---------------------------------------------------------------------------
-export type ProtocoloDobras = "jp3" | "jp7" | "outro";
+export type ProtocoloDobras = "jp3" | "jp7" | "faulkner4" | "outro";
 
 export const SITIOS_JP3: Record<"masculino" | "feminino", { chave: string; rotulo: string }[]> = {
   masculino: [
@@ -42,6 +42,15 @@ export const SITIOS_JP7: { chave: string; rotulo: string }[] = [
   { chave: "dc_abdominal", rotulo: "Abdominal" },
   { chave: "dc_suprailiaca", rotulo: "Suprailíaca" },
   { chave: "dc_coxa", rotulo: "Coxa" },
+];
+
+// Faulkner (1968) - 4 dobras, equação unissex, não usa idade. Amplamente
+// citado em livros-texto - mesma nota de confirmação no topo do arquivo.
+export const SITIOS_FAULKNER: { chave: string; rotulo: string }[] = [
+  { chave: "dc_triceps", rotulo: "Tríceps" },
+  { chave: "dc_subescapular", rotulo: "Subescapular" },
+  { chave: "dc_suprailiaca", rotulo: "Suprailíaca" },
+  { chave: "dc_abdominal", rotulo: "Abdominal" },
 ];
 
 // Todos os sítios de dobra cutânea coletáveis no formulário - superconjunto
@@ -88,7 +97,15 @@ export function calcularPercentualGorduraDobras(
   idade: number | null,
   sexo: SexoComp
 ): number | null {
-  if (protocolo === "outro" || sexo === "desconhecido" || idade === null) return null;
+  if (protocolo === "outro") return null;
+
+  if (protocolo === "faulkner4") {
+    const soma = somaValida(SITIOS_FAULKNER.map((s) => dados[s.chave]));
+    if (soma === null) return null;
+    return 0.153 * soma + 5.783;
+  }
+
+  if (sexo === "desconhecido" || idade === null) return null;
 
   if (protocolo === "jp3") {
     const sitios = SITIOS_JP3[sexo];
