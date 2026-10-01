@@ -26,7 +26,7 @@ const PALAVRAS_POR_DOMINIO: Record<DomainKey, string[]> = {
 // foi encontrada, para que o avaliador veja a conexão com as próprias
 // palavras de quem respondeu - null quando nenhuma palavra-chave bate.
 export function conectarObjetivo(dominio: DomainResult, motivo: Anamnese["motivo"]): string | null {
-  const campos = [motivo?.objetivos, motivo?.deseja_melhorar, motivo?.atividades_perdidas, motivo?.queixa_principal, motivo?.motivo_procura];
+  const campos = [motivo?.objetivos, motivo?.atividades_perdidas, motivo?.queixa_principal, motivo?.motivo_procura];
   const palavras = PALAVRAS_POR_DOMINIO[dominio.chave] || [];
   for (const campo of campos) {
     if (!campo) continue;

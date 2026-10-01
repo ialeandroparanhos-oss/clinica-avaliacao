@@ -17,13 +17,11 @@ export type Anamnese = {
     jornada_horas: string;
     exige_esforco_fisico: boolean | null;
     demanda_fisica_trabalho: string;
-    tempo_sentado_horas: string;
     atividades_diarias: string;
   };
   motivo: {
     motivo_procura: string;
     queixa_principal: string;
-    deseja_melhorar: string;
     atividades_perdidas: string;
     objetivos: string;
     expectativas: string;
@@ -43,14 +41,15 @@ export type Anamnese = {
     tratamentos_anteriores: string;
     tem_acompanhamento_medico: boolean | null;
     acompanhamento_medico: string;
-    fisioterapia_previa: string;
     tem_outras_condicoes: boolean | null;
     outras_condicoes: string;
   };
   // Triagem rápida de risco cardiovascular (fatores de risco ACSM) - do
   // próprio paciente, não confundir com historico_familiar (parentes).
+  // Hipertensão própria não é perguntada aqui de novo - já vem do PAR-Q+
+  // (prontidao.parq.heart_condition / bp_or_heart_med) para não repetir
+  // a mesma pergunta em dois capítulos.
   risco_cardiovascular: {
-    hipertensao_diagnosticada: boolean | null;
     colesterol_alto_ou_usa_estatina: boolean | null;
     hdl_alto_conhecido: boolean | null; // fator protetor
     glicemia_alterada_ou_diabetes: boolean | null;

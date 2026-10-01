@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { anamneseVazia, mesclarComPadrao } from "@/lib/anamnese/defaults";
 import type { Anamnese } from "@/lib/anamnese/types";
-import { calcularAlertas } from "@/lib/anamnese/alerts";
+import { calcularAlertas, precisaInstrumentoCompleto } from "@/lib/anamnese/alerts";
 import {
   Field,
   TextInput,
@@ -28,7 +28,6 @@ import {
   bandeirasVermelhasDor,
   barreirasExercicioOpcoes,
   opcoesJornadaHoras,
-  opcoesHorasSentado,
   opcoesFrequenciaMedicamento,
   opcoesTempoUsoMedicamento,
   opcoesHidratacao,
@@ -43,6 +42,7 @@ import {
   opcoesQualidadeSonoPSQI,
   opcoesFrequenciaPSQI,
   opcoesProblemaPSQI,
+  indicePHQ9Ideacao,
 } from "@/lib/anamnese/questionnaires";
 
 type Stage = "identificacao" | "wizard" | "concluido";
@@ -280,14 +280,6 @@ export default function PacientePage() {
                   />
                 </Field>
               )}
-              <Field label="Quantas horas por dia você passa sentado(a), aproximadamente?">
-                <ChoiceGroup
-                  columns={3}
-                  options={opcoesHorasSentado.map((o) => ({ value: o, label: o }))}
-                  value={anamnese.contexto.tempo_sentado_horas || null}
-                  onChange={(v) => set("contexto", { tempo_sentado_horas: v })}
-                />
-              </Field>
               <Field label="Quais atividades fazem parte do seu dia a dia?">
                 <TextArea
                   value={anamnese.contexto.atividades_diarias}
@@ -311,19 +303,13 @@ export default function PacientePage() {
                   onChange={(e) => set("motivo", { queixa_principal: e.target.value })}
                 />
               </Field>
-              <Field label="O que você gostaria de melhorar?">
-                <TextArea
-                  value={anamnese.motivo.deseja_melhorar}
-                  onChange={(e) => set("motivo", { deseja_melhorar: e.target.value })}
-                />
-              </Field>
               <Field label="Existe alguma atividade que você deixou de fazer por causa de alguma limitação?">
                 <TextArea
                   value={anamnese.motivo.atividades_perdidas}
                   onChange={(e) => set("motivo", { atividades_perdidas: e.target.value })}
                 />
               </Field>
-              <Field label="Quais são seus objetivos com este acompanhamento?">
+              <Field label="O que você gostaria de melhorar ou alcançar com este acompanhamento?">
                 <TextArea
                   value={anamnese.motivo.objetivos}
                   onChange={(e) => set("motivo", { objetivos: e.target.value })}
@@ -446,12 +432,6 @@ export default function PacientePage() {
               )}
 
               <p className="font-medium text-ink pt-2">Mais algumas perguntas rápidas sobre saúde cardiovascular</p>
-              <Field label="Você tem diagnóstico de pressão alta (hipertensão)?">
-                <YesNo
-                  value={anamnese.risco_cardiovascular.hipertensao_diagnosticada}
-                  onChange={(v) => set("risco_cardiovascular", { hipertensao_diagnosticada: v })}
-                />
-              </Field>
               <Field label="Você tem colesterol alto ou usa medicação para colesterol (estatina)?">
                 <YesNo
                   value={anamnese.risco_cardiovascular.colesterol_alto_ou_usa_estatina}
@@ -1009,7 +989,7 @@ export default function PacientePage() {
 
               <div>
                 <p className="font-medium text-ink mb-1 pt-2">Ansiedade (últimas 2 semanas)</p>
-                {itensGAD7.map((texto, i) => (
+                {itensGAD7.slice(0, 2).map((texto, i) => (
                   <LikertItem
                     key={i}
                     texto={texto}
@@ -1024,11 +1004,30 @@ export default function PacientePage() {
                     }}
                   />
                 ))}
+                {precisaInstrumentoCompleto(anamnese.saude_mental.gad7) &&
+                  itensGAD7.slice(2).map((texto, idx) => {
+                    const i = idx + 2;
+                    return (
+                      <LikertItem
+                        key={i}
+                        texto={texto}
+                        numero={i + 1}
+                        total={7}
+                        opcoes={escalaFrequencia4}
+                        value={anamnese.saude_mental.gad7[i]}
+                        onChange={(v) => {
+                          const arr = [...anamnese.saude_mental.gad7];
+                          arr[i] = v;
+                          set("saude_mental", { gad7: arr });
+                        }}
+                      />
+                    );
+                  })}
               </div>
 
               <div>
                 <p className="font-medium text-ink mb-1 pt-2">Humor (últimas 2 semanas)</p>
-                {itensPHQ9.map((texto, i) => (
+                {itensPHQ9.slice(0, 2).map((texto, i) => (
                   <LikertItem
                     key={i}
                     texto={texto}
@@ -1043,6 +1042,40 @@ export default function PacientePage() {
                     }}
                   />
                 ))}
+                {precisaInstrumentoCompleto(anamnese.saude_mental.phq9) &&
+                  itensPHQ9.slice(2, indicePHQ9Ideacao).map((texto, idx) => {
+                    const i = idx + 2;
+                    return (
+                      <LikertItem
+                        key={i}
+                        texto={texto}
+                        numero={i + 1}
+                        total={9}
+                        opcoes={escalaFrequencia4}
+                        value={anamnese.saude_mental.phq9[i]}
+                        onChange={(v) => {
+                          const arr = [...anamnese.saude_mental.phq9];
+                          arr[i] = v;
+                          set("saude_mental", { phq9: arr });
+                        }}
+                      />
+                    );
+                  })}
+                {/* Item de ideação/autolesão sempre perguntado, mesmo quando o
+                    restante do PHQ-9 foi dispensado pela triagem curta - é
+                    sensível demais para pular. */}
+                <LikertItem
+                  texto={itensPHQ9[indicePHQ9Ideacao]}
+                  numero={indicePHQ9Ideacao + 1}
+                  total={9}
+                  opcoes={escalaFrequencia4}
+                  value={anamnese.saude_mental.phq9[indicePHQ9Ideacao]}
+                  onChange={(v) => {
+                    const arr = [...anamnese.saude_mental.phq9];
+                    arr[indicePHQ9Ideacao] = v;
+                    set("saude_mental", { phq9: arr });
+                  }}
+                />
               </div>
             </StepShell>
           )}

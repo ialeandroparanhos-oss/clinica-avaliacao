@@ -9,7 +9,7 @@
 // omissão - vira "investigar".
 
 import type { PacienteRow } from "@/lib/anamnese/types";
-import { escorePSS10, somaSemNulos } from "@/lib/anamnese/alerts";
+import { escorePSS10, somaSemNulos, escoreCurto } from "@/lib/anamnese/alerts";
 import { calcularPSQI } from "@/lib/anamnese/psqi";
 
 export type Classificacao = "adequado" | "atencao" | "prioridade" | "investigar";
@@ -328,6 +328,23 @@ function avaliarBemEstar(p: PacienteRow): DomainResult {
     return resultado("bem_estar", "prioridade", `GAD-7 ${gad7 ?? "–"}/21, PHQ-9 ${phq9 ?? "–"}/27 (faixa sugestiva de quadro importante) — triagem, não diagnóstico.`);
   }
   if (gad7 === null && phq9 === null) {
+    // GAD-7/PHQ-9 completos só são aplicados quando a triagem curta
+    // (GAD-2/PHQ-2) indica necessidade - uma triagem curta negativa é
+    // informação válida (provável ausência de quadro relevante), não
+    // dado ausente. As DUAS precisam ter sido resolvidas como negativas
+    // (AND, não OR) - se uma delas deu positiva e o instrumento completo
+    // ficou incompleto, isso é dado faltando, não triagem negativa.
+    const gad2 = escoreCurto(sm.gad7);
+    const phq2 = escoreCurto(sm.phq9);
+    const gad2Negativo = gad2 !== null && gad2 < 3;
+    const phq2Negativo = phq2 !== null && phq2 < 3;
+    if (gad2Negativo && phq2Negativo) {
+      return resultado(
+        "bem_estar",
+        "adequado",
+        `Triagem curta negativa (GAD-2 ${gad2 ?? "–"}/6, PHQ-2 ${phq2 ?? "–"}/6) - instrumento completo não foi necessário.`
+      );
+    }
     return resultado("bem_estar", "investigar", "GAD-7/PHQ-9 ainda não concluídos.");
   }
   if ((gad7 !== null && gad7 >= 10) || (phq9 !== null && phq9 >= 10)) {

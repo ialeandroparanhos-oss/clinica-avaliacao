@@ -6,7 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import type { Anamnese, PacienteRow } from "@/lib/anamnese/types";
-import { escorePSS10, escoreTSK11, somaSemNulos, rotuloNivel } from "@/lib/anamnese/alerts";
+import { escorePSS10, escoreTSK11, somaSemNulos, escoreCurto, rotuloNivel } from "@/lib/anamnese/alerts";
 import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { calcularRiscoCardiovascular } from "@/lib/anamnese/riscoCardiovascular";
 import { AlertBanner, Field, TextArea, TextInput } from "@/components/forms";
@@ -679,6 +679,8 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
   const pss10 = escorePSS10(anamnese.saude_mental.pss10);
   const gad7 = somaSemNulos(anamnese.saude_mental.gad7);
   const phq9 = somaSemNulos(anamnese.saude_mental.phq9);
+  const gad2 = escoreCurto(anamnese.saude_mental.gad7);
+  const phq2 = escoreCurto(anamnese.saude_mental.phq9);
   const parqPositivos = perguntasParQ.filter((p) => (anamnese.prontidao.parq as any)[p.chave] === true);
   const psqi = calcularPSQI(anamnese);
   const tsk11 = escoreTSK11(anamnese.dor.tsk11);
@@ -696,16 +698,14 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
         <Linha label="Jornada (h)" value={anamnese.contexto.jornada_horas} />
         <Linha label="Exige esforço físico" value={anamnese.contexto.exige_esforco_fisico === null ? null : anamnese.contexto.exige_esforco_fisico ? "Sim" : "Não"} />
         <Linha label="Demanda física no trabalho" value={anamnese.contexto.demanda_fisica_trabalho} />
-        <Linha label="Horas sentado/dia" value={anamnese.contexto.tempo_sentado_horas} />
         <Linha label="Atividades diárias" value={anamnese.contexto.atividades_diarias} />
       </Capitulo>
 
       <Capitulo titulo="Motivo da procura">
         <Linha label="Motivo" value={anamnese.motivo.motivo_procura} />
         <Linha label="Queixa principal" value={anamnese.motivo.queixa_principal} />
-        <Linha label="Deseja melhorar" value={anamnese.motivo.deseja_melhorar} />
         <Linha label="Atividades perdidas" value={anamnese.motivo.atividades_perdidas} />
-        <Linha label="Objetivos" value={anamnese.motivo.objetivos} />
+        <Linha label="Objetivos / o que gostaria de melhorar" value={anamnese.motivo.objetivos} />
         <Linha label="Expectativas" value={anamnese.motivo.expectativas} />
       </Capitulo>
 
@@ -832,7 +832,9 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
         <Linha label="Percepção geral de saúde (1-5)" value={anamnese.saude_mental.percepcao_saude} />
         <Linha label="PSS-10 (estresse, 0-40)" value={pss10} />
         <Linha label="GAD-7 (ansiedade, 0-21)" value={gad7} />
+        <Linha label="GAD-2 (triagem curta, 0-6 - GAD-7 completo não foi necessário)" value={gad7 === null ? gad2 : null} />
         <Linha label="PHQ-9 (humor, 0-27)" value={phq9} />
+        <Linha label="PHQ-2 (triagem curta, 0-6 - PHQ-9 completo não foi necessário)" value={phq9 === null ? phq2 : null} />
         <Linha
           label="Item de ideação (PHQ-9 #9)"
           value={

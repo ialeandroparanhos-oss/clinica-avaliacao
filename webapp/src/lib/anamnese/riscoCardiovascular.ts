@@ -63,8 +63,13 @@ export function calcularRiscoCardiovascular(paciente: PacienteRow): ResultadoRis
     fatores.push({ chave: "obesidade", rotulo: "Obesidade (IMC e/ou circunferência de cintura)" });
   }
 
+  // Hipertensão própria não tem pergunta dedicada neste capítulo - vem do
+  // PAR-Q+ (heart_condition cobre "condição cardíaca ou pressão alta",
+  // bp_or_heart_med cobre uso de medicação) para não repetir a mesma
+  // pergunta em dois lugares da anamnese.
   const hipertensaoMedida = paSist !== null && paDiast !== null && (paSist >= 140 || paDiast >= 90);
-  if (a.risco_cardiovascular?.hipertensao_diagnosticada === true || hipertensaoMedida) {
+  const hipertensaoAutorrelatada = a.prontidao?.parq?.heart_condition === true || a.prontidao?.parq?.bp_or_heart_med === true;
+  if (hipertensaoAutorrelatada || hipertensaoMedida) {
     fatores.push({ chave: "hipertensao", rotulo: "Hipertensão" });
   }
 

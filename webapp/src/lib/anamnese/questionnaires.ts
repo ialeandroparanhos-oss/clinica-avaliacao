@@ -84,8 +84,9 @@ export const regioesCorporais = [
 
 export const caracteristicasDor = ["Queimação", "Pontada", "Peso", "Formigamento", "Latejante", "Aperto", "Outra"];
 
+// "Dor torácica" não entra aqui - já é perguntada no PAR-Q+
+// (prontidao.parq.chest_pain), que gera seu próprio alerta.
 export const bandeirasVermelhasDor = [
-  "Dor torácica",
   "Dor noturna que não melhora em nenhuma posição",
   "Perda de peso inexplicada",
   "Febre associada",
@@ -107,8 +108,6 @@ export const barreirasExercicioOpcoes = [
 // Opções clicáveis para acelerar o preenchimento - sempre com espaço para
 // detalhar em texto quando a resposta pedir.
 export const opcoesJornadaHoras = ["Até 4h", "4-6h", "6-8h", "8-10h", "Mais de 10h"];
-
-export const opcoesHorasSentado = ["Até 2h", "2-4h", "4-6h", "6-8h", "Mais de 8h"];
 
 export const opcoesFrequenciaMedicamento = [
   "1x ao dia",

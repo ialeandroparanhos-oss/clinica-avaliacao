@@ -12,7 +12,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import type { PacienteRow } from "@/lib/anamnese/types";
-import { escorePSS10, escoreTSK11, somaSemNulos, rotuloNivel } from "@/lib/anamnese/alerts";
+import { escorePSS10, escoreTSK11, somaSemNulos, escoreCurto, rotuloNivel } from "@/lib/anamnese/alerts";
 import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { calcularRiscoCardiovascular } from "@/lib/anamnese/riscoCardiovascular";
 import { sexoNormalizado, percentualGorduraIdealSugerido } from "@/lib/avaliacao/composicaoCorporal";
@@ -104,6 +104,8 @@ export default function RelatorioTecnico() {
   const pss10 = escorePSS10(anamnese.saude_mental.pss10);
   const gad7 = somaSemNulos(anamnese.saude_mental.gad7);
   const phq9 = somaSemNulos(anamnese.saude_mental.phq9);
+  const gad2 = escoreCurto(anamnese.saude_mental.gad7);
+  const phq2 = escoreCurto(anamnese.saude_mental.phq9);
   const psqi = calcularPSQI(anamnese);
   const tsk11 = escoreTSK11(anamnese.dor.tsk11);
   const pseq = somaSemNulos(anamnese.dor.pseq);
@@ -209,7 +211,10 @@ export default function RelatorioTecnico() {
             <L label="Estresse percebido (0-10)" value={anamnese.estilo_vida.estresse_percebido} />
             <L label="Dor atual" value={anamnese.dor.tem_dor === true ? `${anamnese.dor.localizacoes.join(", ")} (NRS ${anamnese.dor.intensidade_nrs ?? "–"})` : anamnese.dor.tem_dor === false ? "Nega dor" : null} />
             <L label="TSK-11 / PSEQ" value={anamnese.dor.tem_dor === true ? `${tsk11 ?? "–"} / ${pseq ?? "–"}` : null} />
-            <L label="PSS-10 / GAD-7 / PHQ-9" value={`${pss10 ?? "–"} / ${gad7 ?? "–"} / ${phq9 ?? "–"}`} />
+            <L
+              label="PSS-10 / GAD-7 / PHQ-9"
+              value={`${pss10 ?? "–"} / ${gad7 ?? (gad2 !== null ? `${gad2} (GAD-2)` : "–")} / ${phq9 ?? (phq2 !== null ? `${phq2} (PHQ-2)` : "–")}`}
+            />
             <L
               label="Risco cardiovascular (triagem ACSM)"
               value={

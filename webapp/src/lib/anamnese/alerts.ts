@@ -21,6 +21,21 @@ export function escoreTSK11(itens: (number | null)[]): number | null {
   return ajustado.reduce((a, b) => a + b, 0);
 }
 
+// Triagem curta validada (Kroenke et al.) - GAD-2 e PHQ-2 são,
+// literalmente, os 2 primeiros itens do GAD-7/PHQ-9. Corte >=3 (0-6) é o
+// mesmo usado na literatura de atenção primária para decidir se vale a
+// pena aplicar o instrumento completo. Isso permite manter a anamnese
+// mais curta para quem tria negativo, sem perder a pontuação completa
+// para quem precisa dela.
+export function escoreCurto(itens: (number | null)[]): number | null {
+  return somaSemNulos(itens.slice(0, 2));
+}
+
+export function precisaInstrumentoCompleto(itens: (number | null)[]): boolean {
+  const curto = escoreCurto(itens);
+  return curto !== null && curto >= 3;
+}
+
 // Gera a lista de alertas (Nível 1-4) a partir das respostas da anamnese,
 // seguindo exatamente os critérios definidos em
 // 00-Arquitetura-Geral-dos-Agentes.md (Seção 7) e
