@@ -111,7 +111,7 @@ export default function DetalhePaciente() {
       {aba === "plano" && <AbaPlano paciente={paciente} onSalvo={carregar} />}
       {aba === "reavaliacao" && <AbaReavaliacao paciente={paciente} onSalvo={carregar} />}
       {aba === "anamnese" && <AbaAnamnese anamnese={anamnese} status={paciente.anamnese_status} />}
-      {aba === "fisica" && <AbaFisica pacienteId={paciente.id} dados={paciente.fisica} onSalvo={carregar} />}
+      {aba === "fisica" && <AbaFisica pacienteId={paciente.id} dados={paciente.fisica} sexo={paciente.sexo} onSalvo={carregar} />}
       {aba === "postural" && <AbaPostural pacienteId={paciente.id} dados={paciente.postural} onSalvo={carregar} />}
       {aba === "funcional" && <AbaFuncional pacienteId={paciente.id} dados={paciente.funcional} paciente={paciente} onSalvo={carregar} />}
     </main>
@@ -804,7 +804,7 @@ function SalvarBar({ salvando, ok, onSalvar }: { salvando: boolean; ok: boolean;
   );
 }
 
-function AbaFisica({ pacienteId, dados, onSalvo }: { pacienteId: string; dados: any; onSalvo: () => void }) {
+function AbaFisica({ pacienteId, dados, sexo, onSalvo }: { pacienteId: string; dados: any; sexo?: string | null; onSalvo: () => void }) {
   const [d, setD] = useState<Record<string, string>>({
     peso_kg: dados?.peso_kg ?? "",
     altura_cm: dados?.altura_cm ?? "",
@@ -825,6 +825,14 @@ function AbaFisica({ pacienteId, dados, onSalvo }: { pacienteId: string; dados: 
     d.peso_kg && d.altura_cm
       ? (Number(d.peso_kg) / Math.pow(Number(d.altura_cm) / 100, 2)).toFixed(1)
       : null;
+
+  const rcq = d.circ_cintura && d.circ_quadril ? Number(d.circ_cintura) / Number(d.circ_quadril) : null;
+  const sexoNorm = (sexo || "").trim().toLowerCase();
+  const rcqRiscoAumentado =
+    rcq !== null ? (sexoNorm.startsWith("m") ? rcq >= 0.9 : sexoNorm.startsWith("f") ? rcq >= 0.85 : null) : null;
+
+  const massaGordaKg = d.peso_kg && d.percentual_gordura ? (Number(d.peso_kg) * Number(d.percentual_gordura)) / 100 : null;
+  const massaMagraKg = d.peso_kg && massaGordaKg !== null ? Number(d.peso_kg) - massaGordaKg : null;
 
   const set = (k: string, v: string) => setD((prev) => ({ ...prev, [k]: v }));
 
@@ -853,6 +861,21 @@ function AbaFisica({ pacienteId, dados, onSalvo }: { pacienteId: string; dados: 
           <NumField label="Circ. cintura" suffix="cm" value={d.circ_cintura} onChange={(v) => set("circ_cintura", v)} />
           <NumField label="Circ. quadril" suffix="cm" value={d.circ_quadril} onChange={(v) => set("circ_quadril", v)} />
           <NumField label="Circ. panturrilha" suffix="cm" value={d.circ_panturrilha} onChange={(v) => set("circ_panturrilha", v)} />
+          <Field label="RCQ - relação cintura/quadril (calculado)">
+            <div className="rounded-lg border border-border bg-bg px-3.5 py-2.5 text-[15px] font-mono tabular-nums">
+              {rcq !== null ? rcq.toFixed(2) : "–"}
+            </div>
+            {rcqRiscoAumentado !== null && (
+              <p className={`text-xs mt-1 ${rcqRiscoAumentado ? "text-warn" : "text-muted"}`}>
+                {rcqRiscoAumentado
+                  ? "Acima do corte da OMS associado a risco cardiometabólico aumentado para o sexo registrado."
+                  : "Dentro da faixa esperada pelo corte da OMS para o sexo registrado."}
+              </p>
+            )}
+            {rcq !== null && rcqRiscoAumentado === null && (
+              <p className="text-xs text-muted mt-1">Sexo não registrado - corte da OMS não aplicado.</p>
+            )}
+          </Field>
         </div>
       </div>
 
@@ -863,6 +886,16 @@ function AbaFisica({ pacienteId, dados, onSalvo }: { pacienteId: string; dados: 
             <TextInput value={d.metodo_composicao} onChange={(e) => set("metodo_composicao", e.target.value)} placeholder="Dobras cutâneas, bioimpedância..." />
           </Field>
           <NumField label="% de gordura estimado" value={d.percentual_gordura} onChange={(v) => set("percentual_gordura", v)} />
+          <Field label="Massa gorda (calculada)">
+            <div className="rounded-lg border border-border bg-bg px-3.5 py-2.5 text-[15px] font-mono tabular-nums">
+              {massaGordaKg !== null ? `${massaGordaKg.toFixed(1)} kg` : "–"}
+            </div>
+          </Field>
+          <Field label="Massa magra (calculada)">
+            <div className="rounded-lg border border-border bg-bg px-3.5 py-2.5 text-[15px] font-mono tabular-nums">
+              {massaMagraKg !== null ? `${massaMagraKg.toFixed(1)} kg` : "–"}
+            </div>
+          </Field>
         </div>
       </div>
 

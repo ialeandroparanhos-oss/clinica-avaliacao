@@ -104,6 +104,15 @@ export default function RelatorioTecnico() {
   const tsk11 = escoreTSK11(anamnese.dor.tsk11);
   const pseq = somaSemNulos(anamnese.dor.pseq);
 
+  const circCintura = Number(paciente.fisica?.circ_cintura);
+  const circQuadril = Number(paciente.fisica?.circ_quadril);
+  const rcq = circCintura && circQuadril ? circCintura / circQuadril : null;
+
+  const pesoKg = Number(paciente.fisica?.peso_kg);
+  const percentualGordura = Number(paciente.fisica?.percentual_gordura);
+  const massaGordaKg = pesoKg && percentualGordura ? (pesoKg * percentualGordura) / 100 : null;
+  const massaMagraKg = pesoKg && massaGordaKg !== null ? pesoKg - massaGordaKg : null;
+
   return (
     <>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 print:hidden flex items-center justify-between">
@@ -174,7 +183,9 @@ export default function RelatorioTecnico() {
             <L label="FC de repouso" value={paciente.fisica?.fc_repouso ? `${paciente.fisica.fc_repouso} bpm` : null} />
             <L label="SpO2" value={paciente.fisica?.spo2 ? `${paciente.fisica.spo2}%` : null} />
             <L label="Circ. cintura / quadril" value={paciente.fisica?.circ_cintura ? `${paciente.fisica.circ_cintura} / ${paciente.fisica.circ_quadril || "–"} cm` : null} />
+            <L label="RCQ (calculado)" value={rcq !== null ? rcq.toFixed(2) : null} />
             <L label="Composição corporal" value={paciente.fisica?.percentual_gordura ? `${paciente.fisica.percentual_gordura}% gordura (${paciente.fisica.metodo_composicao || "método não informado"})` : null} />
+            <L label="Massa gorda / magra (calculadas)" value={massaGordaKg !== null && massaMagraKg !== null ? `${massaGordaKg.toFixed(1)} kg / ${massaMagraKg.toFixed(1)} kg` : null} />
             <L label="Observações" value={paciente.fisica?.observacoes} />
           </dl>
         </Secao>
