@@ -2,9 +2,18 @@
 // Extrai séries temporais dos indicadores objetivos a partir da tabela
 // avaliacoes_historico, para comparação ANTES -> ATUAL -> META.
 
+import { vo2maxBruceFoster, vo2maxCooper, metDeVo2 } from "@/lib/avaliacao/cardiorrespiratoria";
+
+function vo2maxDeRegistro(d: Record<string, any>): number | null {
+  if (d.vo2max_manual) return Number(d.vo2max_manual);
+  if (d.protocolo === "bruce" && d.bruce_tempo_total_min) return vo2maxBruceFoster(Number(d.bruce_tempo_total_min));
+  if (d.protocolo === "cooper" && d.cooper_distancia_m) return vo2maxCooper(Number(d.cooper_distancia_m));
+  return null;
+}
+
 export type LinhaHistorico = {
   id: string;
-  tipo: "fisica" | "postural" | "funcional";
+  tipo: "fisica" | "postural" | "funcional" | "cardio";
   dados: Record<string, any>;
   avaliador: string | null;
   criado_em: string;
@@ -14,7 +23,7 @@ export type IndicadorDef = {
   chave: string;
   titulo: string;
   unidade: string;
-  tipo: "fisica" | "funcional";
+  tipo: "fisica" | "funcional" | "cardio";
   // Indicadores derivados (ex.: IMC) calculam o valor a partir de "dados"
   // em vez de ler um campo direto.
   derivado?: (dados: Record<string, any>) => number | null;
@@ -72,6 +81,19 @@ export const INDICADORES: IndicadorDef[] = [
   { chave: "dinamometria_e_kg", titulo: "Dinamometria E", unidade: "kgf", tipo: "funcional" },
   { chave: "apoio_unipodal_d_seg", titulo: "Apoio unipodal D", unidade: "s", tipo: "funcional" },
   { chave: "apoio_unipodal_e_seg", titulo: "Apoio unipodal E", unidade: "s", tipo: "funcional" },
+  { chave: "vo2max", titulo: "VO2máx estimado", unidade: "ml/kg/min", tipo: "cardio", derivado: vo2maxDeRegistro },
+  {
+    chave: "met",
+    titulo: "MET",
+    unidade: "",
+    tipo: "cardio",
+    derivado: (d) => {
+      const vo2max = vo2maxDeRegistro(d);
+      return vo2max !== null ? metDeVo2(vo2max) : null;
+    },
+  },
+  { chave: "rampa_velocidade_final_kmh", titulo: "vVO2máx (rampa)", unidade: "km/h", tipo: "cardio" },
+  { chave: "fc_maxima_atingida", titulo: "FC máxima atingida", unidade: "bpm", tipo: "cardio" },
 ];
 
 export type PontoHistorico = {

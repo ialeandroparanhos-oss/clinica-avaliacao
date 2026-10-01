@@ -17,6 +17,7 @@ import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { calcularRiscoCardiovascular } from "@/lib/anamnese/riscoCardiovascular";
 import { sexoNormalizado, percentualGorduraIdealSugerido } from "@/lib/avaliacao/composicaoCorporal";
 import { triarSarcopeniaDinapenia } from "@/lib/integracao/sarcopenia";
+import { vo2maxBruceFoster, vo2maxCooper, metDeVo2, fcMaxTanaka, fcMaxFox } from "@/lib/avaliacao/cardiorrespiratoria";
 import { calcularPerfilIntegrado, type Classificacao } from "@/lib/integracao/perfil";
 import { HORIZONTES, type Plano } from "@/lib/integracao/plano";
 
@@ -108,6 +109,26 @@ export default function RelatorioTecnico() {
   const pseq = somaSemNulos(anamnese.dor.pseq);
   const riscoCV = calcularRiscoCardiovascular(paciente);
   const sarcopenia = triarSarcopeniaDinapenia(paciente);
+  const idadeNum = Number(anamnese.contexto?.idade) || null;
+
+  const cardio = paciente.cardio ?? {};
+  const vo2max = cardio.vo2max_manual
+    ? Number(cardio.vo2max_manual)
+    : cardio.protocolo === "bruce" && cardio.bruce_tempo_total_min
+      ? vo2maxBruceFoster(Number(cardio.bruce_tempo_total_min))
+      : cardio.protocolo === "cooper" && cardio.cooper_distancia_m
+        ? vo2maxCooper(Number(cardio.cooper_distancia_m))
+        : null;
+  const metCardio = vo2max !== null ? metDeVo2(vo2max) : null;
+  const fcMaxCardio = cardio.fc_maxima_atingida
+    ? Number(cardio.fc_maxima_atingida)
+    : cardio.fc_max_metodo === "tanaka" && idadeNum !== null
+      ? fcMaxTanaka(idadeNum)
+      : cardio.fc_max_metodo === "fox" && idadeNum !== null
+        ? fcMaxFox(idadeNum)
+        : cardio.fc_max_metodo === "manual" && cardio.fc_max_manual
+          ? Number(cardio.fc_max_manual)
+          : null;
 
   const circCintura = Number(paciente.fisica?.circ_cintura);
   const circQuadril = Number(paciente.fisica?.circ_quadril);
@@ -118,7 +139,6 @@ export default function RelatorioTecnico() {
   const massaGordaKg = pesoKg && percentualGordura ? (pesoKg * percentualGordura) / 100 : null;
   const massaMagraKg = pesoKg && massaGordaKg !== null ? pesoKg - massaGordaKg : null;
 
-  const idadeNum = Number(anamnese.contexto?.idade) || null;
   const sexoNorm = sexoNormalizado(paciente.sexo);
   const percentualIdealSugerido = percentualGorduraIdealSugerido(idadeNum, sexoNorm);
   const percentualIdealEfetivo = paciente.fisica?.percentual_gordura_ideal ? Number(paciente.fisica.percentual_gordura_ideal) : percentualIdealSugerido;
@@ -296,7 +316,27 @@ export default function RelatorioTecnico() {
           </dl>
         </Secao>
 
-        <Secao titulo="5. Painel Integrado de Saúde (10 domínios)">
+        <Secao titulo="5. Avaliação cardiorrespiratória (VO2)">
+          <dl>
+            <L
+              label="Protocolo"
+              value={
+                cardio.protocolo
+                  ? ({ bruce: "Bruce (com inclinação)", rampa: "Rampa de velocidade (sem inclinação)", cooper: "Teste de Cooper (12 min)", outro: "Outro" } as Record<string, string>)[cardio.protocolo]
+                  : null
+              }
+            />
+            <L label="VO2máx estimado" value={vo2max !== null ? `${vo2max.toFixed(1)} ml/kg/min` : null} />
+            <L label="MET" value={metCardio !== null ? metCardio.toFixed(1) : null} />
+            <L label="vVO2máx" value={cardio.rampa_velocidade_final_kmh ? `${cardio.rampa_velocidade_final_kmh} km/h` : null} />
+            <L label="FC máxima (medida/estimada)" value={fcMaxCardio !== null ? `${fcMaxCardio.toFixed(0)} bpm` : null} />
+            <L label="PA pós-teste" value={cardio.pa_sistolica_pos ? `${cardio.pa_sistolica_pos}/${cardio.pa_diastolica_pos || "–"} mmHg` : null} />
+            <L label="Percepção de esforço (Borg)" value={cardio.rpe_borg} />
+            <L label="Observações" value={cardio.observacoes} />
+          </dl>
+        </Secao>
+
+        <Secao titulo="6. Painel Integrado de Saúde (10 domínios)">
           <table className="w-full text-sm border-collapse">
             <tbody>
               {perfil.dominios.map((d) => (
@@ -310,7 +350,7 @@ export default function RelatorioTecnico() {
           </table>
         </Secao>
 
-        <Secao titulo="6. Triagem de sarcopenia/dinapenia (aproximada)">
+        <Secao titulo="7. Triagem de sarcopenia/dinapenia (aproximada)">
           <p className="text-sm">
             <strong>
               {
@@ -330,14 +370,14 @@ export default function RelatorioTecnico() {
           </p>
         </Secao>
 
-        <Secao titulo="7. Potencialidades, limitações, riscos e prioridades">
+        <Secao titulo="8. Potencialidades, limitações, riscos e prioridades">
           <p className="text-sm mb-1"><strong>Potencialidades:</strong> {perfil.potencialidades.map((d) => d.titulo).join(", ") || "nenhuma identificada"}</p>
           <p className="text-sm mb-1"><strong>Limitações:</strong> {perfil.limitacoes.map((d) => d.titulo).join(", ") || "nenhuma identificada"}</p>
           <p className="text-sm mb-1"><strong>Riscos:</strong> {perfil.riscos.map((d) => d.titulo).join(", ") || "nenhum identificado"}</p>
           <p className="text-sm"><strong>Prioridades (ordem):</strong> {perfil.prioridades.map((d) => d.titulo).join(" → ") || "nenhuma identificada"}</p>
         </Secao>
 
-        <Secao titulo="8. Plano de intervenção">
+        <Secao titulo="9. Plano de intervenção">
           {!plano || (plano.itens ?? []).length === 0 ? (
             <p className="text-sm text-muted">Plano ainda não elaborado.</p>
           ) : (
