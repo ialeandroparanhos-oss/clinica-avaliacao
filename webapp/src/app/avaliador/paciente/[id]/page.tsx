@@ -29,6 +29,7 @@ import {
   type ProtocoloDobras,
 } from "@/lib/avaliacao/composicaoCorporal";
 import { conectarObjetivo } from "@/lib/integracao/objetivo";
+import { triarSarcopeniaDinapenia } from "@/lib/integracao/sarcopenia";
 
 type Aba = "perfil" | "plano" | "reavaliacao" | "anamnese" | "fisica" | "postural" | "funcional";
 
@@ -159,6 +160,7 @@ function CartaoDominio({ dominio }: { dominio: DomainResult }) {
 function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
   const perfil = useMemo(() => calcularPerfilIntegrado(paciente), [paciente]);
   const discrepancias = useMemo(() => detectarDiscrepancias(paciente), [paciente]);
+  const sarcopenia = useMemo(() => triarSarcopeniaDinapenia(paciente), [paciente]);
   const motivo = mesclarComPadrao(paciente.anamnese).motivo;
   const confiancaLabel = { alta: "Alta", media: "Média", baixa: "Baixa" }[perfil.confianca];
   const confiancaClasse = {
@@ -185,6 +187,36 @@ function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
             <CartaoDominio key={d.chave} dominio={d} />
           ))}
         </div>
+      </div>
+
+      <div
+        className={`rounded-2xl border p-5 ${
+          sarcopenia.classificacao === "sarcopenia_provavel"
+            ? "border-danger/30 bg-danger-soft"
+            : sarcopenia.classificacao === "dinapenia_provavel"
+              ? "border-warn/30 bg-warn-soft"
+              : sarcopenia.classificacao === "sem_sinais"
+                ? "border-accent/30 bg-accent-soft"
+                : "border-border bg-surface"
+        }`}
+      >
+        <h4 className="font-display text-base text-ink mb-1">
+          Sarcopenia / dinapenia (triagem aproximada) —{" "}
+          {
+            {
+              sarcopenia_provavel: "Sarcopenia provável",
+              dinapenia_provavel: "Dinapenia provável",
+              sem_sinais: "Sem sinais nesta triagem",
+              dados_insuficientes: "Dados insuficientes",
+            }[sarcopenia.classificacao]
+          }
+        </h4>
+        <p className="text-sm text-muted mb-1">{sarcopenia.justificativa}</p>
+        <p className="text-xs text-muted">
+          Usa força (dinamometria/chair stand, critério EWGSOP2) e massa magra total comparada à meta calculada
+          para este paciente - não é o padrão-ouro (massa muscular apendicular por DXA). Nunca é diagnóstico;
+          confirmação requer avaliação validada.
+        </p>
       </div>
 
       {discrepancias.length > 0 && (

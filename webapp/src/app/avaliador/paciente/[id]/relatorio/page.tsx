@@ -16,6 +16,7 @@ import { escorePSS10, escoreTSK11, somaSemNulos, rotuloNivel } from "@/lib/anamn
 import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { calcularRiscoCardiovascular } from "@/lib/anamnese/riscoCardiovascular";
 import { sexoNormalizado, percentualGorduraIdealSugerido } from "@/lib/avaliacao/composicaoCorporal";
+import { triarSarcopeniaDinapenia } from "@/lib/integracao/sarcopenia";
 import { calcularPerfilIntegrado, type Classificacao } from "@/lib/integracao/perfil";
 import { HORIZONTES, type Plano } from "@/lib/integracao/plano";
 
@@ -106,6 +107,7 @@ export default function RelatorioTecnico() {
   const tsk11 = escoreTSK11(anamnese.dor.tsk11);
   const pseq = somaSemNulos(anamnese.dor.pseq);
   const riscoCV = calcularRiscoCardiovascular(paciente);
+  const sarcopenia = triarSarcopeniaDinapenia(paciente);
 
   const circCintura = Number(paciente.fisica?.circ_cintura);
   const circQuadril = Number(paciente.fisica?.circ_quadril);
@@ -300,14 +302,34 @@ export default function RelatorioTecnico() {
           </table>
         </Secao>
 
-        <Secao titulo="6. Potencialidades, limitações, riscos e prioridades">
+        <Secao titulo="6. Triagem de sarcopenia/dinapenia (aproximada)">
+          <p className="text-sm">
+            <strong>
+              {
+                {
+                  sarcopenia_provavel: "Sarcopenia provável",
+                  dinapenia_provavel: "Dinapenia provável",
+                  sem_sinais: "Sem sinais nesta triagem",
+                  dados_insuficientes: "Dados insuficientes",
+                }[sarcopenia.classificacao]
+              }
+            </strong>{" "}
+            — {sarcopenia.justificativa}
+          </p>
+          <p className="text-xs text-muted mt-1">
+            Usa massa magra total (não a massa muscular apendicular por DXA exigida pelo EWGSOP2) - triagem, não
+            diagnóstico.
+          </p>
+        </Secao>
+
+        <Secao titulo="7. Potencialidades, limitações, riscos e prioridades">
           <p className="text-sm mb-1"><strong>Potencialidades:</strong> {perfil.potencialidades.map((d) => d.titulo).join(", ") || "nenhuma identificada"}</p>
           <p className="text-sm mb-1"><strong>Limitações:</strong> {perfil.limitacoes.map((d) => d.titulo).join(", ") || "nenhuma identificada"}</p>
           <p className="text-sm mb-1"><strong>Riscos:</strong> {perfil.riscos.map((d) => d.titulo).join(", ") || "nenhum identificado"}</p>
           <p className="text-sm"><strong>Prioridades (ordem):</strong> {perfil.prioridades.map((d) => d.titulo).join(" → ") || "nenhuma identificada"}</p>
         </Secao>
 
-        <Secao titulo="7. Plano de intervenção">
+        <Secao titulo="8. Plano de intervenção">
           {!plano || (plano.itens ?? []).length === 0 ? (
             <p className="text-sm text-muted">Plano ainda não elaborado.</p>
           ) : (
