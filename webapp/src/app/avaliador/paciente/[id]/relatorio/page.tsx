@@ -15,6 +15,7 @@ import type { PacienteRow } from "@/lib/anamnese/types";
 import { escorePSS10, escoreTSK11, somaSemNulos, rotuloNivel } from "@/lib/anamnese/alerts";
 import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { calcularRiscoCardiovascular } from "@/lib/anamnese/riscoCardiovascular";
+import { sexoNormalizado, percentualGorduraIdealSugerido } from "@/lib/avaliacao/composicaoCorporal";
 import { calcularPerfilIntegrado, type Classificacao } from "@/lib/integracao/perfil";
 import { HORIZONTES, type Plano } from "@/lib/integracao/plano";
 
@@ -115,6 +116,18 @@ export default function RelatorioTecnico() {
   const massaGordaKg = pesoKg && percentualGordura ? (pesoKg * percentualGordura) / 100 : null;
   const massaMagraKg = pesoKg && massaGordaKg !== null ? pesoKg - massaGordaKg : null;
 
+  const idadeNum = Number(anamnese.contexto?.idade) || null;
+  const sexoNorm = sexoNormalizado(paciente.sexo);
+  const percentualIdealSugerido = percentualGorduraIdealSugerido(idadeNum, sexoNorm);
+  const percentualIdealEfetivo = paciente.fisica?.percentual_gordura_ideal ? Number(paciente.fisica.percentual_gordura_ideal) : percentualIdealSugerido;
+  const percentualExcedente = percentualGordura && percentualIdealEfetivo !== null ? percentualGordura - percentualIdealEfetivo : null;
+  const gorduraExcedenteKg = pesoKg && percentualExcedente !== null ? Math.max(0, (pesoKg * percentualExcedente) / 100) : null;
+  const massaMagraIdealSugerida = pesoKg && percentualIdealSugerido !== null ? pesoKg * (1 - percentualIdealSugerido / 100) : null;
+  const massaMagraIdealEfetiva = paciente.fisica?.massa_magra_ideal_kg ? Number(paciente.fisica.massa_magra_ideal_kg) : massaMagraIdealSugerida;
+  const carenciaMuscularKg = massaMagraIdealEfetiva !== null && massaMagraKg !== null ? Math.max(0, massaMagraIdealEfetiva - massaMagraKg) : null;
+  const pesoIdealKg = massaMagraKg !== null && percentualIdealEfetivo !== null && percentualIdealEfetivo < 100 ? massaMagraKg / (1 - percentualIdealEfetivo / 100) : null;
+  const ROTULO_PROTOCOLO_REF: Record<string, string> = { dobras: "dobras cutâneas", bioimpedancia: "bioimpedância", media: "média dos dois", outro: "outro/externo" };
+
   return (
     <>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 print:hidden flex items-center justify-between">
@@ -194,8 +207,19 @@ export default function RelatorioTecnico() {
             <L label="SpO2" value={paciente.fisica?.spo2 ? `${paciente.fisica.spo2}%` : null} />
             <L label="Circ. cintura / quadril" value={paciente.fisica?.circ_cintura ? `${paciente.fisica.circ_cintura} / ${paciente.fisica.circ_quadril || "–"} cm` : null} />
             <L label="RCQ (calculado)" value={rcq !== null ? rcq.toFixed(2) : null} />
-            <L label="Composição corporal" value={paciente.fisica?.percentual_gordura ? `${paciente.fisica.percentual_gordura}% gordura (${paciente.fisica.metodo_composicao || "método não informado"})` : null} />
+            <L
+              label="% de gordura (referência)"
+              value={
+                paciente.fisica?.percentual_gordura
+                  ? `${paciente.fisica.percentual_gordura}%${paciente.fisica?.protocolo_referencia_gordura ? ` (${ROTULO_PROTOCOLO_REF[paciente.fisica.protocolo_referencia_gordura] ?? paciente.fisica.protocolo_referencia_gordura})` : ""}`
+                  : null
+              }
+            />
+            <L label="%G ideal / %G excedente" value={percentualIdealEfetivo !== null ? `${percentualIdealEfetivo.toFixed(1)}% / ${percentualExcedente !== null ? percentualExcedente.toFixed(1) : "–"}%` : null} />
             <L label="Massa gorda / magra (calculadas)" value={massaGordaKg !== null && massaMagraKg !== null ? `${massaGordaKg.toFixed(1)} kg / ${massaMagraKg.toFixed(1)} kg` : null} />
+            <L label="Gordura excedente" value={gorduraExcedenteKg !== null ? `${gorduraExcedenteKg.toFixed(1)} kg` : null} />
+            <L label="Massa magra ideal / carência muscular" value={massaMagraIdealEfetiva !== null ? `${massaMagraIdealEfetiva.toFixed(1)} kg / ${carenciaMuscularKg !== null ? carenciaMuscularKg.toFixed(1) : "–"} kg` : null} />
+            <L label="Peso ideal (calculado)" value={pesoIdealKg !== null ? `${pesoIdealKg.toFixed(1)} kg` : null} />
             <L label="Observações" value={paciente.fisica?.observacoes} />
           </dl>
         </Secao>

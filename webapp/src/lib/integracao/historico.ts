@@ -39,6 +39,31 @@ export const INDICADORES: IndicadorDef[] = [
   { chave: "pa_diastolica", titulo: "PA diastólica", unidade: "mmHg", tipo: "fisica" },
   { chave: "fc_repouso", titulo: "FC de repouso", unidade: "bpm", tipo: "fisica" },
   { chave: "percentual_gordura", titulo: "% de gordura", unidade: "%", tipo: "fisica" },
+  {
+    chave: "massa_magra_kg",
+    titulo: "Massa magra",
+    unidade: "kg",
+    tipo: "fisica",
+    derivado: (d) => {
+      const peso = Number(d.peso_kg);
+      const pg = Number(d.percentual_gordura);
+      if (!peso || !pg) return null;
+      return peso - (peso * pg) / 100;
+    },
+  },
+  { chave: "reg_braco_relaxado_circ", titulo: "Circunferência - braço relaxado", unidade: "cm", tipo: "fisica" },
+  { chave: "reg_braco_relaxado_dobra", titulo: "Dobra - braço relaxado", unidade: "mm", tipo: "fisica" },
+  { chave: "reg_braco_contraido_circ", titulo: "Circunferência - braço contraído", unidade: "cm", tipo: "fisica" },
+  { chave: "reg_antebraco_circ", titulo: "Circunferência - antebraço", unidade: "cm", tipo: "fisica" },
+  { chave: "reg_torax_circ", titulo: "Circunferência - tórax", unidade: "cm", tipo: "fisica" },
+  { chave: "reg_torax_dobra", titulo: "Dobra - tórax", unidade: "mm", tipo: "fisica" },
+  { chave: "reg_abdomen_circ", titulo: "Circunferência - abdômen", unidade: "cm", tipo: "fisica" },
+  { chave: "reg_abdomen_dobra", titulo: "Dobra - abdômen", unidade: "mm", tipo: "fisica" },
+  { chave: "reg_quadril_circ", titulo: "Circunferência - quadril", unidade: "cm", tipo: "fisica" },
+  { chave: "reg_coxa_circ", titulo: "Circunferência - coxa", unidade: "cm", tipo: "fisica" },
+  { chave: "reg_coxa_dobra", titulo: "Dobra - coxa", unidade: "mm", tipo: "fisica" },
+  { chave: "reg_panturrilha_circ", titulo: "Circunferência - panturrilha", unidade: "cm", tipo: "fisica" },
+  { chave: "reg_panturrilha_dobra", titulo: "Dobra - panturrilha", unidade: "mm", tipo: "fisica" },
   { chave: "chair_stand_reps", titulo: "30s Chair Stand", unidade: "reps", tipo: "funcional" },
   { chave: "tug_seg", titulo: "TUG", unidade: "s", tipo: "funcional" },
   { chave: "velocidade_marcha_ms", titulo: "Velocidade de marcha", unidade: "m/s", tipo: "funcional" },
