@@ -12,6 +12,7 @@ import { perguntasParQ } from "@/lib/anamnese/questionnaires";
 import { calcularPerfilIntegrado, type Classificacao, type DomainResult } from "@/lib/integracao/perfil";
 import { HORIZONTES, sugerirPlano, type Encaminhamento, type Horizonte, type ItemPlano, type Plano } from "@/lib/integracao/plano";
 import { INDICADORES, extrairSerie, type LinhaHistorico } from "@/lib/integracao/historico";
+import { calcularTagsPerfil, gruposRecomendados, ROTULOS_GRUPO, type GrupoTesteFuncional } from "@/lib/integracao/tagsPerfil";
 
 type Aba = "perfil" | "plano" | "reavaliacao" | "anamnese" | "fisica" | "postural" | "funcional";
 
@@ -102,7 +103,7 @@ export default function DetalhePaciente() {
       {aba === "anamnese" && <AbaAnamnese anamnese={anamnese} status={paciente.anamnese_status} />}
       {aba === "fisica" && <AbaFisica pacienteId={paciente.id} dados={paciente.fisica} onSalvo={carregar} />}
       {aba === "postural" && <AbaPostural pacienteId={paciente.id} dados={paciente.postural} onSalvo={carregar} />}
-      {aba === "funcional" && <AbaFuncional pacienteId={paciente.id} dados={paciente.funcional} onSalvo={carregar} />}
+      {aba === "funcional" && <AbaFuncional pacienteId={paciente.id} dados={paciente.funcional} paciente={paciente} onSalvo={carregar} />}
     </main>
   );
 }
@@ -1006,7 +1007,38 @@ function estimarRM(cargaKg: string, repeticoes: string): string | null {
   return rm.toFixed(1);
 }
 
-function AbaFuncional({ pacienteId, dados, onSalvo }: { pacienteId: string; dados: any; onSalvo: () => void }) {
+function PainelRecomendacaoTestes({ paciente }: { paciente: PacienteRow }) {
+  const tags = useMemo(() => calcularTagsPerfil(paciente), [paciente]);
+  const recomendados = useMemo(() => gruposRecomendados(tags), [tags]);
+  const grupos = Object.entries(recomendados) as [GrupoTesteFuncional, string[]][];
+
+  if (tags.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-accent/30 bg-accent/5 p-4 text-sm space-y-2">
+      <p className="text-ink">
+        <span className="font-medium">Perfil deste paciente (anamnese): </span>
+        {tags.map((t) => t.rotulo).join(" · ")}
+      </p>
+      {grupos.length > 0 && (
+        <div>
+          <p className="text-muted mb-1">Com base nisso, Rita sugere priorizar:</p>
+          <ul className="list-disc list-inside space-y-0.5 text-ink">
+            {grupos.map(([grupo, motivos]) => (
+              <li key={grupo}>
+                <span className="font-medium">{ROTULOS_GRUPO[grupo]}</span>
+                <span className="text-muted"> — {motivos.join(", ")}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <p className="text-xs text-muted">Sugestão de ordem/ênfase, não uma restrição - todos os testes continuam disponíveis abaixo.</p>
+    </div>
+  );
+}
+
+function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacienteId: string; dados: any; paciente: PacienteRow; onSalvo: () => void }) {
   const [d, setD] = useState<Record<string, string>>({
     chair_stand_reps: dados?.chair_stand_reps ?? "",
     five_sts_seg: dados?.five_sts_seg ?? "",
@@ -1046,6 +1078,7 @@ function AbaFuncional({ pacienteId, dados, onSalvo }: { pacienteId: string; dado
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-5 space-y-5">
+      <PainelRecomendacaoTestes paciente={paciente} />
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <NumField label="Chair Stand" suffix="reps/30s" value={d.chair_stand_reps} onChange={(v) => set("chair_stand_reps", v)} />
         <NumField label="5x Sit-to-Stand" suffix="s" value={d.five_sts_seg} onChange={(v) => set("five_sts_seg", v)} />
