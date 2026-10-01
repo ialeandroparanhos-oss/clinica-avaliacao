@@ -36,6 +36,13 @@ import {
   opcoesTabagismo,
   opcoesLazer,
   opcoesDisponibilidadeTempo,
+  itensTSK11,
+  escalaTSK11,
+  itensPSEQ,
+  escalaPSEQ,
+  opcoesQualidadeSonoPSQI,
+  opcoesFrequenciaPSQI,
+  opcoesProblemaPSQI,
 } from "@/lib/anamnese/questionnaires";
 
 type Stage = "identificacao" | "wizard" | "concluido";
@@ -651,46 +658,95 @@ export default function PacientePage() {
           )}
 
           {step === 6 && (
-            <StepShell title="Sono">
-              <Field label="Em média, quantas horas você dorme por noite?">
-                <TextInput value={anamnese.sono.horas_sono} onChange={(e) => set("sono", { horas_sono: e.target.value })} />
-              </Field>
-              <Field label="Como você avalia a qualidade do seu sono?">
-                <ChoiceGroup
-                  columns={5}
-                  options={[1, 2, 3, 4, 5].map((n) => ({ value: n, label: String(n) }))}
-                  value={anamnese.sono.qualidade_percebida}
-                  onChange={(v) => set("sono", { qualidade_percebida: v })}
-                />
-                <p className="text-xs text-muted mt-1">1 = muito ruim · 5 = muito boa</p>
-              </Field>
-              <Field label="Você tem dificuldade para pegar no sono?">
-                <YesNo value={anamnese.sono.dificuldade_iniciar} onChange={(v) => set("sono", { dificuldade_iniciar: v })} />
-              </Field>
-              <Field label="Você acorda no meio da noite com frequência?">
-                <YesNo value={anamnese.sono.despertares_noturnos} onChange={(v) => set("sono", { despertares_noturnos: v })} />
-              </Field>
-              <Field label="Sente sonolência durante o dia?">
+            <StepShell title="Sono" subtitle="Pense no seu sono durante o último mês ao responder.">
+              <Field label="No último mês, como você avaliaria a qualidade geral do seu sono?">
                 <ChoiceGroup
                   columns={4}
-                  options={[
-                    { value: 0, label: "Nunca" },
-                    { value: 1, label: "Às vezes" },
-                    { value: 2, label: "Frequente" },
-                    { value: 3, label: "Sempre" },
-                  ]}
-                  value={anamnese.sono.sonolencia_diurna}
-                  onChange={(v) => set("sono", { sonolencia_diurna: v })}
+                  options={opcoesQualidadeSonoPSQI.map((o, i) => ({ value: i, label: o }))}
+                  value={anamnese.psqi.qualidade_subjetiva}
+                  onChange={(v) => set("psqi", { qualidade_subjetiva: v })}
                 />
               </Field>
-              <Field label="Como você se sente ao acordar?">
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="A que horas você costuma deitar?">
+                  <TextInput type="time" value={anamnese.psqi.hora_deitar} onChange={(e) => set("psqi", { hora_deitar: e.target.value })} />
+                </Field>
+                <Field label="A que horas você costuma acordar?">
+                  <TextInput type="time" value={anamnese.psqi.hora_acordar} onChange={(e) => set("psqi", { hora_acordar: e.target.value })} />
+                </Field>
+                <Field label="Quantos minutos você leva, em média, para pegar no sono?">
+                  <TextInput inputMode="numeric" value={anamnese.psqi.minutos_para_adormecer} onChange={(e) => set("psqi", { minutos_para_adormecer: e.target.value })} />
+                </Field>
+                <Field label="Quantas horas você realmente dorme por noite?">
+                  <TextInput inputMode="decimal" value={anamnese.psqi.horas_dormidas_noite} onChange={(e) => set("psqi", { horas_dormidas_noite: e.target.value })} />
+                </Field>
+              </div>
+              <Field label="Com que frequência você demora mais de 30 minutos para pegar no sono?">
                 <ChoiceGroup
-                  columns={5}
-                  options={[1, 2, 3, 4, 5].map((n) => ({ value: n, label: String(n) }))}
-                  value={anamnese.sono.sensacao_ao_acordar}
-                  onChange={(v) => set("sono", { sensacao_ao_acordar: v })}
+                  columns={2}
+                  options={opcoesFrequenciaPSQI.map((o, i) => ({ value: i, label: o }))}
+                  value={anamnese.psqi.freq_demora_adormecer}
+                  onChange={(v) => set("psqi", { freq_demora_adormecer: v })}
                 />
-                <p className="text-xs text-muted mt-1">1 = exausto(a) · 5 = totalmente descansado(a)</p>
+              </Field>
+
+              <p className="font-medium text-ink pt-2">Nas últimas 4 semanas, com que frequência você teve problemas de sono por causa de...</p>
+              {([
+                ["acordar no meio da noite ou de madrugada", "freq_acorda_meio_noite"],
+                ["precisar levantar para ir ao banheiro", "freq_banheiro"],
+                ["não conseguir respirar bem", "freq_respirar_mal"],
+                ["tossir ou roncar alto", "freq_tosse_ronco"],
+                ["sentir muito frio", "freq_frio"],
+                ["sentir muito calor", "freq_calor"],
+                ["ter pesadelos", "freq_pesadelos"],
+                ["sentir dor", "freq_dor"],
+              ] as const).map(([rotulo, chave]) => (
+                <Field key={chave} label={rotulo}>
+                  <ChoiceGroup
+                    columns={4}
+                    options={opcoesFrequenciaPSQI.map((o, i) => ({ value: i, label: o }))}
+                    value={anamnese.psqi[chave]}
+                    onChange={(v) => set("psqi", { [chave]: v } as Partial<Anamnese["psqi"]>)}
+                  />
+                </Field>
+              ))}
+              <Field label="Outro motivo? Descreva, se houver">
+                <TextInput value={anamnese.psqi.outro_motivo_texto} onChange={(e) => set("psqi", { outro_motivo_texto: e.target.value })} />
+              </Field>
+              {anamnese.psqi.outro_motivo_texto && (
+                <Field label="Com que frequência esse outro motivo atrapalhou seu sono?">
+                  <ChoiceGroup
+                    columns={4}
+                    options={opcoesFrequenciaPSQI.map((o, i) => ({ value: i, label: o }))}
+                    value={anamnese.psqi.freq_outro_motivo}
+                    onChange={(v) => set("psqi", { freq_outro_motivo: v })}
+                  />
+                </Field>
+              )}
+
+              <Field label="Com que frequência você tomou algum remédio para dormir (com ou sem receita)?">
+                <ChoiceGroup
+                  columns={4}
+                  options={opcoesFrequenciaPSQI.map((o, i) => ({ value: i, label: o }))}
+                  value={anamnese.psqi.freq_medicamento_para_dormir}
+                  onChange={(v) => set("psqi", { freq_medicamento_para_dormir: v })}
+                />
+              </Field>
+              <Field label="Com que frequência você teve dificuldade para ficar acordado(a) dirigindo, comendo ou em atividades sociais?">
+                <ChoiceGroup
+                  columns={4}
+                  options={opcoesFrequenciaPSQI.map((o, i) => ({ value: i, label: o }))}
+                  value={anamnese.psqi.freq_sonolencia_atividades}
+                  onChange={(v) => set("psqi", { freq_sonolencia_atividades: v })}
+                />
+              </Field>
+              <Field label="O quanto foi um problema manter o entusiasmo para fazer as coisas?">
+                <ChoiceGroup
+                  columns={4}
+                  options={opcoesProblemaPSQI.map((o, i) => ({ value: i, label: o }))}
+                  value={anamnese.psqi.freq_falta_entusiasmo}
+                  onChange={(v) => set("psqi", { freq_falta_entusiasmo: v })}
+                />
               </Field>
             </StepShell>
           )}
@@ -850,6 +906,44 @@ export default function PacientePage() {
                       onChange={(v) => set("dor", { bandeiras_vermelhas: v })}
                     />
                   </Field>
+
+                  <div>
+                    <p className="font-medium text-ink mb-1 pt-2">O que você pensa sobre se movimentar com essa dor</p>
+                    {itensTSK11.map((texto, i) => (
+                      <LikertItem
+                        key={i}
+                        texto={texto}
+                        numero={i + 1}
+                        total={11}
+                        opcoes={escalaTSK11}
+                        value={anamnese.dor.tsk11[i]}
+                        onChange={(v) => {
+                          const arr = [...anamnese.dor.tsk11];
+                          arr[i] = v;
+                          set("dor", { tsk11: arr });
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  <div>
+                    <p className="font-medium text-ink mb-1 pt-2">O quanto você se sente confiante para fazer isso, apesar da dor</p>
+                    {itensPSEQ.map((texto, i) => (
+                      <LikertItem
+                        key={i}
+                        texto={texto}
+                        numero={i + 1}
+                        total={10}
+                        opcoes={escalaPSEQ}
+                        value={anamnese.dor.pseq[i]}
+                        onChange={(v) => {
+                          const arr = [...anamnese.dor.pseq];
+                          arr[i] = v;
+                          set("dor", { pseq: arr });
+                        }}
+                      />
+                    ))}
+                  </div>
                 </>
               )}
             </StepShell>

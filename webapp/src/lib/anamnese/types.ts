@@ -85,6 +85,30 @@ export type Anamnese = {
     sonolencia_diurna: number | null; // 0-3
     sensacao_ao_acordar: number | null; // 1-5
   };
+  // PSQI (Pittsburgh Sleep Quality Index) completo - Buysse et al. 1989.
+  // Os 7 componentes abaixo seguem o algoritmo de pontuação original
+  // (cada um 0-3, escore global 0-21); ver cálculo em lib/anamnese/psqi.ts.
+  psqi: {
+    qualidade_subjetiva: number | null; // 0 (muito boa) - 3 (muito ruim)
+    hora_deitar: string; // "HH:MM"
+    minutos_para_adormecer: string;
+    hora_acordar: string; // "HH:MM"
+    horas_dormidas_noite: string;
+    freq_demora_adormecer: number | null; // 0-3
+    freq_acorda_meio_noite: number | null; // 0-3
+    freq_banheiro: number | null; // 0-3
+    freq_respirar_mal: number | null; // 0-3
+    freq_tosse_ronco: number | null; // 0-3
+    freq_frio: number | null; // 0-3
+    freq_calor: number | null; // 0-3
+    freq_pesadelos: number | null; // 0-3
+    freq_dor: number | null; // 0-3
+    freq_outro_motivo: number | null; // 0-3
+    outro_motivo_texto: string;
+    freq_medicamento_para_dormir: number | null; // 0-3
+    freq_sonolencia_atividades: number | null; // 0-3
+    freq_falta_entusiasmo: number | null; // 0-3
+  };
   estilo_vida: {
     alimentacao_avaliacao: number | null; // 1-5
     alimentacao_geral: string;
@@ -118,6 +142,9 @@ export type Anamnese = {
     impacto_avds: number | null;
     tratamentos_anteriores: string;
     bandeiras_vermelhas: string[];
+    // Questionários condicionais, só fazem sentido quando há dor relatada.
+    tsk11: (number | null)[]; // 11 itens, 1-4 (baseado na Tampa Scale of Kinesiophobia)
+    pseq: (number | null)[]; // 10 itens, 0-6 (Pain Self-Efficacy Questionnaire)
   };
   saude_mental: {
     percepcao_saude: number | null; // 1-5

@@ -140,3 +140,65 @@ export const opcoesLazer = [
 ];
 
 export const opcoesDisponibilidadeTempo = ["Menos de 1h/semana", "1-2h/semana", "3-5h/semana", "Mais de 5h/semana"];
+
+// Cinesiofobia (medo de movimento/reinjúria), baseada na Tampa Scale of
+// Kinesiophobia (TSK), versão reduzida de 11 itens. A redação segue o
+// conteúdo clínico amplamente conhecido do instrumento - confirmar a
+// versão validada oficial em português antes do uso clínico formal (ver
+// nota no topo deste arquivo).
+export const escalaTSK11 = ["Discordo totalmente", "Discordo", "Concordo", "Concordo totalmente"];
+
+export const itensTSK11 = [
+  "Tenho medo de me machucar se fizer exercício físico.",
+  "Se eu tentasse superar isso, minha dor aumentaria.",
+  "Meu corpo está me dizendo que tenho algo seriamente errado.",
+  "Provavelmente minha dor seria aliviada se eu fizesse exercício. (invertido)",
+  "As pessoas não estão levando minha condição médica suficientemente a sério.",
+  "Meu acidente/problema colocou meu corpo em risco pelo resto da minha vida.",
+  "A dor sempre significa que eu machuquei meu corpo.",
+  "Só porque algo agrava minha dor não significa que seja perigoso.",
+  "Tenho medo de machucar meu corpo acidentalmente.",
+  "A maneira mais segura de evitar que minha dor piore é tomando cuidado para não fazer movimentos desnecessários.",
+  "Eu não teria tanta dor se não houvesse algo potencialmente perigoso acontecendo no meu corpo.",
+];
+
+// Índice (0-based) do único item de pontuação invertida nesta versão reduzida.
+export const itensInvertidosTSK11 = [3];
+
+// Autoeficácia para lidar com a dor - baseada no Pain Self-Efficacy
+// Questionnaire (PSEQ), 10 itens, escala de confiança 0-6.
+export const escalaPSEQ = [
+  "0 - Nada confiante",
+  "1",
+  "2",
+  "3 - Mais ou menos confiante",
+  "4",
+  "5",
+  "6 - Completamente confiante",
+];
+
+export const itensPSEQ = [
+  "Posso ter uma vida normal mesmo com dor.",
+  "Posso aumentar aos poucos meu nível de atividade física, apesar da dor.",
+  "Posso realizar algumas tarefas domésticas apesar da dor (ex.: tarefas leves, lavar louça etc.).",
+  "Posso realizar algumas das minhas atividades de lazer ou hobbies apesar da dor.",
+  "Posso lidar com minha dor na maioria dos ambientes.",
+  "Posso realizar a maior parte das tarefas domésticas apesar da dor (ex.: faxina, organização).",
+  "Posso socializar com amigos ou familiares com a mesma frequência, apesar da dor.",
+  "Posso lidar com minha dor sem medicação.",
+  "Ainda posso atingir a maioria dos meus objetivos de vida, apesar da dor.",
+  "Posso viver uma vida satisfatória apesar da dor.",
+];
+
+// PSQI (Pittsburgh Sleep Quality Index) - Buysse et al. 1989. As opções de
+// frequência abaixo são usadas em vários dos 7 componentes do instrumento.
+export const opcoesQualidadeSonoPSQI = ["Muito boa", "Boa", "Ruim", "Muito ruim"]; // 0-3
+
+export const opcoesFrequenciaPSQI = [
+  "Nenhuma vez no último mês",
+  "Menos de 1x por semana",
+  "1 ou 2x por semana",
+  "3 ou mais vezes por semana",
+]; // 0-3
+
+export const opcoesProblemaPSQI = ["Nenhum problema", "Problema muito pequeno", "Algum problema", "Grande problema"]; // 0-3

@@ -10,6 +10,7 @@
 
 import type { PacienteRow } from "@/lib/anamnese/types";
 import { escorePSS10, somaSemNulos } from "@/lib/anamnese/alerts";
+import { calcularPSQI } from "@/lib/anamnese/psqi";
 
 export type Classificacao = "adequado" | "atencao" | "prioridade" | "investigar";
 
@@ -281,19 +282,31 @@ function avaliarEstiloDeVida(p: PacienteRow): DomainResult {
 // 8. Sono
 // ---------------------------------------------------------------------------
 function avaliarSono(p: PacienteRow): DomainResult {
+  const psqi = p.anamnese ? calcularPSQI(p.anamnese) : null;
+  if (psqi !== null) {
+    if (psqi.global > 10) {
+      return resultado("sono", "prioridade", `PSQI = ${psqi.global}/21, bem acima do corte de 5 para sono de má qualidade.`);
+    }
+    if (psqi.global > 5) {
+      return resultado("sono", "atencao", `PSQI = ${psqi.global}/21, acima do corte de 5 para sono de má qualidade.`);
+    }
+    return resultado("sono", "adequado", `PSQI = ${psqi.global}/21, dentro da faixa considerada de boa qualidade pelo instrumento.`);
+  }
+
+  // PSQI incompleto - usa as perguntas simplificadas de triagem como apoio.
   const s = p.anamnese?.sono;
   const q = s?.qualidade_percebida;
   if (q === null || q === undefined) {
-    return resultado("sono", "investigar", "Qualidade de sono ainda não registrada.");
+    return resultado("sono", "investigar", "PSQI e triagem simplificada de sono ainda não respondidos.");
   }
   const problema = s?.dificuldade_iniciar === true || s?.despertares_noturnos === true;
   if (q <= 2 && problema) {
-    return resultado("sono", "prioridade", `Qualidade de sono ${q}/5, com dificuldade para iniciar e/ou despertares noturnos.`);
+    return resultado("sono", "prioridade", `Qualidade de sono ${q}/5, com dificuldade para iniciar e/ou despertares noturnos (PSQI incompleto).`);
   }
   if (q === 3 || problema || (s?.sonolencia_diurna ?? 0) >= 2) {
-    return resultado("sono", "atencao", `Qualidade de sono ${q}/5${problema ? ", com queixas noturnas" : ""}.`);
+    return resultado("sono", "atencao", `Qualidade de sono ${q}/5${problema ? ", com queixas noturnas" : ""} (PSQI incompleto).`);
   }
-  return resultado("sono", "adequado", `Qualidade de sono ${q}/5, sem queixas noturnas relevantes.`);
+  return resultado("sono", "adequado", `Qualidade de sono ${q}/5, sem queixas noturnas relevantes (PSQI incompleto).`);
 }
 
 // ---------------------------------------------------------------------------

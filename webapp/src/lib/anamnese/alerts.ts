@@ -1,5 +1,6 @@
 import type { Alerta, Anamnese } from "./types";
-import { indicePHQ9Ideacao, itensInvertidosPSS10 } from "./questionnaires";
+import { indicePHQ9Ideacao, itensInvertidosPSS10, itensInvertidosTSK11 } from "./questionnaires";
+import { calcularPSQI } from "./psqi";
 
 export function somaSemNulos(itens: (number | null)[]): number | null {
   if (itens.some((v) => v === null || v === undefined)) return null;
@@ -9,6 +10,14 @@ export function somaSemNulos(itens: (number | null)[]): number | null {
 export function escorePSS10(itens: (number | null)[]): number | null {
   if (itens.some((v) => v === null || v === undefined)) return null;
   const ajustado = itens.map((v, i) => (itensInvertidosPSS10.includes(i) ? 4 - (v as number) : (v as number)));
+  return ajustado.reduce((a, b) => a + b, 0);
+}
+
+// TSK-11 é pontuado em escala 1-4 (diferente do PSS-10, que é 0-4), então o
+// item invertido usa (1+4) - v em vez de (0+4) - v.
+export function escoreTSK11(itens: (number | null)[]): number | null {
+  if (itens.some((v) => v === null || v === undefined)) return null;
+  const ajustado = itens.map((v, i) => (itensInvertidosTSK11.includes(i) ? 5 - (v as number) : (v as number)));
   return ajustado.reduce((a, b) => a + b, 0);
 }
 
@@ -58,6 +67,11 @@ export function calcularAlertas(a: Anamnese): Alerta[] {
   const phq9Score = somaSemNulos(a.saude_mental.phq9);
   if (phq9Score !== null && phq9Score >= 15) {
     add(2, `PHQ-9 = ${phq9Score}/27 (faixa sugestiva de sintomas depressivos importantes) - triagem, não diagnóstico.`, "Saúde mental");
+  }
+
+  const psqi = calcularPSQI(a);
+  if (psqi !== null && psqi.global > 5) {
+    add(1, `PSQI = ${psqi.global}/21, acima do corte de 5 proposto pelos autores do instrumento para sono de má qualidade.`, "Sono");
   }
 
   return alertas;

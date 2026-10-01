@@ -6,7 +6,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import type { Anamnese, PacienteRow } from "@/lib/anamnese/types";
-import { escorePSS10, somaSemNulos, rotuloNivel } from "@/lib/anamnese/alerts";
+import { escorePSS10, escoreTSK11, somaSemNulos, rotuloNivel } from "@/lib/anamnese/alerts";
+import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { AlertBanner, Field, TextArea, TextInput } from "@/components/forms";
 import { perguntasParQ } from "@/lib/anamnese/questionnaires";
 import { calcularPerfilIntegrado, type Classificacao, type DomainResult } from "@/lib/integracao/perfil";
@@ -570,6 +571,9 @@ function AbaAnamnese({ anamnese, status }: { anamnese: Anamnese; status: string 
   const gad7 = somaSemNulos(anamnese.saude_mental.gad7);
   const phq9 = somaSemNulos(anamnese.saude_mental.phq9);
   const parqPositivos = perguntasParQ.filter((p) => (anamnese.prontidao.parq as any)[p.chave] === true);
+  const psqi = calcularPSQI(anamnese);
+  const tsk11 = escoreTSK11(anamnese.dor.tsk11);
+  const pseq = somaSemNulos(anamnese.dor.pseq);
 
   return (
     <div className="space-y-4">
@@ -638,13 +642,17 @@ function AbaAnamnese({ anamnese, status }: { anamnese: Anamnese; status: string 
         <Linha label="Horas sentado/dia (IPAQ)" value={anamnese.atividade_fisica.ipaq.horas_sentado_dia} />
       </Capitulo>
 
-      <Capitulo titulo="Sono">
-        <Linha label="Horas de sono" value={anamnese.sono.horas_sono} />
-        <Linha label="Qualidade percebida (1-5)" value={anamnese.sono.qualidade_percebida} />
-        <Linha label="Dificuldade para iniciar" value={anamnese.sono.dificuldade_iniciar === null ? null : anamnese.sono.dificuldade_iniciar ? "Sim" : "Não"} />
-        <Linha label="Despertares noturnos" value={anamnese.sono.despertares_noturnos === null ? null : anamnese.sono.despertares_noturnos ? "Sim" : "Não"} />
-        <Linha label="Sonolência diurna (0-3)" value={anamnese.sono.sonolencia_diurna} />
-        <Linha label="Sensação ao acordar (1-5)" value={anamnese.sono.sensacao_ao_acordar} />
+      <Capitulo titulo="Sono (PSQI)">
+        <Linha label="PSQI - escore global (0-21)" value={psqi ? `${psqi.global}${psqi.global > 5 ? " (acima do corte de má qualidade)" : ""}` : null} />
+        <Linha label="Componente 1 - qualidade subjetiva (0-3)" value={psqi?.componentes.qualidadeSubjetiva} />
+        <Linha label="Componente 2 - latência (0-3)" value={psqi?.componentes.latencia} />
+        <Linha label="Componente 3 - duração (0-3)" value={psqi?.componentes.duracao} />
+        <Linha label="Componente 4 - eficiência habitual (0-3)" value={psqi?.componentes.eficiencia} />
+        <Linha label="Componente 5 - distúrbios do sono (0-3)" value={psqi?.componentes.disturbios} />
+        <Linha label="Componente 6 - uso de medicação (0-3)" value={psqi?.componentes.medicacao} />
+        <Linha label="Componente 7 - disfunção diurna (0-3)" value={psqi?.componentes.disfuncaoDiurna} />
+        <Linha label="Outro motivo relatado" value={anamnese.psqi.outro_motivo_texto} />
+        {!psqi && <Linha label="Status" value="PSQI incompleto - respostas insuficientes para calcular o escore." />}
       </Capitulo>
 
       <Capitulo titulo="Estilo de vida">
@@ -677,6 +685,8 @@ function AbaAnamnese({ anamnese, status }: { anamnese: Anamnese; status: string 
           <Linha label="Dor noturna" value={anamnese.dor.dor_noturna === null ? null : anamnese.dor.dor_noturna ? "Sim" : "Não"} />
           <Linha label="Tratamentos anteriores" value={anamnese.dor.tratamentos_anteriores} />
           <Linha label="Bandeiras vermelhas" value={anamnese.dor.bandeiras_vermelhas} />
+          <Linha label="TSK-11 - cinesiofobia (11-44)" value={tsk11 ? `${tsk11}${tsk11 >= 26 ? " (faixa comumente citada como alta cinesiofobia)" : ""}` : null} />
+          <Linha label="PSEQ - autoeficácia para dor (0-60)" value={pseq ? `${pseq}${pseq < 40 ? " (faixa comumente citada como baixa autoeficácia)" : ""}` : null} />
         </Capitulo>
       )}
 

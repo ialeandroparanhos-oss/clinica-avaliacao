@@ -12,7 +12,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import type { PacienteRow } from "@/lib/anamnese/types";
-import { escorePSS10, somaSemNulos, rotuloNivel } from "@/lib/anamnese/alerts";
+import { escorePSS10, escoreTSK11, somaSemNulos, rotuloNivel } from "@/lib/anamnese/alerts";
+import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { calcularPerfilIntegrado, type Classificacao } from "@/lib/integracao/perfil";
 import { HORIZONTES, type Plano } from "@/lib/integracao/plano";
 
@@ -99,6 +100,9 @@ export default function RelatorioTecnico() {
   const pss10 = escorePSS10(anamnese.saude_mental.pss10);
   const gad7 = somaSemNulos(anamnese.saude_mental.gad7);
   const phq9 = somaSemNulos(anamnese.saude_mental.phq9);
+  const psqi = calcularPSQI(anamnese);
+  const tsk11 = escoreTSK11(anamnese.dor.tsk11);
+  const pseq = somaSemNulos(anamnese.dor.pseq);
 
   return (
     <>
@@ -155,9 +159,10 @@ export default function RelatorioTecnico() {
             <L label="Histórico de saúde" value={anamnese.historico_saude.doencas} />
             <L label="Queda em 12 meses" value={anamnese.historico_saude.quedas_12m === true ? "Sim" : anamnese.historico_saude.quedas_12m === false ? "Não" : null} />
             <L label="Atividade física atual" value={anamnese.atividade_fisica.pratica_atual === true ? anamnese.atividade_fisica.modalidades || "Sim" : anamnese.atividade_fisica.pratica_atual === false ? "Sedentário(a)" : null} />
-            <L label="Qualidade do sono (1-5)" value={anamnese.sono.qualidade_percebida} />
+            <L label="PSQI - escore global (0-21)" value={psqi ? psqi.global : anamnese.sono.qualidade_percebida ? `${anamnese.sono.qualidade_percebida}/5 (triagem simplificada, PSQI incompleto)` : null} />
             <L label="Estresse percebido (0-10)" value={anamnese.estilo_vida.estresse_percebido} />
             <L label="Dor atual" value={anamnese.dor.tem_dor === true ? `${anamnese.dor.localizacoes.join(", ")} (NRS ${anamnese.dor.intensidade_nrs ?? "–"})` : anamnese.dor.tem_dor === false ? "Nega dor" : null} />
+            <L label="TSK-11 / PSEQ" value={anamnese.dor.tem_dor === true ? `${tsk11 ?? "–"} / ${pseq ?? "–"}` : null} />
             <L label="PSS-10 / GAD-7 / PHQ-9" value={`${pss10 ?? "–"} / ${gad7 ?? "–"} / ${phq9 ?? "–"}`} />
           </dl>
         </Secao>
