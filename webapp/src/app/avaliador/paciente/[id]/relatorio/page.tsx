@@ -224,6 +224,8 @@ export default function RelatorioTecnico() {
             <L label="Velocidade de marcha" value={paciente.funcional?.velocidade_marcha_ms ? `${paciente.funcional.velocidade_marcha_ms} m/s` : null} />
             <L label="TC6" value={paciente.funcional?.tc6_metros ? `${paciente.funcional.tc6_metros} m` : null} />
             <L label="Dinamometria D/E" value={paciente.funcional?.dinamometria_d_kg ? `${paciente.funcional.dinamometria_d_kg} / ${paciente.funcional.dinamometria_e_kg || "–"} kgf` : null} />
+            <L label="Push-up test" value={paciente.funcional?.pushup_reps ? `${paciente.funcional.pushup_reps} reps` : null} />
+            <L label="Arm Curl Test" value={paciente.funcional?.arm_curl_reps ? `${paciente.funcional.arm_curl_reps} reps/30s` : null} />
             <L
               label="RM submáximo (estimado)"
               value={

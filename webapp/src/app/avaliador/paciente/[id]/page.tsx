@@ -837,13 +837,20 @@ function NumField({
   onChange,
   suffix,
 }: {
-  label: string;
+  label: React.ReactNode;
   value: string;
   onChange: (v: string) => void;
   suffix?: string;
 }) {
   return (
-    <Field label={suffix ? `${label} (${suffix})` : label}>
+    <Field
+      label={
+        <>
+          {label}
+          {suffix && <span> ({suffix})</span>}
+        </>
+      }
+    >
       <TextInput inputMode="decimal" value={value} onChange={(e) => onChange(e.target.value)} />
     </Field>
   );
@@ -1129,6 +1136,80 @@ function estimarRM(cargaKg: string, repeticoes: string): string | null {
   return rm.toFixed(1);
 }
 
+// Instruções de aplicação em português, para o avaliador consultar sem sair
+// da tela - não é protocolo oficial fechado, é um lembrete rápido de campo.
+const INSTRUCOES_TESTE: Record<string, string> = {
+  chair_stand:
+    "Paciente sentado numa cadeira sem apoio de braço, com os braços cruzados sobre o peito. Conte quantas vezes ele consegue levantar e sentar completamente em 30 segundos.",
+  five_sts:
+    "Mesma posição do Chair Stand. Cronometre o tempo que o paciente leva para levantar e sentar 5 vezes seguidas, o mais rápido possível, sem usar os braços.",
+  tug: "Paciente sentado numa cadeira com apoio de braço. Ao sinal, ele se levanta, caminha 3 metros, dá a volta, retorna e senta novamente. Cronometre o tempo total.",
+  apoio_unipodal:
+    "Peça para o paciente ficar em pé sobre uma perna, sem apoio, olhos abertos. Cronometre até ele perder o equilíbrio ou tocar o chão com o outro pé. Repita para o outro lado.",
+  velocidade_marcha:
+    "Marque um percurso de 4 a 10 metros em piso plano. Peça para o paciente caminhar no ritmo habitual dele. Cronometre e divida a distância pelo tempo (m/s).",
+  tc6: "Em um corredor marcado (geralmente 30m), peça para o paciente caminhar o mais rápido possível, sem correr, durante 6 minutos. Registre a distância total percorrida.",
+  dinamometria:
+    "Com o dinamômetro de preensão manual, braço ao lado do corpo, cotovelo a 90°. Peça para apertar com força máxima. Registre o melhor de 2-3 tentativas por lado.",
+  pushup:
+    "Posição de flexão de braço padrão, ou apoiada nos joelhos (modificada) quando necessário. Conte o máximo de repetições com boa técnica, sem pausa prolongada, até a falha ou esgotamento.",
+  arm_curl:
+    "Sentado, com halter leve (referência: ~2kg mulheres / ~3kg homens, ajuste pelo condicionamento do paciente). Conte quantas flexões de cotovelo completas ele consegue fazer em 30 segundos (Arm Curl Test, Senior Fitness Test).",
+  rm_submaximo:
+    "Escolha uma carga que o paciente consiga mover entre 3 e 10 vezes com boa técnica, perto da falha. Registre a carga e as repetições - o sistema estima o 1RM pela fórmula de Brzycki.",
+  falha_carga_fixa:
+    "Escolha uma carga fixa (geralmente mais leve que o teste de RM submáximo) e peça o máximo de repetições possível com boa técnica até a falha. Útil para acompanhar resistência muscular com a mesma carga ao longo do tempo.",
+  goniometria:
+    "Posicione o goniômetro no eixo articular, alinhando os braços fixo e móvel conforme o movimento avaliado. Registre o ângulo máximo atingido (anote nas observações se foi ativo ou passivo).",
+  agachamento_livre:
+    "Peça para o paciente agachar livremente, sem carga, até onde conseguir com conforto. Observe profundidade, alinhamento do joelho (valgo/varo), compensações no tronco e nos tornozelos.",
+  core_prancha:
+    "Paciente em posição de prancha (apoio nos antebraços e pés, corpo alinhado da cabeça aos calcanhares). Cronometre até ele perder a postura correta (quadril cair ou subir, tremores excessivos).",
+};
+
+function InfoPopover({ texto }: { texto: string }) {
+  const [aberto, setAberto] = useState(false);
+  return (
+    <span className="relative inline-block align-middle ml-1">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          setAberto((v) => !v);
+        }}
+        className="w-4 h-4 inline-flex items-center justify-center rounded-full bg-accent/15 text-accent-dark text-[10px] font-bold leading-none hover:bg-accent/25"
+        aria-label="Como aplicar este teste"
+      >
+        i
+      </button>
+      {aberto && (
+        <span className="absolute z-20 top-6 left-0 w-64 rounded-lg border border-border bg-surface shadow-lg p-3 text-xs font-normal normal-case text-ink whitespace-normal block text-left">
+          {texto}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              setAberto(false);
+            }}
+            className="block mt-2 text-accent-dark text-xs font-medium"
+          >
+            Fechar
+          </button>
+        </span>
+      )}
+    </span>
+  );
+}
+
+function RotuloComInfo({ texto, chave }: { texto: string; chave: keyof typeof INSTRUCOES_TESTE }) {
+  return (
+    <>
+      {texto}
+      <InfoPopover texto={INSTRUCOES_TESTE[chave]} />
+    </>
+  );
+}
+
 function PainelRecomendacaoTestes({ paciente }: { paciente: PacienteRow }) {
   const tags = useMemo(() => calcularTagsPerfil(paciente), [paciente]);
   const recomendados = useMemo(() => gruposRecomendados(tags), [tags]);
@@ -1171,6 +1252,8 @@ function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacienteId: st
     tc6_metros: dados?.tc6_metros ?? "",
     dinamometria_d_kg: dados?.dinamometria_d_kg ?? "",
     dinamometria_e_kg: dados?.dinamometria_e_kg ?? "",
+    pushup_reps: dados?.pushup_reps ?? "",
+    arm_curl_reps: dados?.arm_curl_reps ?? "",
     rm_exercicio: dados?.rm_exercicio ?? "",
     rm_carga_kg: dados?.rm_carga_kg ?? "",
     rm_repeticoes: dados?.rm_repeticoes ?? "",
@@ -1202,19 +1285,32 @@ function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacienteId: st
     <div className="rounded-2xl border border-border bg-surface p-5 space-y-5">
       <PainelRecomendacaoTestes paciente={paciente} />
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <NumField label="Chair Stand" suffix="reps/30s" value={d.chair_stand_reps} onChange={(v) => set("chair_stand_reps", v)} />
-        <NumField label="5x Sit-to-Stand" suffix="s" value={d.five_sts_seg} onChange={(v) => set("five_sts_seg", v)} />
-        <NumField label="TUG" suffix="s" value={d.tug_seg} onChange={(v) => set("tug_seg", v)} />
-        <NumField label="Apoio unipodal D" suffix="s" value={d.apoio_unipodal_d_seg} onChange={(v) => set("apoio_unipodal_d_seg", v)} />
-        <NumField label="Apoio unipodal E" suffix="s" value={d.apoio_unipodal_e_seg} onChange={(v) => set("apoio_unipodal_e_seg", v)} />
-        <NumField label="Velocidade de marcha" suffix="m/s" value={d.velocidade_marcha_ms} onChange={(v) => set("velocidade_marcha_ms", v)} />
-        <NumField label="TC6" suffix="m" value={d.tc6_metros} onChange={(v) => set("tc6_metros", v)} />
-        <NumField label="Dinamometria D" suffix="kgf" value={d.dinamometria_d_kg} onChange={(v) => set("dinamometria_d_kg", v)} />
-        <NumField label="Dinamometria E" suffix="kgf" value={d.dinamometria_e_kg} onChange={(v) => set("dinamometria_e_kg", v)} />
+        <NumField label={<RotuloComInfo texto="Chair Stand" chave="chair_stand" />} suffix="reps/30s" value={d.chair_stand_reps} onChange={(v) => set("chair_stand_reps", v)} />
+        <NumField label={<RotuloComInfo texto="5x Sit-to-Stand" chave="five_sts" />} suffix="s" value={d.five_sts_seg} onChange={(v) => set("five_sts_seg", v)} />
+        <NumField label={<RotuloComInfo texto="TUG" chave="tug" />} suffix="s" value={d.tug_seg} onChange={(v) => set("tug_seg", v)} />
+        <NumField label={<RotuloComInfo texto="Apoio unipodal D" chave="apoio_unipodal" />} suffix="s" value={d.apoio_unipodal_d_seg} onChange={(v) => set("apoio_unipodal_d_seg", v)} />
+        <NumField label={<RotuloComInfo texto="Apoio unipodal E" chave="apoio_unipodal" />} suffix="s" value={d.apoio_unipodal_e_seg} onChange={(v) => set("apoio_unipodal_e_seg", v)} />
+        <NumField label={<RotuloComInfo texto="Velocidade de marcha" chave="velocidade_marcha" />} suffix="m/s" value={d.velocidade_marcha_ms} onChange={(v) => set("velocidade_marcha_ms", v)} />
+        <NumField label={<RotuloComInfo texto="TC6" chave="tc6" />} suffix="m" value={d.tc6_metros} onChange={(v) => set("tc6_metros", v)} />
+        <NumField label={<RotuloComInfo texto="Dinamometria D" chave="dinamometria" />} suffix="kgf" value={d.dinamometria_d_kg} onChange={(v) => set("dinamometria_d_kg", v)} />
+        <NumField label={<RotuloComInfo texto="Dinamometria E" chave="dinamometria" />} suffix="kgf" value={d.dinamometria_e_kg} onChange={(v) => set("dinamometria_e_kg", v)} />
       </div>
 
       <div className="pt-4 border-t border-border">
-        <h4 className="font-display text-base text-ink mb-1">RM submáximo (estimado)</h4>
+        <h4 className="font-display text-base text-ink mb-1">Força sem dinamômetro (exercícios de musculação)</h4>
+        <p className="text-xs text-muted mb-3">
+          Alternativas validadas para estimar força/resistência muscular sem dinamômetro e sem teste de 1RM direto.
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <NumField label={<RotuloComInfo texto="Push-up test" chave="pushup" />} suffix="reps" value={d.pushup_reps} onChange={(v) => set("pushup_reps", v)} />
+          <NumField label={<RotuloComInfo texto="Arm Curl Test" chave="arm_curl" />} suffix="reps/30s" value={d.arm_curl_reps} onChange={(v) => set("arm_curl_reps", v)} />
+        </div>
+      </div>
+
+      <div className="pt-4 border-t border-border">
+        <h4 className="font-display text-base text-ink mb-1">
+          <RotuloComInfo texto="RM submáximo (estimado)" chave="rm_submaximo" />
+        </h4>
         <p className="text-xs text-muted mb-3">
           Fórmula de Brzycki - estimativa de campo, mais confiável até ~10 repetições. Nunca substitui um teste
           direto de 1RM.
@@ -1234,7 +1330,9 @@ function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacienteId: st
       </div>
 
       <div className="pt-4 border-t border-border">
-        <h4 className="font-display text-base text-ink mb-1">Repetições até a falha (carga fixa)</h4>
+        <h4 className="font-display text-base text-ink mb-1">
+          <RotuloComInfo texto="Repetições até a falha (carga fixa)" chave="falha_carga_fixa" />
+        </h4>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <Field label="Exercício">
             <TextInput value={d.falha_exercicio} onChange={(e) => set("falha_exercicio", e.target.value)} />
@@ -1246,7 +1344,9 @@ function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacienteId: st
 
       <div className="pt-4 border-t border-border">
         <div className="flex items-center justify-between mb-1">
-          <h4 className="font-display text-base text-ink">Amplitude articular (goniometria)</h4>
+          <h4 className="font-display text-base text-ink">
+            <RotuloComInfo texto="Amplitude articular (goniometria)" chave="goniometria" />
+          </h4>
           <button type="button" onClick={adicionarGoniometria} className="text-sm font-medium text-accent hover:underline">
             + Adicionar articulação
           </button>
@@ -1295,11 +1395,11 @@ function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacienteId: st
 
       <div className="pt-4 border-t border-border space-y-4">
         <h4 className="font-display text-base text-ink">Testes funcionais observacionais</h4>
-        <Field label="Agachamento livre - observações (profundidade, valgo dinâmico, compensações...)">
+        <Field label={<RotuloComInfo texto="Agachamento livre - observações (profundidade, valgo dinâmico, compensações...)" chave="agachamento_livre" />}>
           <TextArea value={d.agachamento_livre_obs} onChange={(e) => set("agachamento_livre_obs", e.target.value)} />
         </Field>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <NumField label="Estabilidade do core - prancha" suffix="s" value={d.core_prancha_seg} onChange={(v) => set("core_prancha_seg", v)} />
+          <NumField label={<RotuloComInfo texto="Estabilidade do core - prancha" chave="core_prancha" />} suffix="s" value={d.core_prancha_seg} onChange={(v) => set("core_prancha_seg", v)} />
         </div>
         <Field label="Estabilidade do core - observações">
           <TextArea value={d.core_estabilidade_obs} onChange={(e) => set("core_estabilidade_obs", e.target.value)} />
