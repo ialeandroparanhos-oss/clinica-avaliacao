@@ -15,6 +15,8 @@ import { calcularPerfilIntegrado, type Classificacao, type DomainResult } from "
 import { HORIZONTES, sugerirPlano, type Encaminhamento, type Horizonte, type ItemPlano, type Plano } from "@/lib/integracao/plano";
 import { INDICADORES, extrairSerie, type LinhaHistorico } from "@/lib/integracao/historico";
 import { calcularTagsPerfil, gruposRecomendados, ROTULOS_GRUPO, type GrupoTesteFuncional } from "@/lib/integracao/tagsPerfil";
+import { detectarDiscrepancias } from "@/lib/integracao/discrepancias";
+import { conectarObjetivo } from "@/lib/integracao/objetivo";
 
 type Aba = "perfil" | "plano" | "reavaliacao" | "anamnese" | "fisica" | "postural" | "funcional";
 
@@ -144,6 +146,8 @@ function CartaoDominio({ dominio }: { dominio: DomainResult }) {
 
 function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
   const perfil = useMemo(() => calcularPerfilIntegrado(paciente), [paciente]);
+  const discrepancias = useMemo(() => detectarDiscrepancias(paciente), [paciente]);
+  const motivo = mesclarComPadrao(paciente.anamnese).motivo;
   const confiancaLabel = { alta: "Alta", media: "Média", baixa: "Baixa" }[perfil.confianca];
   const confiancaClasse = {
     alta: "bg-accent-soft text-accent-dark",
@@ -170,6 +174,24 @@ function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
           ))}
         </div>
       </div>
+
+      {discrepancias.length > 0 && (
+        <div className="rounded-2xl border border-info/30 bg-info-soft p-5">
+          <h4 className="font-display text-base text-info mb-2">Discrepâncias a investigar</h4>
+          <p className="text-xs text-info/80 mb-3">
+            Pontos onde o autorrelato do paciente e os achados objetivos (fotos, observações, testes) parecem não
+            bater — não é acusação de que o paciente "errou", é um convite a conversar sobre isso na devolutiva.
+          </p>
+          <ul className="space-y-2 text-sm text-info">
+            {discrepancias.map((disc, i) => (
+              <li key={i}>
+                <strong>{disc.titulo}</strong>
+                <p className="text-info/80">{disc.descricao}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {perfil.riscos.length > 0 && (
         <div className="rounded-2xl border border-danger/30 bg-danger-soft p-5">
@@ -221,17 +243,26 @@ function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
         {perfil.prioridades.length === 0 ? (
           <p className="text-sm text-muted">Nenhuma prioridade identificada com os dados atuais.</p>
         ) : (
-          <ol className="space-y-1 text-sm text-ink list-decimal list-inside">
-            {perfil.prioridades.map((d) => (
-              <li key={d.chave}>
-                <strong>{d.titulo}</strong> — {d.justificativa}
-              </li>
-            ))}
+          <ol className="space-y-2 text-sm text-ink list-decimal list-inside">
+            {perfil.prioridades.map((d) => {
+              const conexao = conectarObjetivo(d, motivo);
+              return (
+                <li key={d.chave}>
+                  <strong>{d.titulo}</strong> — {d.justificativa}
+                  {conexao && (
+                    <p className="text-xs text-accent-dark mt-0.5 ml-5 italic">
+                      Conecta com o que o paciente disse em "Motivo da procura": "{conexao}"
+                    </p>
+                  )}
+                </li>
+              );
+            })}
           </ol>
         )}
         <p className="text-xs text-muted mt-3">
-          Conecte estas prioridades ao objetivo declarado pelo paciente (capítulo "Motivo da procura" da anamnese)
-          na hora de montar o plano — a IA não faz essa conexão fina automaticamente.
+          Quando há uma palavra-chave em comum com o que o paciente escreveu no capítulo "Motivo da procura", a
+          conexão aparece acima — é um apoio heurístico para começar a conversa, não uma ligação garantida. O
+          profissional sempre confirma e refina essa conexão ao montar o plano.
         </p>
       </div>
     </div>
