@@ -9,6 +9,7 @@ import type { Anamnese, PacienteRow } from "@/lib/anamnese/types";
 import { escorePSS10, escoreTSK11, somaSemNulos, rotuloNivel } from "@/lib/anamnese/alerts";
 import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { AlertBanner, Field, TextArea, TextInput } from "@/components/forms";
+import { SerieChart } from "@/components/SerieChart";
 import { perguntasParQ } from "@/lib/anamnese/questionnaires";
 import { calcularPerfilIntegrado, type Classificacao, type DomainResult } from "@/lib/integracao/perfil";
 import { HORIZONTES, sugerirPlano, type Encaminhamento, type Horizonte, type ItemPlano, type Plano } from "@/lib/integracao/plano";
@@ -49,12 +50,20 @@ export default function DetalhePaciente() {
             {new Date(paciente.data_nascimento).toLocaleDateString("pt-BR")} · {paciente.telefone || "sem telefone"}
           </p>
         </div>
-        <Link
-          href={`/avaliador/paciente/${paciente.id}/relatorio`}
-          className="text-sm font-medium text-accent hover:underline whitespace-nowrap pt-1"
-        >
-          Ver relatório técnico →
-        </Link>
+        <div className="flex flex-col items-end gap-1 pt-1">
+          <Link
+            href={`/avaliador/paciente/${paciente.id}/relatorio`}
+            className="text-sm font-medium text-accent hover:underline whitespace-nowrap"
+          >
+            Ver relatório técnico →
+          </Link>
+          <Link
+            href={`/avaliador/paciente/${paciente.id}/relatorio-paciente`}
+            className="text-sm font-medium text-accent hover:underline whitespace-nowrap"
+          >
+            Ver versão para o paciente →
+          </Link>
+        </div>
       </div>
 
       {paciente.alertas?.length > 0 && (
@@ -490,6 +499,9 @@ function AbaReavaliacao({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo:
         indicadoresComDados.map(({ ind, serie }) => {
           const antes = serie[0];
           const atual = serie[serie.length - 1];
+          const metaTexto = metas[ind.chave];
+          const metaNum = metaTexto !== undefined && metaTexto !== "" ? Number(metaTexto) : undefined;
+          const metaValida = metaNum !== undefined && Number.isFinite(metaNum) ? metaNum : undefined;
           return (
             <div key={ind.chave} className="rounded-2xl border border-border bg-surface p-5">
               <div className="flex items-center justify-between mb-3">
@@ -520,6 +532,12 @@ function AbaReavaliacao({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo:
                   />
                 </div>
               </div>
+
+              {serie.length > 1 && (
+                <div className="mb-4">
+                  <SerieChart serie={serie} meta={metaValida} />
+                </div>
+              )}
 
               {serie.length > 1 && (
                 <details className="text-xs text-muted">
