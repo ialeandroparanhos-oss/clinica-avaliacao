@@ -166,6 +166,7 @@ export default function PacientePage() {
       <main className="min-h-screen flex items-center justify-center px-4 py-12">
         <form onSubmit={identificar} className="w-full max-w-md rounded-2xl border border-border bg-surface p-8 space-y-5">
           <div>
+            <img src="/logo-forma-e-fisio.jpg" alt="Forma e Fisio" className="h-14 w-14 rounded-xl mb-4" />
             <p className="text-xs font-semibold tracking-widest text-accent uppercase mb-2">Anamnese</p>
             <h1 className="font-display text-2xl text-ink">Vamos começar com sua identificação</h1>
             <p className="text-muted text-sm mt-2">
