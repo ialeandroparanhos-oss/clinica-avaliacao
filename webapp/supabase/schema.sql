@@ -49,6 +49,7 @@ create table if not exists pacientes (
   fisica jsonb not null default '{}'::jsonb,
   postural jsonb not null default '{}'::jsonb,
   funcional jsonb not null default '{}'::jsonb,
+  cardio jsonb not null default '{}'::jsonb,
   plano jsonb not null default '{}'::jsonb,
 
   criado_em timestamptz not null default now(),
@@ -80,6 +81,10 @@ create policy "avaliadores_update" on pacientes
 drop policy if exists "avaliadores_insert" on pacientes;
 create policy "avaliadores_insert" on pacientes
   for insert with check (auth.role() = 'authenticated');
+
+drop policy if exists "avaliadores_delete" on pacientes;
+create policy "avaliadores_delete" on pacientes
+  for delete using (auth.role() = 'authenticated');
 
 -- ----------------------------------------------------------------------------
 -- RPC: paciente se identifica (nome + data de nascimento). Cria o registro
@@ -185,7 +190,7 @@ grant execute on function save_anamnese(uuid, text, date, jsonb, text, jsonb) to
 create table if not exists avaliacoes_historico (
   id uuid primary key default gen_random_uuid(),
   paciente_id uuid not null references pacientes(id) on delete cascade,
-  tipo text not null check (tipo in ('fisica', 'postural', 'funcional')),
+  tipo text not null check (tipo in ('fisica', 'postural', 'funcional', 'cardio')),
   dados jsonb not null,
   avaliador text,
   criado_em timestamptz not null default now()
@@ -203,6 +208,10 @@ create policy "avaliadores_select_historico" on avaliacoes_historico
 drop policy if exists "avaliadores_insert_historico" on avaliacoes_historico;
 create policy "avaliadores_insert_historico" on avaliacoes_historico
   for insert with check (auth.role() = 'authenticated');
+
+drop policy if exists "avaliadores_delete_historico" on avaliacoes_historico;
+create policy "avaliadores_delete_historico" on avaliacoes_historico
+  for delete using (auth.role() = 'authenticated');
 
 -- ----------------------------------------------------------------------------
 -- Licença da clínica: um único registro (id=1) que liga/desliga o acesso

@@ -40,6 +40,7 @@ export default function DashboardAvaliador() {
   const [pacientes, setPacientes] = useState<LinhaPaciente[]>([]);
   const [busca, setBusca] = useState("");
   const [loading, setLoading] = useState(true);
+  const [excluindoId, setExcluindoId] = useState<string | null>(null);
 
   useEffect(() => {
     carregar();
@@ -54,6 +55,29 @@ export default function DashboardAvaliador() {
       .limit(500);
     setPacientes((data as LinhaPaciente[]) ?? []);
     setLoading(false);
+  }
+
+  async function excluirPaciente(p: LinhaPaciente) {
+    const confirmado = window.confirm(
+      `Excluir ${p.nome} e todos os dados da avaliação (anamnese, física, postural, funcional, cardio e histórico)?\n\nEsta ação não pode ser desfeita.`
+    );
+    if (!confirmado) return;
+
+    setExcluindoId(p.id);
+    try {
+      const { data: arquivos } = await supabase.storage.from("fotos-posturais").list(p.id);
+      if (arquivos && arquivos.length > 0) {
+        await supabase.storage.from("fotos-posturais").remove(arquivos.map((a) => `${p.id}/${a.name}`));
+      }
+      const { error } = await supabase.from("pacientes").delete().eq("id", p.id);
+      if (error) {
+        window.alert("Não foi possível excluir: " + error.message);
+        return;
+      }
+      setPacientes((prev) => prev.filter((x) => x.id !== p.id));
+    } finally {
+      setExcluindoId(null);
+    }
   }
 
   const filtrados = pacientes.filter((p) => p.nome.toLowerCase().includes(busca.toLowerCase()));
@@ -90,6 +114,7 @@ export default function DashboardAvaliador() {
                 <th className="px-4 py-3 font-medium">Anamnese</th>
                 <th className="px-4 py-3 font-medium">Alertas</th>
                 <th className="px-4 py-3 font-medium">Atualizado</th>
+                <th className="px-4 py-3 font-medium"></th>
               </tr>
             </thead>
             <tbody>
@@ -122,6 +147,16 @@ export default function DashboardAvaliador() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-muted text-xs">{new Date(p.atualizado_em).toLocaleString("pt-BR")}</td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        type="button"
+                        onClick={() => excluirPaciente(p)}
+                        disabled={excluindoId === p.id}
+                        className="text-xs font-medium text-muted hover:text-danger disabled:opacity-50"
+                      >
+                        {excluindoId === p.id ? "Excluindo..." : "Excluir"}
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
