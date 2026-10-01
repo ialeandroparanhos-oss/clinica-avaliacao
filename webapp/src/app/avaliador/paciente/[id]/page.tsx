@@ -1600,6 +1600,12 @@ const INSTRUCOES_TESTE: Record<string, string> = {
     "Sentado na ponta de uma cadeira, uma perna estendida com o calcanhar no chão, a outra dobrada. Ele se inclina à frente tentando tocar a ponta do pé da perna estendida. Meça a distância entre a ponta dos dedos e a ponta do pé (negativo se não alcançar, positivo se ultrapassar) - adaptação para idosos (Senior Fitness Test, Rikli & Jones).",
   back_scratch:
     "Uma mão por cima do ombro (palma nas costas, dedos para baixo) e a outra por trás da cintura (palma para fora, dedos para cima), tentando tocar os dedos das duas mãos atrás das costas. Meça a distância entre os dedos médios (negativo = não se tocam, positivo = sobrepõem). Repita dos dois lados (Senior Fitness Test, Rikli & Jones).",
+  bruce_protocolo:
+    "Teste progressivo em esteira com inclinação, 7 estágios de 3 minutos cada (velocidade e inclinação aumentam a cada estágio). Continue até o paciente atingir exaustão voluntária ou um critério de interrupção. Registre a FC ao final de cada estágio completado e o tempo total até a parada (em minutos decimais, ex.: 9min30s = 9.5).",
+  rampa_protocolo:
+    "Esteira sem inclinação (0%). Comece numa velocidade confortável (ex.: 6-8 km/h) e aumente cerca de 1 km/h a cada 1-2 minutos, sem pausas, até a exaustão. A velocidade do último estágio completado é a vVO2máx.",
+  cooper_protocolo:
+    "Teste de campo: o paciente percorre a maior distância possível em 12 minutos, correndo ou caminhando conforme sua capacidade, em pista ou esteira sem inclinação. Registre a distância total percorrida.",
 };
 
 function InfoPopover({ texto }: { texto: string }) {
@@ -1969,7 +1975,9 @@ function AbaCardio({ pacienteId, dados, paciente, onSalvo }: { pacienteId: strin
 
       {d.protocolo === "bruce" && (
         <div className="pt-2">
-          <h4 className="font-display text-base text-ink mb-2">Protocolo de Bruce (7 estágios, 3 min cada)</h4>
+          <h4 className="font-display text-base text-ink mb-2">
+            <RotuloComInfo texto="Protocolo de Bruce (7 estágios, 3 min cada)" chave="bruce_protocolo" />
+          </h4>
           <div className="overflow-x-auto mb-3">
             <table className="w-full text-sm">
               <thead>
@@ -2013,15 +2021,25 @@ function AbaCardio({ pacienteId, dados, paciente, onSalvo }: { pacienteId: strin
       )}
 
       {d.protocolo === "rampa" && (
-        <div className="pt-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <NumField label="Velocidade final atingida (vVO2máx)" suffix="km/h" value={d.rampa_velocidade_final_kmh} onChange={(v) => set("rampa_velocidade_final_kmh", v)} />
-          <NumField label="Tempo total até a exaustão" suffix="min" value={d.rampa_tempo_total_min} onChange={(v) => set("rampa_tempo_total_min", v)} />
+        <div className="pt-2">
+          <h4 className="font-display text-base text-ink mb-2">
+            <RotuloComInfo texto="Rampa de velocidade (sem inclinação)" chave="rampa_protocolo" />
+          </h4>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <NumField label="Velocidade final atingida (vVO2máx)" suffix="km/h" value={d.rampa_velocidade_final_kmh} onChange={(v) => set("rampa_velocidade_final_kmh", v)} />
+            <NumField label="Tempo total até a exaustão" suffix="min" value={d.rampa_tempo_total_min} onChange={(v) => set("rampa_tempo_total_min", v)} />
+          </div>
         </div>
       )}
 
       {d.protocolo === "cooper" && (
-        <div className="pt-2 max-w-xs">
-          <NumField label="Distância percorrida em 12 min" suffix="m" value={d.cooper_distancia_m} onChange={(v) => set("cooper_distancia_m", v)} />
+        <div className="pt-2">
+          <h4 className="font-display text-base text-ink mb-2">
+            <RotuloComInfo texto="Teste de Cooper (12 minutos)" chave="cooper_protocolo" />
+          </h4>
+          <div className="max-w-xs">
+            <NumField label="Distância percorrida em 12 min" suffix="m" value={d.cooper_distancia_m} onChange={(v) => set("cooper_distancia_m", v)} />
+          </div>
         </div>
       )}
 
