@@ -443,6 +443,32 @@ export default function PacientePage() {
                   />
                 </Field>
               )}
+
+              <p className="font-medium text-ink pt-2">Mais algumas perguntas rápidas sobre saúde cardiovascular</p>
+              <Field label="Você tem diagnóstico de pressão alta (hipertensão)?">
+                <YesNo
+                  value={anamnese.risco_cardiovascular.hipertensao_diagnosticada}
+                  onChange={(v) => set("risco_cardiovascular", { hipertensao_diagnosticada: v })}
+                />
+              </Field>
+              <Field label="Você tem colesterol alto ou usa medicação para colesterol (estatina)?">
+                <YesNo
+                  value={anamnese.risco_cardiovascular.colesterol_alto_ou_usa_estatina}
+                  onChange={(v) => set("risco_cardiovascular", { colesterol_alto_ou_usa_estatina: v })}
+                />
+              </Field>
+              <Field label="Você sabe se seu HDL (colesterol bom) é alto (acima de 60)?">
+                <YesNo
+                  value={anamnese.risco_cardiovascular.hdl_alto_conhecido}
+                  onChange={(v) => set("risco_cardiovascular", { hdl_alto_conhecido: v })}
+                />
+              </Field>
+              <Field label="Você tem glicemia alterada (pré-diabetes) ou diabetes?">
+                <YesNo
+                  value={anamnese.risco_cardiovascular.glicemia_alterada_ou_diabetes}
+                  onChange={(v) => set("risco_cardiovascular", { glicemia_alterada_ou_diabetes: v })}
+                />
+              </Field>
             </StepShell>
           )}
 

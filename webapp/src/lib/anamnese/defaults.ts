@@ -38,6 +38,12 @@ export const anamneseVazia: Anamnese = {
     tem_outras_condicoes: null,
     outras_condicoes: "",
   },
+  risco_cardiovascular: {
+    hipertensao_diagnosticada: null,
+    colesterol_alto_ou_usa_estatina: null,
+    hdl_alto_conhecido: null,
+    glicemia_alterada_ou_diabetes: null,
+  },
   medicamentos: {
     usa_medicamentos: null,
     lista: [],

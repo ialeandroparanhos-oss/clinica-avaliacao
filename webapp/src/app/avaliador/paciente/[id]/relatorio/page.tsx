@@ -14,6 +14,7 @@ import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import type { PacienteRow } from "@/lib/anamnese/types";
 import { escorePSS10, escoreTSK11, somaSemNulos, rotuloNivel } from "@/lib/anamnese/alerts";
 import { calcularPSQI } from "@/lib/anamnese/psqi";
+import { calcularRiscoCardiovascular } from "@/lib/anamnese/riscoCardiovascular";
 import { calcularPerfilIntegrado, type Classificacao } from "@/lib/integracao/perfil";
 import { HORIZONTES, type Plano } from "@/lib/integracao/plano";
 
@@ -103,6 +104,7 @@ export default function RelatorioTecnico() {
   const psqi = calcularPSQI(anamnese);
   const tsk11 = escoreTSK11(anamnese.dor.tsk11);
   const pseq = somaSemNulos(anamnese.dor.pseq);
+  const riscoCV = calcularRiscoCardiovascular(paciente);
 
   const circCintura = Number(paciente.fisica?.circ_cintura);
   const circQuadril = Number(paciente.fisica?.circ_quadril);
@@ -173,6 +175,14 @@ export default function RelatorioTecnico() {
             <L label="Dor atual" value={anamnese.dor.tem_dor === true ? `${anamnese.dor.localizacoes.join(", ")} (NRS ${anamnese.dor.intensidade_nrs ?? "–"})` : anamnese.dor.tem_dor === false ? "Nega dor" : null} />
             <L label="TSK-11 / PSEQ" value={anamnese.dor.tem_dor === true ? `${tsk11 ?? "–"} / ${pseq ?? "–"}` : null} />
             <L label="PSS-10 / GAD-7 / PHQ-9" value={`${pss10 ?? "–"} / ${gad7 ?? "–"} / ${phq9 ?? "–"}`} />
+            <L
+              label="Risco cardiovascular (triagem ACSM)"
+              value={
+                riscoCV
+                  ? `${{ baixo: "Baixo", moderado: "Moderado", alto: "Alto" }[riscoCV.classificacao]} (${riscoCV.contagem} fator(es))`
+                  : null
+              }
+            />
           </dl>
         </Secao>
 

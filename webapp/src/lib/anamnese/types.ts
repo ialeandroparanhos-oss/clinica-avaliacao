@@ -47,6 +47,14 @@ export type Anamnese = {
     tem_outras_condicoes: boolean | null;
     outras_condicoes: string;
   };
+  // Triagem rápida de risco cardiovascular (fatores de risco ACSM) - do
+  // próprio paciente, não confundir com historico_familiar (parentes).
+  risco_cardiovascular: {
+    hipertensao_diagnosticada: boolean | null;
+    colesterol_alto_ou_usa_estatina: boolean | null;
+    hdl_alto_conhecido: boolean | null; // fator protetor
+    glicemia_alterada_ou_diabetes: boolean | null;
+  };
   medicamentos: {
     usa_medicamentos: boolean | null;
     lista: Medicamento[];

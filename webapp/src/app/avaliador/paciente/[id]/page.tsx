@@ -8,6 +8,7 @@ import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import type { Anamnese, PacienteRow } from "@/lib/anamnese/types";
 import { escorePSS10, escoreTSK11, somaSemNulos, rotuloNivel } from "@/lib/anamnese/alerts";
 import { calcularPSQI } from "@/lib/anamnese/psqi";
+import { calcularRiscoCardiovascular } from "@/lib/anamnese/riscoCardiovascular";
 import { AlertBanner, Field, TextArea, TextInput } from "@/components/forms";
 import { SerieChart } from "@/components/SerieChart";
 import { perguntasParQ } from "@/lib/anamnese/questionnaires";
@@ -112,7 +113,7 @@ export default function DetalhePaciente() {
       {aba === "perfil" && <AbaPerfilIntegrado paciente={paciente} />}
       {aba === "plano" && <AbaPlano paciente={paciente} onSalvo={carregar} />}
       {aba === "reavaliacao" && <AbaReavaliacao paciente={paciente} onSalvo={carregar} />}
-      {aba === "anamnese" && <AbaAnamnese anamnese={anamnese} status={paciente.anamnese_status} />}
+      {aba === "anamnese" && <AbaAnamnese anamnese={anamnese} status={paciente.anamnese_status} paciente={paciente} />}
       {aba === "fisica" && <AbaFisica pacienteId={paciente.id} dados={paciente.fisica} sexo={paciente.sexo} onSalvo={carregar} />}
       {aba === "postural" && <AbaPostural pacienteId={paciente.id} dados={paciente.postural} onSalvo={carregar} />}
       {aba === "funcional" && <AbaFuncional pacienteId={paciente.id} dados={paciente.funcional} paciente={paciente} onSalvo={carregar} />}
@@ -615,7 +616,7 @@ function Capitulo({ titulo, children }: { titulo: string; children: React.ReactN
   );
 }
 
-function AbaAnamnese({ anamnese, status }: { anamnese: Anamnese; status: string }) {
+function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; status: string; paciente: PacienteRow }) {
   const pss10 = escorePSS10(anamnese.saude_mental.pss10);
   const gad7 = somaSemNulos(anamnese.saude_mental.gad7);
   const phq9 = somaSemNulos(anamnese.saude_mental.phq9);
@@ -623,6 +624,7 @@ function AbaAnamnese({ anamnese, status }: { anamnese: Anamnese; status: string 
   const psqi = calcularPSQI(anamnese);
   const tsk11 = escoreTSK11(anamnese.dor.tsk11);
   const pseq = somaSemNulos(anamnese.dor.pseq);
+  const riscoCV = calcularRiscoCardiovascular(paciente);
 
   return (
     <div className="space-y-4">
@@ -659,6 +661,34 @@ function AbaAnamnese({ anamnese, status }: { anamnese: Anamnese; status: string 
         <Linha label="Acompanhamento médico" value={anamnese.historico_saude.acompanhamento_medico} />
         <Linha label="Outras condições" value={anamnese.historico_saude.outras_condicoes} />
       </Capitulo>
+
+      {riscoCV && (
+        <div
+          className={`rounded-2xl border p-5 ${
+            riscoCV.classificacao === "alto"
+              ? "border-danger/30 bg-danger-soft"
+              : riscoCV.classificacao === "moderado"
+                ? "border-warn/30 bg-warn-soft"
+                : "border-accent/30 bg-accent-soft"
+          }`}
+        >
+          <h3 className="font-display text-lg text-ink mb-1">
+            Risco cardiovascular (triagem rápida) —{" "}
+            {{ baixo: "Baixo", moderado: "Moderado", alto: "Alto" }[riscoCV.classificacao]}
+          </h3>
+          <p className="text-sm text-muted mb-2">{riscoCV.justificativa}</p>
+          {riscoCV.fatores.length > 0 && (
+            <p className="text-sm text-ink">
+              <strong>Fatores presentes:</strong> {riscoCV.fatores.map((f) => f.rotulo).join(", ")}
+            </p>
+          )}
+          {riscoCV.fatorProtetor && <p className="text-sm text-ink">HDL alto conhecido - descontado 1 fator de risco.</p>}
+          <p className="text-xs text-muted mt-2">
+            Baseado na estratificação de fatores de risco do ACSM - triagem para apoiar a decisão de liberação
+            médica antes de testes de esforço, nunca um diagnóstico.
+          </p>
+        </div>
+      )}
 
       {anamnese.medicamentos.usa_medicamentos && (
         <Capitulo titulo="Medicamentos">
