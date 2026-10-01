@@ -33,6 +33,36 @@ function L({ label, value }: { label: string; value: any }) {
   );
 }
 
+const BUCKET_FOTOS_POSTURAIS = "fotos-posturais";
+
+function FotoRelatorio({ label, path }: { label: string; path: string | null | undefined }) {
+  const supabase = useMemo(() => createClient(), []);
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelado = false;
+    if (!path) {
+      setUrl(null);
+      return;
+    }
+    supabase.storage
+      .from(BUCKET_FOTOS_POSTURAIS)
+      .createSignedUrl(path, 3600)
+      .then(({ data }) => {
+        if (!cancelado) setUrl(data?.signedUrl ?? null);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [path]);
+  if (!path || !url) return null;
+  return (
+    <div className="space-y-1 break-inside-avoid">
+      <img src={url} alt={label} className="h-40 w-auto rounded-lg border border-border object-cover" />
+      <p className="text-xs text-muted">{label}</p>
+    </div>
+  );
+}
+
 function Secao({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <section className="mb-6 break-inside-avoid">
@@ -145,6 +175,12 @@ export default function RelatorioTecnico() {
         </Secao>
 
         <Secao titulo="3. Avaliação postural e biomecânica">
+          <div className="flex flex-wrap gap-4 mb-3">
+            <FotoRelatorio label="Vista anterior" path={paciente.postural?.foto_anterior_path} />
+            <FotoRelatorio label="Vista posterior" path={paciente.postural?.foto_posterior_path} />
+            <FotoRelatorio label="Vista lateral direita" path={paciente.postural?.foto_lateral_d_path} />
+            <FotoRelatorio label="Vista lateral esquerda" path={paciente.postural?.foto_lateral_e_path} />
+          </div>
           <dl>
             <L label="Vista anterior" value={paciente.postural?.obs_anterior} />
             <L label="Vista posterior" value={paciente.postural?.obs_posterior} />

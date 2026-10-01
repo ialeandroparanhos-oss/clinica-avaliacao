@@ -846,6 +846,99 @@ function AbaFisica({ pacienteId, dados, onSalvo }: { pacienteId: string; dados: 
   );
 }
 
+const BUCKET_FOTOS_POSTURAIS = "fotos-posturais";
+
+function useFotoSignedUrl(path: string): string | null {
+  const supabase = useMemo(() => createClient(), []);
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelado = false;
+    if (!path) {
+      setUrl(null);
+      return;
+    }
+    supabase.storage
+      .from(BUCKET_FOTOS_POSTURAIS)
+      .createSignedUrl(path, 3600)
+      .then(({ data }) => {
+        if (!cancelado) setUrl(data?.signedUrl ?? null);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [path]);
+  return url;
+}
+
+function FotoVista({
+  pacienteId,
+  vista,
+  label,
+  path,
+  onChange,
+}: {
+  pacienteId: string;
+  vista: string;
+  label: string;
+  path: string;
+  onChange: (path: string) => void;
+}) {
+  const supabase = useMemo(() => createClient(), []);
+  const [enviando, setEnviando] = useState(false);
+  const url = useFotoSignedUrl(path);
+
+  async function enviar(file: File) {
+    setEnviando(true);
+    const extensao = file.name.split(".").pop() || "jpg";
+    const caminho = `${pacienteId}/${vista}.${extensao}`;
+    const { error } = await supabase.storage
+      .from(BUCKET_FOTOS_POSTURAIS)
+      .upload(caminho, file, { upsert: true, contentType: file.type });
+    if (!error) onChange(caminho);
+    setEnviando(false);
+  }
+
+  async function remover() {
+    if (!path) return;
+    await supabase.storage.from(BUCKET_FOTOS_POSTURAIS).remove([path]);
+    onChange("");
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-medium text-ink">{label}</p>
+      {url ? (
+        <img src={url} alt={label} className="h-44 w-auto rounded-lg border border-border object-cover" />
+      ) : (
+        <div className="h-44 w-32 rounded-lg border border-dashed border-border flex items-center justify-center text-xs text-muted text-center px-2">
+          Sem foto
+        </div>
+      )}
+      <div className="flex items-center gap-3">
+        <label className="text-sm font-medium text-accent hover:underline cursor-pointer">
+          {enviando ? "Enviando..." : url ? "Substituir" : "Enviar foto"}
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            disabled={enviando}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) enviar(file);
+              e.target.value = "";
+            }}
+          />
+        </label>
+        {url && (
+          <button type="button" onClick={remover} className="text-xs text-muted hover:text-danger">
+            remover
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string; dados: any; onSalvo: () => void }) {
   const [d, setD] = useState<Record<string, string>>({
     obs_anterior: dados?.obs_anterior ?? "",
@@ -853,6 +946,10 @@ function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string; dados
     obs_lateral_d: dados?.obs_lateral_d ?? "",
     obs_lateral_e: dados?.obs_lateral_e ?? "",
     obs_movimento: dados?.obs_movimento ?? "",
+    foto_anterior_path: dados?.foto_anterior_path ?? "",
+    foto_posterior_path: dados?.foto_posterior_path ?? "",
+    foto_lateral_d_path: dados?.foto_lateral_d_path ?? "",
+    foto_lateral_e_path: dados?.foto_lateral_e_path ?? "",
   });
   const { salvar, salvando, ok } = useSalvarSecao(pacienteId, "postural");
   const set = (k: string, v: string) => setD((prev) => ({ ...prev, [k]: v }));
@@ -861,8 +958,15 @@ function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string; dados
     <div className="rounded-2xl border border-border bg-surface p-5 space-y-4">
       <p className="text-sm text-muted">
         Registre observações descritivas (nunca causais) para cada vista - ver protocolo fotográfico
-        padronizado no documento do Agente 4.
+        padronizado no documento do Agente 4. As fotos ficam em um arquivo privado, visível apenas para
+        avaliadores autenticados da clínica.
       </p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <FotoVista pacienteId={pacienteId} vista="anterior" label="Vista anterior" path={d.foto_anterior_path} onChange={(v) => set("foto_anterior_path", v)} />
+        <FotoVista pacienteId={pacienteId} vista="posterior" label="Vista posterior" path={d.foto_posterior_path} onChange={(v) => set("foto_posterior_path", v)} />
+        <FotoVista pacienteId={pacienteId} vista="lateral_d" label="Vista lateral direita" path={d.foto_lateral_d_path} onChange={(v) => set("foto_lateral_d_path", v)} />
+        <FotoVista pacienteId={pacienteId} vista="lateral_e" label="Vista lateral esquerda" path={d.foto_lateral_e_path} onChange={(v) => set("foto_lateral_e_path", v)} />
+      </div>
       <Field label="Vista anterior">
         <TextArea value={d.obs_anterior} onChange={(e) => set("obs_anterior", e.target.value)} />
       </Field>
