@@ -2,7 +2,6 @@ import type { Anamnese } from "./types";
 
 export const anamneseVazia: Anamnese = {
   contexto: {
-    idade: "",
     profissao: "",
     rotina: "",
     jornada_horas: "",

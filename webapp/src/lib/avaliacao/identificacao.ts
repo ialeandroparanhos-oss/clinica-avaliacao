@@ -23,7 +23,7 @@ export function idadeDaDataNascimento(dataNascimento?: string | null, hoje: Date
 }
 
 export function idadeAutomatica(p: PacienteRow): number | null {
-  return idadeDaDataNascimento(p.data_nascimento) ?? paraNumero(p.anamnese?.contexto?.idade);
+  return idadeDaDataNascimento(p.data_nascimento);
 }
 
 export function idadeEfetiva(p: PacienteRow): number | null {

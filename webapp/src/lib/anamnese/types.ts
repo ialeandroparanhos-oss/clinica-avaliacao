@@ -11,7 +11,6 @@ export type Medicamento = {
 
 export type Anamnese = {
   contexto: {
-    idade: string;
     profissao: string;
     rotina: string;
     jornada_horas: string;

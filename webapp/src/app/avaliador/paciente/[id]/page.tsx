@@ -684,7 +684,7 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
       <p className="text-xs text-muted uppercase tracking-wide">Status: {status}</p>
 
       <Capitulo titulo="Contexto">
-        <Linha label="Idade" value={anamnese.contexto.idade} />
+        <Linha label="Idade (da data de nascimento)" value={idadeEfetiva(paciente) !== null ? `${idadeEfetiva(paciente)} anos` : null} />
         <Linha label="Profissão" value={anamnese.contexto.profissao} />
         <Linha label="Rotina" value={anamnese.contexto.rotina} />
         <Linha label="Jornada (h)" value={anamnese.contexto.jornada_horas} />

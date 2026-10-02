@@ -239,13 +239,6 @@ export default function PacientePage() {
         <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8">
           {step === 0 && (
             <StepShell title="Sobre você" subtitle="Um pouco do seu contexto diário.">
-              <Field label="Qual sua idade?">
-                <TextInput
-                  value={anamnese.contexto.idade}
-                  onChange={(e) => set("contexto", { idade: e.target.value })}
-                  placeholder="Ex.: 42"
-                />
-              </Field>
               <Field label="Qual sua profissão?">
                 <TextInput
                   value={anamnese.contexto.profissao}
