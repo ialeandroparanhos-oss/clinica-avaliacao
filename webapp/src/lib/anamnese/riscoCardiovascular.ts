@@ -5,6 +5,8 @@
 // diagnóstico, e nunca substitui avaliação médica quando indicada.
 
 import type { PacienteRow } from "./types";
+import { paraNumero } from "@/lib/numeros";
+import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 
 export type FatorRisco = { chave: string; rotulo: string };
 
@@ -16,22 +18,17 @@ export type ResultadoRiscoCV = {
   justificativa: string;
 };
 
-function num(v: unknown): number | null {
-  if (v === null || v === undefined || v === "") return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-}
+const num = paraNumero;
 
 export function calcularRiscoCardiovascular(paciente: PacienteRow): ResultadoRiscoCV | null {
   const a = paciente.anamnese;
   if (!a) return null;
 
-  const idade = num(a.contexto?.idade);
-  const sexo = (paciente.sexo || "").trim().toLowerCase();
-  const imc =
-    num(paciente.fisica?.peso_kg) && num(paciente.fisica?.altura_cm)
-      ? Number(paciente.fisica.peso_kg) / Math.pow(Number(paciente.fisica.altura_cm) / 100, 2)
-      : null;
+  const idade = idadeEfetiva(paciente);
+  const sexo = sexoEfetivo(paciente);
+  const peso = num(paciente.fisica?.peso_kg);
+  const altura = num(paciente.fisica?.altura_cm);
+  const imc = peso && altura ? peso / Math.pow(altura / 100, 2) : null;
   const circCintura = num(paciente.fisica?.circ_cintura);
   const paSist = num(paciente.fisica?.pa_sistolica);
   const paDiast = num(paciente.fisica?.pa_diastolica);
@@ -39,7 +36,7 @@ export function calcularRiscoCardiovascular(paciente: PacienteRow): ResultadoRis
   const fatores: FatorRisco[] = [];
 
   if (idade !== null) {
-    if ((sexo.startsWith("m") && idade >= 45) || (sexo.startsWith("f") && idade >= 55)) {
+    if ((sexo === "masculino" && idade >= 45) || (sexo === "feminino" && idade >= 55)) {
       fatores.push({ chave: "idade", rotulo: `Idade (${idade} anos)` });
     }
   }
@@ -58,7 +55,7 @@ export function calcularRiscoCardiovascular(paciente: PacienteRow): ResultadoRis
 
   const obesidadeImc = imc !== null && imc >= 30;
   const obesidadeCintura =
-    circCintura !== null && ((sexo.startsWith("m") && circCintura >= 102) || (sexo.startsWith("f") && circCintura >= 88));
+    circCintura !== null && ((sexo === "masculino" && circCintura >= 102) || (sexo === "feminino" && circCintura >= 88));
   if (obesidadeImc || obesidadeCintura) {
     fatores.push({ chave: "obesidade", rotulo: "Obesidade (IMC e/ou circunferência de cintura)" });
   }

@@ -11,6 +11,8 @@
 import type { PacienteRow } from "@/lib/anamnese/types";
 import { escorePSS10, somaSemNulos, escoreCurto } from "@/lib/anamnese/alerts";
 import { calcularPSQI } from "@/lib/anamnese/psqi";
+import { paraNumero } from "@/lib/numeros";
+import { sexoEfetivo } from "@/lib/avaliacao/identificacao";
 
 export type Classificacao = "adequado" | "atencao" | "prioridade" | "investigar";
 
@@ -55,18 +57,7 @@ const TITULOS: Record<DomainKey, string> = {
   funcionalidade: "Funcionalidade",
 };
 
-function num(v: unknown): number | null {
-  if (v === null || v === undefined || v === "") return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-}
-
-function sexoNormalizado(sexo?: string | null): "masculino" | "feminino" | "desconhecido" {
-  const s = (sexo || "").trim().toLowerCase();
-  if (s.startsWith("m")) return "masculino";
-  if (s.startsWith("f")) return "feminino";
-  return "desconhecido";
-}
+const num = paraNumero;
 
 function resultado(chave: DomainKey, classificacao: Classificacao, justificativa: string): DomainResult {
   return { chave, titulo: TITULOS[chave], classificacao, justificativa };
@@ -86,7 +77,7 @@ function avaliarForca(p: PacienteRow): DomainResult {
   }
 
   if (melhorMao !== null) {
-    const sexo = sexoNormalizado(p.sexo);
+    const sexo = sexoEfetivo(p);
     if (sexo === "masculino" && melhorMao < 27) {
       return resultado("forca", "prioridade", `Dinamometria ${melhorMao} kgf, abaixo do corte de força reduzida do EWGSOP2 para homens (27 kgf).`);
     }
@@ -184,7 +175,7 @@ function avaliarComposicaoCorporal(p: PacienteRow): DomainResult {
   const peso = num(p.fisica?.peso_kg);
   const altura = num(p.fisica?.altura_cm);
   const cintura = num(p.fisica?.circ_cintura);
-  const sexo = sexoNormalizado(p.sexo);
+  const sexo = sexoEfetivo(p);
 
   const imc = peso !== null && altura !== null ? peso / Math.pow(altura / 100, 2) : null;
 

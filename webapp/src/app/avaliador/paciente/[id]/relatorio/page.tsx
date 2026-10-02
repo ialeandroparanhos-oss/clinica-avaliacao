@@ -15,7 +15,10 @@ import type { PacienteRow } from "@/lib/anamnese/types";
 import { escorePSS10, escoreTSK11, somaSemNulos, escoreCurto, rotuloNivel } from "@/lib/anamnese/alerts";
 import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { calcularRiscoCardiovascular } from "@/lib/anamnese/riscoCardiovascular";
-import { sexoNormalizado, percentualGorduraIdealSugerido } from "@/lib/avaliacao/composicaoCorporal";
+import { percentualGorduraIdealSugerido } from "@/lib/avaliacao/composicaoCorporal";
+import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
+import { CAMPOS_CIRCUNFERENCIA, calcularMassaMagraRelativa, expansibilidadeToracica } from "@/lib/avaliacao/medidasRegionais";
+import { paraNumero } from "@/lib/numeros";
 import { triarSarcopeniaDinapenia } from "@/lib/integracao/sarcopenia";
 import { vo2maxBruceFoster, vo2maxCooper, metDeVo2, fcMaxTanaka, fcMaxFox } from "@/lib/avaliacao/cardiorrespiratoria";
 import { calcularPerfilIntegrado, type Classificacao } from "@/lib/integracao/perfil";
@@ -111,43 +114,53 @@ export default function RelatorioTecnico() {
   const pseq = somaSemNulos(anamnese.dor.pseq);
   const riscoCV = calcularRiscoCardiovascular(paciente);
   const sarcopenia = triarSarcopeniaDinapenia(paciente);
-  const idadeNum = Number(anamnese.contexto?.idade) || null;
+  const idadeNum = idadeEfetiva(paciente);
 
   const cardio = paciente.cardio ?? {};
-  const vo2max = cardio.vo2max_manual
-    ? Number(cardio.vo2max_manual)
-    : cardio.protocolo === "bruce" && cardio.bruce_tempo_total_min
-      ? vo2maxBruceFoster(Number(cardio.bruce_tempo_total_min))
-      : cardio.protocolo === "cooper" && cardio.cooper_distancia_m
-        ? vo2maxCooper(Number(cardio.cooper_distancia_m))
-        : null;
-  const metCardio = vo2max !== null ? metDeVo2(vo2max) : null;
-  const fcMaxCardio = cardio.fc_maxima_atingida
-    ? Number(cardio.fc_maxima_atingida)
-    : cardio.fc_max_metodo === "tanaka" && idadeNum !== null
-      ? fcMaxTanaka(idadeNum)
-      : cardio.fc_max_metodo === "fox" && idadeNum !== null
-        ? fcMaxFox(idadeNum)
-        : cardio.fc_max_metodo === "manual" && cardio.fc_max_manual
-          ? Number(cardio.fc_max_manual)
+  const vo2maxManual = paraNumero(cardio.vo2max_manual);
+  const bruceTempo = paraNumero(cardio.bruce_tempo_total_min);
+  const cooperDistancia = paraNumero(cardio.cooper_distancia_m);
+  const vo2max =
+    vo2maxManual !== null
+      ? vo2maxManual
+      : cardio.protocolo === "bruce" && bruceTempo !== null
+        ? vo2maxBruceFoster(bruceTempo)
+        : cardio.protocolo === "cooper" && cooperDistancia !== null
+          ? vo2maxCooper(cooperDistancia)
           : null;
+  const metCardio = vo2max !== null ? metDeVo2(vo2max) : null;
+  const fcMaxMedida = paraNumero(cardio.fc_maxima_atingida);
+  const fcMaxManual = paraNumero(cardio.fc_max_manual);
+  const fcMaxCardio =
+    fcMaxMedida !== null
+      ? fcMaxMedida
+      : cardio.fc_max_metodo === "tanaka" && idadeNum !== null
+        ? fcMaxTanaka(idadeNum)
+        : cardio.fc_max_metodo === "fox" && idadeNum !== null
+          ? fcMaxFox(idadeNum)
+          : cardio.fc_max_metodo === "manual" && fcMaxManual !== null
+            ? fcMaxManual
+            : null;
 
-  const circCintura = Number(paciente.fisica?.circ_cintura);
-  const circQuadril = Number(paciente.fisica?.circ_quadril);
+  const circCintura = paraNumero(paciente.fisica?.circ_cintura);
+  const circQuadril = paraNumero(paciente.fisica?.circ_quadril);
   const rcq = circCintura && circQuadril ? circCintura / circQuadril : null;
+  const expansibilidade = expansibilidadeToracica(paciente.fisica ?? {});
+  const linhasMagraRelativa = calcularMassaMagraRelativa(paciente.fisica ?? {});
+  const circunferenciasRegistradas = CAMPOS_CIRCUNFERENCIA.filter((c) => paraNumero(paciente.fisica?.[c.chave]) !== null);
 
-  const pesoKg = Number(paciente.fisica?.peso_kg);
-  const percentualGordura = Number(paciente.fisica?.percentual_gordura);
+  const pesoKg = paraNumero(paciente.fisica?.peso_kg);
+  const percentualGordura = paraNumero(paciente.fisica?.percentual_gordura);
   const massaGordaKg = pesoKg && percentualGordura ? (pesoKg * percentualGordura) / 100 : null;
   const massaMagraKg = pesoKg && massaGordaKg !== null ? pesoKg - massaGordaKg : null;
 
-  const sexoNorm = sexoNormalizado(paciente.sexo);
+  const sexoNorm = sexoEfetivo(paciente);
   const percentualIdealSugerido = percentualGorduraIdealSugerido(idadeNum, sexoNorm);
-  const percentualIdealEfetivo = paciente.fisica?.percentual_gordura_ideal ? Number(paciente.fisica.percentual_gordura_ideal) : percentualIdealSugerido;
+  const percentualIdealEfetivo = paraNumero(paciente.fisica?.percentual_gordura_ideal) ?? percentualIdealSugerido;
   const percentualExcedente = percentualGordura && percentualIdealEfetivo !== null ? percentualGordura - percentualIdealEfetivo : null;
   const gorduraExcedenteKg = pesoKg && percentualExcedente !== null ? Math.max(0, (pesoKg * percentualExcedente) / 100) : null;
   const massaMagraIdealSugerida = pesoKg && percentualIdealSugerido !== null ? pesoKg * (1 - percentualIdealSugerido / 100) : null;
-  const massaMagraIdealEfetiva = paciente.fisica?.massa_magra_ideal_kg ? Number(paciente.fisica.massa_magra_ideal_kg) : massaMagraIdealSugerida;
+  const massaMagraIdealEfetiva = paraNumero(paciente.fisica?.massa_magra_ideal_kg) ?? massaMagraIdealSugerida;
   const carenciaMuscularKg = massaMagraIdealEfetiva !== null && massaMagraKg !== null ? Math.max(0, massaMagraIdealEfetiva - massaMagraKg) : null;
   const pesoIdealKg = massaMagraKg !== null && percentualIdealEfetivo !== null && percentualIdealEfetivo < 100 ? massaMagraKg / (1 - percentualIdealEfetivo / 100) : null;
   const ROTULO_PROTOCOLO_REF: Record<string, string> = { dobras: "dobras cutâneas", bioimpedancia: "bioimpedância", media: "média dos dois", outro: "outro/externo" };
@@ -173,7 +186,7 @@ export default function RelatorioTecnico() {
           </p>
           <h1 className="font-display text-2xl text-ink">{paciente.nome}</h1>
           <p className="text-sm text-muted mt-1">
-            Nascimento: {new Date(paciente.data_nascimento).toLocaleDateString("pt-BR")} · Sexo: {paciente.sexo || "não informado"}
+            Nascimento: {new Date(paciente.data_nascimento).toLocaleDateString("pt-BR")} · Sexo: {sexoNorm === "masculino" ? "masculino" : sexoNorm === "feminino" ? "feminino" : "não informado"}{idadeNum !== null ? ` · Idade: ${idadeNum} anos` : ""}
           </p>
           <p className="text-xs text-muted mt-2">
             Gerado em {new Date().toLocaleString("pt-BR")} · Confiança do Perfil Integrado:{" "}
@@ -232,8 +245,27 @@ export default function RelatorioTecnico() {
             <L label="PA" value={paciente.fisica?.pa_sistolica ? `${paciente.fisica.pa_sistolica}/${paciente.fisica.pa_diastolica} mmHg` : null} />
             <L label="FC de repouso" value={paciente.fisica?.fc_repouso ? `${paciente.fisica.fc_repouso} bpm` : null} />
             <L label="SpO2" value={paciente.fisica?.spo2 ? `${paciente.fisica.spo2}%` : null} />
-            <L label="Circ. cintura / quadril" value={paciente.fisica?.circ_cintura ? `${paciente.fisica.circ_cintura} / ${paciente.fisica.circ_quadril || "–"} cm` : null} />
+            <L
+              label="Circunferências registradas (cm)"
+              value={
+                circunferenciasRegistradas.length > 0
+                  ? circunferenciasRegistradas.map((c) => `${c.rotulo}: ${paraNumero(paciente.fisica?.[c.chave])}`).join(" · ")
+                  : null
+              }
+            />
             <L label="RCQ (calculado)" value={rcq !== null ? rcq.toFixed(2) : null} />
+            <L label="Expansibilidade torácica" value={expansibilidade !== null ? `${expansibilidade.toFixed(1)} cm` : null} />
+            <L
+              label="Massa magra relativa por região (cm)"
+              value={
+                linhasMagraRelativa.some((l) => l.corrigida !== null)
+                  ? linhasMagraRelativa
+                      .filter((l) => l.corrigida !== null)
+                      .map((l) => `${l.regiao.rotulo}: ${(l.corrigida as number).toFixed(1)}`)
+                      .join(" · ")
+                  : null
+              }
+            />
             <L
               label="% de gordura (referência)"
               value={

@@ -1,13 +1,18 @@
-// Etapa 11 — Reavaliação
+﻿// Etapa 11 — Reavaliação
 // Extrai séries temporais dos indicadores objetivos a partir da tabela
 // avaliacoes_historico, para comparação ANTES -> ATUAL -> META.
 
 import { vo2maxBruceFoster, vo2maxCooper, metDeVo2 } from "@/lib/avaliacao/cardiorrespiratoria";
+import { CAMPOS_CIRCUNFERENCIA, REGIOES_MASSA_MAGRA, expansibilidadeToracica, massaMagraRelativaDaRegiao } from "@/lib/avaliacao/medidasRegionais";
+import { paraNumero } from "@/lib/numeros";
 
 function vo2maxDeRegistro(d: Record<string, any>): number | null {
-  if (d.vo2max_manual) return Number(d.vo2max_manual);
-  if (d.protocolo === "bruce" && d.bruce_tempo_total_min) return vo2maxBruceFoster(Number(d.bruce_tempo_total_min));
-  if (d.protocolo === "cooper" && d.cooper_distancia_m) return vo2maxCooper(Number(d.cooper_distancia_m));
+  const manual = paraNumero(d.vo2max_manual);
+  if (manual !== null) return manual;
+  const tempo = paraNumero(d.bruce_tempo_total_min);
+  if (d.protocolo === "bruce" && tempo !== null) return vo2maxBruceFoster(tempo);
+  const distancia = paraNumero(d.cooper_distancia_m);
+  if (d.protocolo === "cooper" && distancia !== null) return vo2maxCooper(distancia);
   return null;
 }
 
@@ -37,13 +42,12 @@ export const INDICADORES: IndicadorDef[] = [
     unidade: "",
     tipo: "fisica",
     derivado: (d) => {
-      const peso = Number(d.peso_kg);
-      const altura = Number(d.altura_cm);
+      const peso = paraNumero(d.peso_kg);
+      const altura = paraNumero(d.altura_cm);
       if (!peso || !altura) return null;
       return peso / Math.pow(altura / 100, 2);
     },
   },
-  { chave: "circ_cintura", titulo: "Circunferência de cintura", unidade: "cm", tipo: "fisica" },
   { chave: "pa_sistolica", titulo: "PA sistólica", unidade: "mmHg", tipo: "fisica" },
   { chave: "pa_diastolica", titulo: "PA diastólica", unidade: "mmHg", tipo: "fisica" },
   { chave: "fc_repouso", titulo: "FC de repouso", unidade: "bpm", tipo: "fisica" },
@@ -54,25 +58,31 @@ export const INDICADORES: IndicadorDef[] = [
     unidade: "kg",
     tipo: "fisica",
     derivado: (d) => {
-      const peso = Number(d.peso_kg);
-      const pg = Number(d.percentual_gordura);
+      const peso = paraNumero(d.peso_kg);
+      const pg = paraNumero(d.percentual_gordura);
       if (!peso || !pg) return null;
       return peso - (peso * pg) / 100;
     },
   },
-  { chave: "reg_braco_relaxado_circ", titulo: "Circunferência - braço relaxado", unidade: "cm", tipo: "fisica" },
-  { chave: "reg_braco_relaxado_dobra", titulo: "Dobra - braço relaxado", unidade: "mm", tipo: "fisica" },
-  { chave: "reg_braco_contraido_circ", titulo: "Circunferência - braço contraído", unidade: "cm", tipo: "fisica" },
-  { chave: "reg_antebraco_circ", titulo: "Circunferência - antebraço", unidade: "cm", tipo: "fisica" },
-  { chave: "reg_torax_circ", titulo: "Circunferência - tórax", unidade: "cm", tipo: "fisica" },
-  { chave: "reg_torax_dobra", titulo: "Dobra - tórax", unidade: "mm", tipo: "fisica" },
-  { chave: "reg_abdomen_circ", titulo: "Circunferência - abdômen", unidade: "cm", tipo: "fisica" },
-  { chave: "reg_abdomen_dobra", titulo: "Dobra - abdômen", unidade: "mm", tipo: "fisica" },
-  { chave: "reg_quadril_circ", titulo: "Circunferência - quadril", unidade: "cm", tipo: "fisica" },
-  { chave: "reg_coxa_circ", titulo: "Circunferência - coxa", unidade: "cm", tipo: "fisica" },
-  { chave: "reg_coxa_dobra", titulo: "Dobra - coxa", unidade: "mm", tipo: "fisica" },
-  { chave: "reg_panturrilha_circ", titulo: "Circunferência - panturrilha", unidade: "cm", tipo: "fisica" },
-  { chave: "reg_panturrilha_dobra", titulo: "Dobra - panturrilha", unidade: "mm", tipo: "fisica" },
+  ...CAMPOS_CIRCUNFERENCIA.map(
+    (campo): IndicadorDef => ({ chave: campo.chave, titulo: `Circunferência - ${campo.rotulo}`, unidade: "cm", tipo: "fisica" })
+  ),
+  {
+    chave: "expansibilidade_toracica",
+    titulo: "Expansibilidade torácica (insp. máx - mín)",
+    unidade: "cm",
+    tipo: "fisica",
+    derivado: expansibilidadeToracica,
+  },
+  ...REGIOES_MASSA_MAGRA.map(
+    (regiao): IndicadorDef => ({
+      chave: `massa_magra_rel_${regiao.id}`,
+      titulo: `Massa magra relativa - ${regiao.rotulo}`,
+      unidade: "cm",
+      tipo: "fisica",
+      derivado: (d) => massaMagraRelativaDaRegiao(d, regiao).corrigida,
+    })
+  ),
   { chave: "chair_stand_reps", titulo: "30s Chair Stand", unidade: "reps", tipo: "funcional" },
   { chave: "tug_seg", titulo: "TUG", unidade: "s", tipo: "funcional" },
   { chave: "velocidade_marcha_ms", titulo: "Velocidade de marcha", unidade: "m/s", tipo: "funcional" },
@@ -106,10 +116,11 @@ export function extrairSerie(historico: LinhaHistorico[], indicador: IndicadorDe
   return historico
     .filter((h) => h.tipo === indicador.tipo)
     .map((h) => {
-      const valor = indicador.derivado ? indicador.derivado(h.dados) : Number(h.dados[indicador.chave]);
+      const valor = indicador.derivado ? indicador.derivado(h.dados) : paraNumero(h.dados[indicador.chave]);
       if (valor === null || valor === undefined || !Number.isFinite(valor)) return null;
       return { valor, data: h.criado_em, avaliador: h.avaliador };
     })
     .filter((p): p is PontoHistorico => p !== null)
     .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
 }
+

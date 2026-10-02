@@ -7,6 +7,7 @@
 // aplicar, e nunca produz diagnóstico (mesma regra do Agente 6 em perfil.ts).
 
 import type { PacienteRow } from "@/lib/anamnese/types";
+import { idadeEfetiva } from "@/lib/avaliacao/identificacao";
 
 export type TagPerfilChave =
   | "idoso"
@@ -24,15 +25,10 @@ export type TagPerfil = {
   motivo: string;
 };
 
-function idadeAnos(p: PacienteRow): number | null {
-  const n = Number(p.anamnese?.contexto?.idade);
-  return Number.isFinite(n) && n > 0 ? n : null;
-}
-
 export function calcularTagsPerfil(paciente: PacienteRow): TagPerfil[] {
   const tags: TagPerfil[] = [];
   const a = paciente.anamnese;
-  const idade = idadeAnos(paciente);
+  const idade = idadeEfetiva(paciente);
 
   if (idade !== null && idade >= 60) {
     tags.push({ chave: "idoso", rotulo: "Idoso (60+)", motivo: `Idade ${idade} anos.` });

@@ -13,7 +13,9 @@
 
 import type { PacienteRow } from "@/lib/anamnese/types";
 import { calcularPerfilIntegrado } from "./perfil";
-import { sexoNormalizado, percentualGorduraIdealSugerido } from "@/lib/avaliacao/composicaoCorporal";
+import { percentualGorduraIdealSugerido } from "@/lib/avaliacao/composicaoCorporal";
+import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
+import { paraNumero } from "@/lib/numeros";
 
 export type ClassificacaoSarcopenia = "sarcopenia_provavel" | "dinapenia_provavel" | "sem_sinais" | "dados_insuficientes";
 
@@ -30,15 +32,15 @@ export function triarSarcopeniaDinapenia(paciente: PacienteRow): ResultadoSarcop
   const forcaReduzida = forca?.classificacao === "prioridade";
   const forcaAvaliavel = forca !== undefined && forca.classificacao !== "investigar";
 
-  const pesoKg = Number(paciente.fisica?.peso_kg) || null;
-  const percentualGordura = Number(paciente.fisica?.percentual_gordura) || null;
+  const pesoKg = paraNumero(paciente.fisica?.peso_kg) || null;
+  const percentualGordura = paraNumero(paciente.fisica?.percentual_gordura) || null;
   const massaMagraKg = pesoKg !== null && percentualGordura !== null ? pesoKg - (pesoKg * percentualGordura) / 100 : null;
 
-  const idade = Number(paciente.anamnese?.contexto?.idade) || null;
-  const sexo = sexoNormalizado(paciente.sexo);
-  const percentualIdealInformado = Number(paciente.fisica?.percentual_gordura_ideal) || null;
+  const idade = idadeEfetiva(paciente);
+  const sexo = sexoEfetivo(paciente);
+  const percentualIdealInformado = paraNumero(paciente.fisica?.percentual_gordura_ideal) || null;
   const percentualIdeal = percentualIdealInformado ?? percentualGorduraIdealSugerido(idade, sexo);
-  const massaMagraIdealInformada = Number(paciente.fisica?.massa_magra_ideal_kg) || null;
+  const massaMagraIdealInformada = paraNumero(paciente.fisica?.massa_magra_ideal_kg) || null;
   const massaMagraIdealKg = massaMagraIdealInformada ?? (pesoKg !== null && percentualIdeal !== null ? pesoKg * (1 - percentualIdeal / 100) : null);
 
   const massaMuscularReduzida =

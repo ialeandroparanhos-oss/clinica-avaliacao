@@ -7,7 +7,32 @@
 // padrão de nota usado para os instrumentos psicométricos deste projeto
 // (ver lib/anamnese/questionnaires.ts).
 
+import { paraNumero } from "@/lib/numeros";
+
 export type SexoComp = "masculino" | "feminino" | "desconhecido";
+
+// ---------------------------------------------------------------------------
+// Classificações simples para exibição (IMC pela OMS, RCQ pelo corte da OMS)
+// ---------------------------------------------------------------------------
+export type ClasseIMC = "baixo_peso" | "eutrofia" | "sobrepeso" | "obesidade_1" | "obesidade_2" | "obesidade_3";
+
+export function classificarIMC(imc: number): { chave: ClasseIMC; rotulo: string } {
+  if (imc < 18.5) return { chave: "baixo_peso", rotulo: "Baixo peso" };
+  if (imc < 25) return { chave: "eutrofia", rotulo: "Eutrofia (peso adequado)" };
+  if (imc < 30) return { chave: "sobrepeso", rotulo: "Sobrepeso" };
+  if (imc < 35) return { chave: "obesidade_1", rotulo: "Obesidade grau I" };
+  if (imc < 40) return { chave: "obesidade_2", rotulo: "Obesidade grau II" };
+  return { chave: "obesidade_3", rotulo: "Obesidade grau III" };
+}
+
+// Corte da OMS para risco cardiometabólico aumentado: RCQ >= 0,90 (homens)
+// e >= 0,85 (mulheres). Duas faixas apenas - uma tabela estratificada por
+// idade só entra com a fonte de referência confirmada.
+export function classificarRCQ(rcq: number, sexo: SexoComp): "adequado" | "aumentado" | null {
+  if (sexo === "desconhecido") return null;
+  const corte = sexo === "masculino" ? 0.9 : 0.85;
+  return rcq >= corte ? "aumentado" : "adequado";
+}
 
 export function sexoNormalizado(sexo?: string | null): SexoComp {
   const s = (sexo || "").trim().toLowerCase();
@@ -79,14 +104,10 @@ export function sugerirProtocoloDobras(idade: number | null): { protocolo: Proto
   return { protocolo: "jp7", motivo: "Protocolo de 7 dobras - mais preciso para a maior parte dos adultos." };
 }
 
-function numeroValido(n: number): boolean {
-  return Number.isFinite(n) && n > 0;
-}
-
 function somaValida(valores: (string | undefined)[]): number | null {
-  const nums = valores.map((v) => Number(v));
-  if (nums.some((n) => !numeroValido(n))) return null;
-  return nums.reduce((a, b) => a + b, 0);
+  const nums = valores.map((v) => paraNumero(v));
+  if (nums.some((n) => n === null || n <= 0)) return null;
+  return (nums as number[]).reduce((a, b) => a + b, 0);
 }
 
 // Retorna %G (equação de Siri a partir da densidade corporal de Jackson &
