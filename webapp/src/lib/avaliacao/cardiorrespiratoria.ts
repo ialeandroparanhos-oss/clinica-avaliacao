@@ -10,6 +10,9 @@
 // cardiovascular em lib/anamnese/riscoCardiovascular.ts antes de aplicar
 // um teste máximo.
 
+import { paraNumero } from "@/lib/numeros";
+import type { SexoComp } from "./composicaoCorporal";
+
 export type EstagioBruce = { estagio: number; velocidadeKmh: number; inclinacaoPct: number; duracaoAcumuladaMin: number };
 
 // Protocolo de Bruce (padrão) - velocidades convertidas de mph para km/h.
@@ -99,3 +102,103 @@ export function detectarDeflexaoFc(pontos: PontoFcEstagio[]): { indice: number; 
 export function duploProduto(fc: number, paSistolica: number): number {
   return fc * paSistolica;
 }
+
+// ---------------------------------------------------------------------------
+// VO2máx do registro salvo (qualquer protocolo) - fonte única usada pela
+// aba, pelo painel integrado, pelo histórico e pelo relatório.
+// ---------------------------------------------------------------------------
+export function vo2maxDeRegistro(d: Record<string, any> | null | undefined): number | null {
+  if (!d) return null;
+  const manual = paraNumero(d.vo2max_manual);
+  if (manual !== null) return manual;
+  const tempo = paraNumero(d.bruce_tempo_total_min);
+  if (d.protocolo === "bruce" && tempo !== null) return vo2maxBruceFoster(tempo);
+  const distancia = paraNumero(d.cooper_distancia_m);
+  if (d.protocolo === "cooper" && distancia !== null) return vo2maxCooper(distancia);
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Classificação do VO2máx por idade e sexo - tabela de Cooper (a mesma
+// linhagem do teste de 12 minutos), amplamente reproduzida em materiais de
+// avaliação física. Cada faixa guarda os limites INFERIORES de:
+// [fraco, regular, bom, excelente]; abaixo do primeiro = muito fraco.
+// CONFIRMAR os valores com a fonte (apostila) antes do uso clínico formal.
+// ---------------------------------------------------------------------------
+export type ClasseVO2 = "muito_fraco" | "fraco" | "regular" | "bom" | "excelente";
+
+const LIMITES_VO2: Record<"masculino" | "feminino", { ate: number; limites: [number, number, number, number] }[]> = {
+  masculino: [
+    { ate: 29, limites: [25, 34, 43, 53] },
+    { ate: 39, limites: [23, 31, 39, 49] },
+    { ate: 49, limites: [20, 27, 36, 45] },
+    { ate: 59, limites: [18, 25, 34, 43] },
+    { ate: 200, limites: [16, 23, 31, 41] },
+  ],
+  feminino: [
+    { ate: 29, limites: [24, 31, 38, 49] },
+    { ate: 39, limites: [20, 28, 34, 45] },
+    { ate: 49, limites: [17, 24, 31, 42] },
+    { ate: 59, limites: [15, 21, 28, 38] },
+    { ate: 200, limites: [13, 18, 24, 35] },
+  ],
+};
+
+export const ROTULO_CLASSE_VO2: Record<ClasseVO2, string> = {
+  muito_fraco: "Muito fraco",
+  fraco: "Fraco",
+  regular: "Regular",
+  bom: "Bom",
+  excelente: "Excelente",
+};
+
+// Abaixo de 20 anos usa a faixa de 20-29 (a tabela não cobre menores).
+export function classificarVO2max(vo2: number, idade: number | null, sexo: SexoComp): ClasseVO2 | null {
+  if (idade === null || sexo === "desconhecido") return null;
+  const faixa = LIMITES_VO2[sexo].find((f) => idade <= f.ate);
+  if (!faixa) return null;
+  const [fraco, regular, bom, excelente] = faixa.limites;
+  if (vo2 < fraco) return "muito_fraco";
+  if (vo2 < regular) return "fraco";
+  if (vo2 < bom) return "regular";
+  if (vo2 < excelente) return "bom";
+  return "excelente";
+}
+
+// ---------------------------------------------------------------------------
+// PSE - Escala de Borg 6-20: descrição verbal do valor informado.
+// ---------------------------------------------------------------------------
+const ANCORAS_BORG: [number, string][] = [
+  [6, "Nenhum esforço"],
+  [7, "Extremamente leve"],
+  [9, "Muito leve"],
+  [11, "Leve"],
+  [13, "Um pouco intenso"],
+  [15, "Intenso (pesado)"],
+  [17, "Muito intenso"],
+  [19, "Extremamente intenso"],
+  [20, "Esforço máximo"],
+];
+
+export type TomPSE = "info" | "ok" | "atencao" | "alerta" | "perigo" | "critico";
+
+export function descreverPSE(valor: number): { rotulo: string; tom: TomPSE } | null {
+  if (!Number.isFinite(valor) || valor < 6 || valor > 20) return null;
+  const n = Math.round(valor);
+  const exata = ANCORAS_BORG.find(([v]) => v === n);
+  let rotulo: string;
+  if (exata) {
+    rotulo = exata[1];
+  } else {
+    const abaixo = [...ANCORAS_BORG].reverse().find(([v]) => v < n)!;
+    const acima = ANCORAS_BORG.find(([v]) => v > n)!;
+    rotulo = `Entre "${abaixo[1].toLowerCase()}" e "${acima[1].toLowerCase()}"`;
+  }
+  const tom: TomPSE = n <= 10 ? "info" : n <= 12 ? "ok" : n <= 14 ? "atencao" : n <= 16 ? "alerta" : n <= 18 ? "perigo" : "critico";
+  return { rotulo, tom };
+}
+
+// PSE >= 17 é um dos critérios práticos de esforço máximo em testes
+// progressivos - abaixo disso o teste pode ter sido interrompido antes do
+// máximo e o VO2máx estimado tende a ficar subestimado.
+export const PSE_ESFORCO_MAXIMO = 17;

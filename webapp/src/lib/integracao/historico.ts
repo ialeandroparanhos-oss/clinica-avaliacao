@@ -2,19 +2,9 @@
 // Extrai séries temporais dos indicadores objetivos a partir da tabela
 // avaliacoes_historico, para comparação ANTES -> ATUAL -> META.
 
-import { vo2maxBruceFoster, vo2maxCooper, metDeVo2 } from "@/lib/avaliacao/cardiorrespiratoria";
+import { vo2maxDeRegistro, metDeVo2 } from "@/lib/avaliacao/cardiorrespiratoria";
 import { CAMPOS_CIRCUNFERENCIA, REGIOES_MASSA_MAGRA, expansibilidadeToracica, massaMagraRelativaDaRegiao } from "@/lib/avaliacao/medidasRegionais";
 import { paraNumero } from "@/lib/numeros";
-
-function vo2maxDeRegistro(d: Record<string, any>): number | null {
-  const manual = paraNumero(d.vo2max_manual);
-  if (manual !== null) return manual;
-  const tempo = paraNumero(d.bruce_tempo_total_min);
-  if (d.protocolo === "bruce" && tempo !== null) return vo2maxBruceFoster(tempo);
-  const distancia = paraNumero(d.cooper_distancia_m);
-  if (d.protocolo === "cooper" && distancia !== null) return vo2maxCooper(distancia);
-  return null;
-}
 
 export type LinhaHistorico = {
   id: string;

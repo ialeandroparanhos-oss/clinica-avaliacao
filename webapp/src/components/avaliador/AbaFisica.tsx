@@ -2,7 +2,7 @@
 
 // Aba Física e Antropométrica (Agente 3 - Marco).
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import type { PacienteRow } from "@/lib/anamnese/types";
 import { CheckboxGroup, Field, TextArea, TextInput } from "@/components/forms";
 import { CampoComSugestao, NumField, SalvarBar, SelectField, Selo, ValorCalculado, useSalvarSecao, type TomSelo } from "./campos";
@@ -284,39 +284,44 @@ export function AbaFisica({
             </thead>
             <tbody>
               {CIRC_MEMBROS.map((m) => (
-                <tr key={m.id} className="border-b border-border last:border-0">
-                  <td className="py-2 pr-2 text-ink">{m.rotulo}</td>
-                  {(["d", "e"] as const).map((lado) => (
-                    <td key={lado} className="py-2 px-2">
-                      <TextInput
-                        inputMode="decimal"
-                        value={d[`circ_${m.id}_${lado}`]}
-                        onChange={(e) => set(`circ_${m.id}_${lado}`, normalizarDecimal(e.target.value))}
-                        className="max-w-[7rem]"
-                        aria-label={`${m.rotulo} ${m.feminino ? (lado === "d" ? "direita" : "esquerda") : lado === "d" ? "direito" : "esquerdo"}`}
-                      />
-                    </td>
-                  ))}
-                </tr>
+                <Fragment key={m.id}>
+                  <tr className="border-b border-border last:border-0">
+                    <td className="py-2 pr-2 text-ink">{m.rotulo}</td>
+                    {(["d", "e"] as const).map((lado) => (
+                      <td key={lado} className="py-2 px-2">
+                        <TextInput
+                          inputMode="decimal"
+                          value={d[`circ_${m.id}_${lado}`]}
+                          onChange={(e) => set(`circ_${m.id}_${lado}`, normalizarDecimal(e.target.value))}
+                          className="max-w-[7rem]"
+                          aria-label={`${m.rotulo} ${m.feminino ? (lado === "d" ? "direita" : "esquerda") : lado === "d" ? "direito" : "esquerdo"}`}
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                  {m.id === "coxa" && (
+                    <tr className="border-b border-border">
+                      <td className="py-2 pr-2 text-muted text-xs align-top">Nível da coxa</td>
+                      <td colSpan={2} className="py-2 px-2">
+                        <div className="max-w-md">
+                          <CheckboxGroup
+                            columns={3}
+                            options={NIVEIS_COXA.map((n) => n.label)}
+                            values={NIVEIS_COXA.filter((n) => n.value === d.coxa_nivel).map((n) => n.label)}
+                            onChange={(marcados) => {
+                              const atual = NIVEIS_COXA.find((n) => n.value === d.coxa_nivel)?.label;
+                              const novo = marcados.find((m) => m !== atual);
+                              set("coxa_nivel", NIVEIS_COXA.find((n) => n.label === novo)?.value ?? "");
+                            }}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </table>
-        </div>
-
-        <div className="mt-3">
-          <p className="text-sm font-medium text-ink mb-1.5">Nível em que a coxa foi medida</p>
-          <div className="max-w-md">
-            <CheckboxGroup
-              columns={3}
-              options={NIVEIS_COXA.map((n) => n.label)}
-              values={NIVEIS_COXA.filter((n) => n.value === d.coxa_nivel).map((n) => n.label)}
-              onChange={(marcados) => {
-                const atual = NIVEIS_COXA.find((n) => n.value === d.coxa_nivel)?.label;
-                const novo = marcados.find((m) => m !== atual);
-                set("coxa_nivel", NIVEIS_COXA.find((n) => n.label === novo)?.value ?? "");
-              }}
-            />
-          </div>
         </div>
       </div>
 
@@ -468,22 +473,52 @@ export function AbaFisica({
                 <th className="py-2 px-2 font-medium">Circunferência (cm)</th>
                 <th className="py-2 px-2 font-medium">Dobra usada</th>
                 <th className="py-2 px-2 font-medium">Massa magra relativa (cm)</th>
+                <th className="py-2 px-2 font-medium min-w-[11rem]">Composição da circunferência</th>
               </tr>
             </thead>
             <tbody>
-              {linhasMagra.map((l) => (
-                <tr key={l.regiao.id} className="border-b border-border last:border-0">
-                  <td className="py-2 pr-2 text-ink">{l.regiao.rotulo}</td>
-                  <td className="py-2 px-2 font-mono tabular-nums text-muted">{f1(l.circ)}</td>
-                  <td className="py-2 px-2 font-mono tabular-nums text-muted">
-                    {l.dobra !== null ? `${f1(l.dobra)} mm` : "–"} <span className="font-sans text-xs">({l.regiao.dobraRotulo})</span>
-                  </td>
-                  <td className="py-2 px-2 font-mono tabular-nums font-semibold text-accent-dark">{f1(l.corrigida)}</td>
-                </tr>
-              ))}
+              {linhasMagra.map((l) => {
+                const gorduraCm = l.circ !== null && l.corrigida !== null ? l.circ - l.corrigida : null;
+                const pctGordura = gorduraCm !== null && l.circ !== null && l.circ > 0 ? Math.min(100, Math.max(0, (gorduraCm / l.circ) * 100)) : null;
+                return (
+                  <tr key={l.regiao.id} className="border-b border-border last:border-0">
+                    <td className="py-2 pr-2 text-ink">{l.regiao.rotulo}</td>
+                    <td className="py-2 px-2 font-mono tabular-nums text-muted">{f1(l.circ)}</td>
+                    <td className="py-2 px-2 font-mono tabular-nums text-muted">
+                      {l.dobra !== null ? `${f1(l.dobra)} mm` : "–"} <span className="font-sans text-xs">({l.regiao.dobraRotulo})</span>
+                    </td>
+                    <td className="py-2 px-2 font-mono tabular-nums font-semibold text-accent-dark">{f1(l.corrigida)}</td>
+                    <td className="py-2 px-2">
+                      {pctGordura !== null && gorduraCm !== null ? (
+                        <div
+                          title={`Massa magra relativa ${f1(l.corrigida)} cm (${(100 - pctGordura).toFixed(0)}%) · gordura subcutânea ${gorduraCm.toFixed(1)} cm (${pctGordura.toFixed(0)}%)`}
+                        >
+                          <div className="flex h-3 w-full overflow-hidden rounded-full border border-border bg-bg">
+                            <div className="bg-accent" style={{ width: `${100 - pctGordura}%` }} />
+                            <div className="bg-warn" style={{ width: `${pctGordura}%` }} />
+                          </div>
+                          <p className="mt-0.5 text-[11px] text-muted tabular-nums">
+                            {(100 - pctGordura).toFixed(0)}% magra · {pctGordura.toFixed(0)}% gordura ({gorduraCm.toFixed(1)} cm)
+                          </p>
+                        </div>
+                      ) : (
+                        <span className="text-muted">–</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
+        <p className="mt-2 flex items-center gap-3 text-xs text-muted">
+          <span className="inline-flex items-center gap-1">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-accent" /> massa magra relativa
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-warn" /> gordura subcutânea (π × dobra)
+          </span>
+        </p>
       </div>
 
       <div className="pt-4 border-t border-border">

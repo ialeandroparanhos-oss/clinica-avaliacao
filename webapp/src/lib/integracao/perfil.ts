@@ -12,7 +12,9 @@ import type { PacienteRow } from "@/lib/anamnese/types";
 import { escorePSS10, somaSemNulos, escoreCurto } from "@/lib/anamnese/alerts";
 import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { paraNumero } from "@/lib/numeros";
-import { sexoEfetivo } from "@/lib/avaliacao/identificacao";
+import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
+import { avaliarForcaSemDinamometro } from "@/lib/avaliacao/forcaSemDinamometro";
+import { classificarVO2max, ROTULO_CLASSE_VO2, vo2maxDeRegistro, type ClasseVO2 } from "@/lib/avaliacao/cardiorrespiratoria";
 
 export type Classificacao = "adequado" | "atencao" | "prioridade" | "investigar";
 
@@ -64,16 +66,24 @@ function resultado(chave: DomainKey, classificacao: Classificacao, justificativa
 }
 
 // ---------------------------------------------------------------------------
-// 1. Força — dinamometria (EWGSOP2) como critério principal
+// 1. Força — dinamometria (EWGSOP2) como critério principal; sem
+//    dinamômetro, 5x Sit-to-Stand (EWGSOP2) + Rikli & Jones (ver
+//    lib/avaliacao/forcaSemDinamometro.ts)
 // ---------------------------------------------------------------------------
 function avaliarForca(p: PacienteRow): DomainResult {
   const d = num(p.funcional?.dinamometria_d_kg);
   const e = num(p.funcional?.dinamometria_e_kg);
-  const chair = num(p.funcional?.chair_stand_reps);
   const melhorMao = d !== null && e !== null ? Math.max(d, e) : d ?? e;
 
-  if (melhorMao === null && chair === null) {
-    return resultado("forca", "investigar", "Nenhum indicador de força coletado ainda.");
+  if (melhorMao === null) {
+    const alt = avaliarForcaSemDinamometro({
+      fiveStsSeg: num(p.funcional?.five_sts_seg),
+      chairReps: num(p.funcional?.chair_stand_reps),
+      armCurlReps: num(p.funcional?.arm_curl_reps),
+      idade: idadeEfetiva(p),
+      sexo: sexoEfetivo(p),
+    });
+    return resultado("forca", alt.classificacao, alt.justificativa);
   }
 
   if (melhorMao !== null) {
@@ -90,7 +100,7 @@ function avaliarForca(p: PacienteRow): DomainResult {
     return resultado("forca", "adequado", `Dinamometria ${melhorMao} kgf, dentro da faixa esperada pelo corte do EWGSOP2.`);
   }
 
-  return resultado("forca", "atencao", `Chair Stand = ${chair} repetições coletado, mas sem dinamometria para aplicar um corte de referência.`);
+  return resultado("forca", "investigar", "Nenhum indicador de força coletado ainda.");
 }
 
 // ---------------------------------------------------------------------------
@@ -147,25 +157,61 @@ function avaliarEquilibrio(p: PacienteRow): DomainResult {
 }
 
 // ---------------------------------------------------------------------------
-// 4. Capacidade cardiorrespiratória — velocidade de marcha como indicador
-//    principal (citada na literatura com corte de fragilidade); TC6 exige
+// 4. Capacidade cardiorrespiratória — VO2máx do teste de esteira/Cooper
+//    (classificado por idade e sexo) + velocidade de marcha; TC6 exige
 //    equação de referência que o sistema ainda não calcula
+//
+//    Denominador comum: cada indicador com corte de referência vira uma nota
+//    de 0 (adequado), 1 (atenção) ou 2 (prioridade); o resultado do domínio
+//    é a MÉDIA das notas (< 0,5 adequado; < 1,5 atenção; >= 1,5 prioridade).
+//    Indicadores sem corte (TC6) aparecem na justificativa mas não entram na
+//    média. Se os indicadores divergirem, a justificativa avisa.
 // ---------------------------------------------------------------------------
+const CLASSE_VO2_NOTA: Record<ClasseVO2, number> = { muito_fraco: 2, fraco: 2, regular: 1, bom: 0, excelente: 0 };
+
 function avaliarCardio(p: PacienteRow): DomainResult {
+  const chave = "capacidade_cardiorrespiratoria" as const;
   const vel = num(p.funcional?.velocidade_marcha_ms);
   const tc6 = num(p.funcional?.tc6_metros);
+  const vo2 = vo2maxDeRegistro(p.cardio);
+
+  const notas: { nome: string; nota: number }[] = [];
+  const extras: string[] = [];
+
+  if (vo2 !== null) {
+    const texto = `${vo2.toFixed(1)} mL/kg/min`;
+    const classe = classificarVO2max(vo2, idadeEfetiva(p), sexoEfetivo(p));
+    if (classe) {
+      notas.push({ nome: `VO2máx ${texto} (${ROTULO_CLASSE_VO2[classe].toLowerCase()} para idade/sexo)`, nota: CLASSE_VO2_NOTA[classe] });
+    } else {
+      extras.push(`VO2máx ${texto} (faltam idade/sexo para classificar)`);
+    }
+  }
 
   if (vel !== null) {
-    if (vel < 0.8) return resultado("capacidade_cardiorrespiratoria", "prioridade", `Velocidade de marcha ${vel} m/s, abaixo do limiar de 0,8 m/s citado na literatura como indicativo de mobilidade comprometida.`);
-    if (vel < 1.0) return resultado("capacidade_cardiorrespiratoria", "atencao", `Velocidade de marcha ${vel} m/s, na faixa intermediária (0,8-1,0 m/s).`);
-    return resultado("capacidade_cardiorrespiratoria", "adequado", `Velocidade de marcha ${vel} m/s, acima de 1,0 m/s.`);
+    const nota = vel < 0.8 ? 2 : vel < 1.0 ? 1 : 0;
+    const faixa = vel < 0.8 ? "abaixo de 0,8 m/s" : vel < 1.0 ? "entre 0,8 e 1,0 m/s" : "acima de 1,0 m/s";
+    notas.push({ nome: `velocidade de marcha ${vel} m/s (${faixa})`, nota });
   }
 
-  if (tc6 !== null) {
-    return resultado("capacidade_cardiorrespiratoria", "investigar", `TC6 = ${tc6} m coletado — comparar manualmente com a equação de valor previsto (idade/sexo/altura) antes de classificar.`);
+  if (tc6 !== null) extras.push(`TC6 ${tc6} m (sem corte aplicado - comparar com a equação de valor previsto)`);
+
+  if (notas.length === 0) {
+    if (extras.length > 0) return resultado(chave, "investigar", `${extras.join("; ")}. Nenhum indicador com corte de referência para classificar.`);
+    return resultado(chave, "investigar", "Nenhum teste de capacidade cardiorrespiratória coletado ainda.");
   }
 
-  return resultado("capacidade_cardiorrespiratoria", "investigar", "Nenhum teste de capacidade cardiorrespiratória coletado ainda.");
+  const media = notas.reduce((s, n) => s + n.nota, 0) / notas.length;
+  const classificacao: Classificacao = media < 0.5 ? "adequado" : media < 1.5 ? "atencao" : "prioridade";
+  const partes = notas.map((n) => n.nome);
+  let texto = partes.join("; ");
+  if (notas.length > 1) {
+    texto += ` - média das notas ${media.toFixed(1).replace(".", ",")} (0 adequado, 1 atenção, 2 prioridade)`;
+    const notasDistintas = new Set(notas.map((n) => n.nota));
+    if (notasDistintas.size > 1) texto += "; indicadores divergentes, interprete o conjunto";
+  }
+  if (extras.length > 0) texto += `. Também: ${extras.join("; ")}`;
+  return resultado(chave, classificacao, texto + (texto.endsWith(".") ? "" : "."));
 }
 
 // ---------------------------------------------------------------------------
