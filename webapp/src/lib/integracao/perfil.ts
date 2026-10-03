@@ -13,7 +13,7 @@ import { escorePSS10, somaSemNulos, escoreCurto } from "@/lib/anamnese/alerts";
 import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { paraNumero } from "@/lib/numeros";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
-import { avaliarForcaSemDinamometro } from "@/lib/avaliacao/forcaSemDinamometro";
+import { avaliarForca as avaliarForcaIntegrada } from "@/lib/avaliacao/forca";
 import { classificarVO2max, ROTULO_CLASSE_VO2, vo2maxDeRegistro, type ClasseVO2 } from "@/lib/avaliacao/cardiorrespiratoria";
 
 export type Classificacao = "adequado" | "atencao" | "prioridade" | "investigar";
@@ -66,41 +66,25 @@ function resultado(chave: DomainKey, classificacao: Classificacao, justificativa
 }
 
 // ---------------------------------------------------------------------------
-// 1. Força — dinamometria (EWGSOP2) como critério principal; sem
-//    dinamômetro, 5x Sit-to-Stand (EWGSOP2) + Rikli & Jones (ver
-//    lib/avaliacao/forcaSemDinamometro.ts)
+// 1. Força — ponto de corte único, com ou sem dinamômetro: qualquer indicador
+//    abaixo do corte (dinamometria brasileira 60+, 5x Sit-to-Stand > 15 s ou
+//    dois testes de Rikli & Jones) = força reduzida (ver
+//    lib/avaliacao/forca.ts)
 // ---------------------------------------------------------------------------
 function avaliarForca(p: PacienteRow): DomainResult {
   const d = num(p.funcional?.dinamometria_d_kg);
   const e = num(p.funcional?.dinamometria_e_kg);
   const melhorMao = d !== null && e !== null ? Math.max(d, e) : d ?? e;
 
-  if (melhorMao === null) {
-    const alt = avaliarForcaSemDinamometro({
-      fiveStsSeg: num(p.funcional?.five_sts_seg),
-      chairReps: num(p.funcional?.chair_stand_reps),
-      armCurlReps: num(p.funcional?.arm_curl_reps),
-      idade: idadeEfetiva(p),
-      sexo: sexoEfetivo(p),
-    });
-    return resultado("forca", alt.classificacao, alt.justificativa);
-  }
-
-  if (melhorMao !== null) {
-    const sexo = sexoEfetivo(p);
-    if (sexo === "masculino" && melhorMao < 27) {
-      return resultado("forca", "prioridade", `Dinamometria ${melhorMao} kgf, abaixo do corte de força reduzida do EWGSOP2 para homens (27 kgf).`);
-    }
-    if (sexo === "feminino" && melhorMao < 16) {
-      return resultado("forca", "prioridade", `Dinamometria ${melhorMao} kgf, abaixo do corte de força reduzida do EWGSOP2 para mulheres (16 kgf).`);
-    }
-    if (sexo === "desconhecido") {
-      return resultado("forca", "atencao", `Dinamometria ${melhorMao} kgf coletada, mas o sexo não está registrado para aplicar o corte do EWGSOP2.`);
-    }
-    return resultado("forca", "adequado", `Dinamometria ${melhorMao} kgf, dentro da faixa esperada pelo corte do EWGSOP2.`);
-  }
-
-  return resultado("forca", "investigar", "Nenhum indicador de força coletado ainda.");
+  const r = avaliarForcaIntegrada({
+    dinamometriaKgf: melhorMao,
+    fiveStsSeg: num(p.funcional?.five_sts_seg),
+    chairReps: num(p.funcional?.chair_stand_reps),
+    armCurlReps: num(p.funcional?.arm_curl_reps),
+    idade: idadeEfetiva(p),
+    sexo: sexoEfetivo(p),
+  });
+  return resultado("forca", r.classificacao, r.justificativa);
 }
 
 // ---------------------------------------------------------------------------

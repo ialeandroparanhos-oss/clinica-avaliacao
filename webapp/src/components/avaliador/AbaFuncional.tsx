@@ -8,7 +8,7 @@ import { Field, TextArea, TextInput } from "@/components/forms";
 import { NumField, SalvarBar, Selo, ValorCalculado, useSalvarSecao, type TomSelo } from "./campos";
 import { RotuloComInfo } from "./instrucoes";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
-import { avaliarForcaSemDinamometro, limitesRikli } from "@/lib/avaliacao/forcaSemDinamometro";
+import { avaliarForca, corteDinamometriaKgf, limitesRikli } from "@/lib/avaliacao/forca";
 import { paraNumero } from "@/lib/numeros";
 import { calcularTagsPerfil, gruposRecomendados, ROTULOS_GRUPO, type GrupoTesteFuncional } from "@/lib/integracao/tagsPerfil";
 
@@ -126,16 +126,17 @@ export function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacient
   const idadeAtual = idadeEfetiva(paciente);
   const sexoAtual = sexoEfetivo(paciente);
   const limitesForca = limitesRikli(idadeAtual, sexoAtual);
-  const semDinamometria = paraNumero(d.dinamometria_d_kg) === null && paraNumero(d.dinamometria_e_kg) === null;
-  const forcaSemDina = semDinamometria
-    ? avaliarForcaSemDinamometro({
-        fiveStsSeg: paraNumero(d.five_sts_seg),
-        chairReps: paraNumero(d.chair_stand_reps),
-        armCurlReps: paraNumero(d.arm_curl_reps),
-        idade: idadeAtual,
-        sexo: sexoAtual,
-      })
-    : null;
+  const dinaD = paraNumero(d.dinamometria_d_kg);
+  const dinaE = paraNumero(d.dinamometria_e_kg);
+  const corteDina = corteDinamometriaKgf(idadeAtual, sexoAtual);
+  const forcaResultado = avaliarForca({
+    dinamometriaKgf: dinaD !== null && dinaE !== null ? Math.max(dinaD, dinaE) : dinaD ?? dinaE,
+    fiveStsSeg: paraNumero(d.five_sts_seg),
+    chairReps: paraNumero(d.chair_stand_reps),
+    armCurlReps: paraNumero(d.arm_curl_reps),
+    idade: idadeAtual,
+    sexo: sexoAtual,
+  });
 
   // Grava a velocidade calculada em velocidade_marcha_ms (o campo que o painel
   // integrado e o histórico já leem). Se distância/tempo foram apagados, não
@@ -193,25 +194,27 @@ export function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacient
       </div>
 
       <div className="pt-4 border-t border-border">
-        <h4 className="font-display text-base text-ink mb-1">Força sem dinamômetro</h4>
+        <h4 className="font-display text-base text-ink mb-1">Força - resultado e ponto de corte</h4>
         <p className="text-xs text-muted mb-3">
-          Sem dinamômetro, o painel integrado classifica a força pelo <strong>5x Sit-to-Stand &gt; 15 s</strong> (corte do EWGSOP2) e, a partir dos 60 anos, pelo{" "}
-          <strong>Chair Stand</strong> e <strong>Arm Curl</strong> comparados à faixa normal de Rikli &amp; Jones para idade/sexo. O Push-up é registrado para acompanhar evolução (não há corte
-          de referência aplicado).
+          O painel integrado classifica a força com <strong>um ponto único</strong>, com ou sem dinamômetro: qualquer indicador abaixo do corte conta como <strong>força reduzida</strong>
+          {" "}(critério do EWGSOP2) - <strong>dinamometria</strong> abaixo do corte brasileiro, <strong>5x Sit-to-Stand &gt; 15 s</strong>, ou <strong>Chair Stand e Arm Curl</strong> (60+) ambos
+          abaixo da faixa normal de Rikli &amp; Jones. Um só teste de Rikli &amp; Jones abaixo vale como atenção. O Push-up é registrado para acompanhar evolução (sem corte de referência).
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <NumField label={<RotuloComInfo texto="Push-up test" chave="pushup" />} suffix="reps" value={d.pushup_reps} onChange={(v) => set("pushup_reps", v)} />
           <NumField label={<RotuloComInfo texto="Arm Curl Test" chave="arm_curl" />} suffix="reps/30s" value={d.arm_curl_reps} onChange={(v) => set("arm_curl_reps", v)} />
         </div>
-        {limitesForca && (
-          <p className="mt-2 text-xs text-muted">
-            Faixa normal mínima para {idadeAtual} anos ({sexoAtual === "feminino" ? "mulheres" : "homens"}): Chair Stand ≥ {limitesForca.chair} reps; Arm Curl ≥ {limitesForca.curl} reps.
-          </p>
-        )}
-        {forcaSemDina && forcaSemDina.classificacao !== "investigar" && (
+        <p className="mt-2 text-xs text-muted">
+          Cortes para este paciente
+          {idadeAtual !== null ? ` (${idadeAtual} anos` : " ("}
+          {sexoAtual === "feminino" ? ", mulher)" : sexoAtual === "masculino" ? ", homem)" : ", sexo não informado)"}:{" "}
+          {corteDina ? `dinamometria < ${String(corteDina.kgf).replace(".", ",")} kgf (${corteDina.fonte})` : "dinamometria - informe o sexo"}; 5x Sit-to-Stand &gt; 15 s
+          {limitesForca ? `; Chair Stand < ${limitesForca.chair} reps; Arm Curl < ${limitesForca.curl} reps.` : "; Chair Stand/Arm Curl só a partir dos 60 anos."}
+        </p>
+        {forcaResultado.classificacao !== "investigar" && (
           <div className="mt-3 flex flex-wrap items-start gap-2 text-sm">
-            <Selo tom={TOM_CLASSIFICACAO[forcaSemDina.classificacao]}>{ROTULO_CLASSIFICACAO[forcaSemDina.classificacao]}</Selo>
-            <span className="text-muted flex-1 min-w-[16rem]">{forcaSemDina.justificativa}</span>
+            <Selo tom={TOM_CLASSIFICACAO[forcaResultado.classificacao]}>{ROTULO_CLASSIFICACAO[forcaResultado.classificacao]}</Selo>
+            <span className="text-muted flex-1 min-w-[16rem]">{forcaResultado.justificativa}</span>
           </div>
         )}
       </div>
