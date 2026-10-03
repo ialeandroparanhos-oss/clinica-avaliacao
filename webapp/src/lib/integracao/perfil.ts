@@ -14,6 +14,7 @@ import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { paraNumero } from "@/lib/numeros";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { avaliarForca as avaliarForcaIntegrada } from "@/lib/avaliacao/forca";
+import { classificarRCEst, confirmarAdiposidade, relacaoCinturaEstatura } from "@/lib/avaliacao/composicaoCorporal";
 import { classificarVO2max, ROTULO_CLASSE_VO2, vo2maxDeRegistro, type ClasseVO2 } from "@/lib/avaliacao/cardiorrespiratoria";
 
 export type Classificacao = "adequado" | "atencao" | "prioridade" | "investigar";
@@ -163,7 +164,11 @@ function avaliarCardio(p: PacienteRow): DomainResult {
   const extras: string[] = [];
 
   if (vo2 !== null) {
-    const texto = `${vo2.toFixed(1)} mL/kg/min`;
+    // Estimativa de campo/esteira: arredondada (a precisão é de alguns
+    // mL/kg/min); só o VO2 medido em ergoespirometria mantém a casa decimal.
+    const medido = num(p.cardio?.vo2max_manual) !== null;
+    const metTxt = vo2 / 3.5 < 5 ? `; ${(vo2 / 3.5).toFixed(1).replace(".", ",")} METs, aptidão baixa (< 5 METs)` : "";
+    const texto = `${medido ? vo2.toFixed(1) : `≈ ${Math.round(vo2)}`} mL/kg/min${metTxt}`;
     const classe = classificarVO2max(vo2, idadeEfetiva(p), sexoEfetivo(p));
     if (classe) {
       notas.push({ nome: `VO2máx ${texto} (${ROTULO_CLASSE_VO2[classe].toLowerCase()} para idade/sexo)`, nota: CLASSE_VO2_NOTA[classe] });
@@ -173,8 +178,10 @@ function avaliarCardio(p: PacienteRow): DomainResult {
   }
 
   if (vel !== null) {
-    const nota = vel < 0.8 ? 2 : vel < 1.0 ? 1 : 0;
-    const faixa = vel < 0.8 ? "abaixo de 0,8 m/s" : vel < 1.0 ? "entre 0,8 e 1,0 m/s" : "acima de 1,0 m/s";
+    // EWGSOP2: velocidade de marcha <= 0,8 m/s (indicador de sarcopenia grave e
+    // de pior desfecho); 0,8 exato já conta.
+    const nota = vel <= 0.8 ? 2 : vel < 1.0 ? 1 : 0;
+    const faixa = vel <= 0.8 ? "0,8 m/s ou menos" : vel < 1.0 ? "entre 0,8 e 1,0 m/s" : "1,0 m/s ou mais";
     notas.push({ nome: `velocidade de marcha ${vel} m/s (${faixa})`, nota });
   }
 
@@ -220,15 +227,38 @@ function avaliarComposicaoCorporal(p: PacienteRow): DomainResult {
   };
   const notas: string[] = [];
 
+  const quadril = num(p.fisica?.circ_quadril);
+  const rcq = cintura !== null && quadril !== null && quadril > 0 ? cintura / quadril : null;
+  const rcest = relacaoCinturaEstatura(cintura, altura);
+  const adiposidade = confirmarAdiposidade({ imc, cinturaCm: cintura, rcq, rcest, sexo });
+  const textoAdiposidade =
+    adiposidade === null
+      ? ""
+      : adiposidade.estado === "confirmada"
+        ? `; adiposidade central confirmada por ${adiposidade.criterios.join(", ")}`
+        : adiposidade.estado === "nao_confirmada"
+          ? `; sem sinal de excesso de adiposidade central em ${adiposidade.avaliados.join(", ")} - confirmar pelo %G`
+          : "; adiposidade a confirmar (sem cintura/RCQ/RCEst)";
+
   if (imc !== null) {
     if (imc >= 30) {
       elevar("prioridade");
-      notas.push(`IMC ${imc.toFixed(1)} (obesidade, critério OMS)`);
+      notas.push(`IMC ${imc.toFixed(1)} (obesidade, critério OMS${textoAdiposidade})`);
     } else if (imc >= 25 || imc < 18.5) {
       elevar("atencao");
-      notas.push(`IMC ${imc.toFixed(1)} (${imc >= 25 ? "sobrepeso" : "baixo peso"}, critério OMS)`);
+      notas.push(`IMC ${imc.toFixed(1)} (${imc >= 25 ? "sobrepeso" : "baixo peso"}, critério OMS${textoAdiposidade})`);
     } else {
       notas.push(`IMC ${imc.toFixed(1)} (eutrofia)`);
+    }
+  }
+
+  if (rcest !== null) {
+    const txt = rcest.toFixed(2).replace(".", ",");
+    if (classificarRCEst(rcest) === "aumentado") {
+      elevar("atencao");
+      notas.push(`relação cintura/estatura ${txt} (≥ 0,5, risco aumentado, corte do NICE)`);
+    } else {
+      notas.push(`relação cintura/estatura ${txt} (< 0,5)`);
     }
   }
 
@@ -384,8 +414,12 @@ function avaliarFuncionalidade(p: PacienteRow): DomainResult {
   const fiveSts = num(p.funcional?.five_sts_seg);
 
   if (tug !== null) {
-    if (tug >= 12) return resultado("funcionalidade", "prioridade", `TUG = ${tug}s, no ou acima do corte de risco de queda comumente citado (≥12s).`);
-    return resultado("funcionalidade", "adequado", `TUG = ${tug}s, abaixo do corte de risco de queda comumente citado.`);
+    // 12 s = triagem (STEADI); 13,5 s = alto risco. O TUG confirma risco melhor
+    // do que o descarta (sensibilidade ~0,31, especificidade ~0,74 em
+    // meta-análise): nunca deve ser usado isoladamente.
+    if (tug >= 13.5) return resultado("funcionalidade", "prioridade", `TUG = ${tug}s, no ou acima de 13,5s (alto risco de queda). Interpretar junto com os demais testes e o histórico de quedas - o TUG não deve ser usado isolado.`);
+    if (tug >= 12) return resultado("funcionalidade", "atencao", `TUG = ${tug}s, entre 12s (corte de triagem do STEADI) e 13,5s (alto risco). O TUG sozinho descarta mal o risco de queda - interpretar junto com os demais testes.`);
+    return resultado("funcionalidade", "adequado", `TUG = ${tug}s, abaixo de 12s (corte de triagem). Um TUG normal não exclui risco de queda - considerar histórico de quedas e demais testes.`);
   }
   if (chair !== null || fiveSts !== null) {
     return resultado("funcionalidade", "atencao", "Teste parcial coletado (Chair Stand/5xSTS), mas sem TUG para o corte de referência principal.");

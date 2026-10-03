@@ -34,6 +34,61 @@ export function classificarRCQ(rcq: number, sexo: SexoComp): "adequado" | "aumen
   return rcq >= corte ? "aumentado" : "adequado";
 }
 
+// Relação cintura/estatura (RCEst): corte 0,5 adotado pelo NICE (0,4-0,49
+// saudável; >= 0,5 risco aumentado). Em adultos é equivalente ou ligeiramente
+// melhor que a circunferência da cintura e superior ao IMC para risco
+// cardiometabólico. Ressalva: um corte único penaliza pessoas mais baixas.
+export const CORTE_RCEST = 0.5;
+
+export function relacaoCinturaEstatura(cinturaCm: number | null, alturaCm: number | null): number | null {
+  if (cinturaCm === null || alturaCm === null || cinturaCm <= 0 || alturaCm <= 0) return null;
+  return cinturaCm / alturaCm;
+}
+
+export function classificarRCEst(rcest: number): "adequado" | "aumentado" {
+  return rcest >= CORTE_RCEST ? "aumentado" : "adequado";
+}
+
+// O IMC sozinho não confirma excesso de gordura (a Comissão da Lancet Diabetes
+// & Endocrinology, 2025, propõe confirmar a adiposidade por medida direta ou
+// por critérios antropométricos além do IMC). Quando o IMC aponta excesso
+// (>= 25), olha as medidas disponíveis de adiposidade central: cintura (corte
+// da OMS por sexo), RCQ e RCEst.
+export type ConfirmacaoAdiposidade =
+  | { estado: "confirmada"; criterios: string[] }
+  | { estado: "nao_confirmada"; avaliados: string[] }
+  | { estado: "sem_medidas" };
+
+export function confirmarAdiposidade(entrada: {
+  imc: number | null;
+  cinturaCm: number | null;
+  rcq: number | null;
+  rcest: number | null;
+  sexo: SexoComp;
+}): ConfirmacaoAdiposidade | null {
+  const { imc, cinturaCm, rcq, rcest, sexo } = entrada;
+  if (imc === null || imc < 25) return null;
+
+  const criterios: string[] = [];
+  const avaliados: string[] = [];
+
+  if (cinturaCm !== null && sexo !== "desconhecido") {
+    const corte = sexo === "masculino" ? 94 : 80;
+    (cinturaCm >= corte ? criterios : avaliados).push(`cintura ${cinturaCm} cm (corte OMS ${corte} cm)`);
+  }
+  if (rcq !== null && sexo !== "desconhecido") {
+    const aumentado = classificarRCQ(rcq, sexo) === "aumentado";
+    (aumentado ? criterios : avaliados).push(`RCQ ${rcq.toFixed(2).replace(".", ",")}`);
+  }
+  if (rcest !== null) {
+    (rcest >= CORTE_RCEST ? criterios : avaliados).push(`RCEst ${rcest.toFixed(2).replace(".", ",")} (corte ${String(CORTE_RCEST).replace(".", ",")})`);
+  }
+
+  if (criterios.length > 0) return { estado: "confirmada", criterios };
+  if (avaliados.length > 0) return { estado: "nao_confirmada", avaliados };
+  return { estado: "sem_medidas" };
+}
+
 export function sexoNormalizado(sexo?: string | null): SexoComp {
   const s = (sexo || "").trim().toLowerCase();
   if (s.startsWith("m")) return "masculino";

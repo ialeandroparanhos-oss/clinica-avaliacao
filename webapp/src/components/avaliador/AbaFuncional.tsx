@@ -8,7 +8,7 @@ import { Field, TextArea, TextInput } from "@/components/forms";
 import { NumField, SalvarBar, Selo, ValorCalculado, useSalvarSecao, type TomSelo } from "./campos";
 import { RotuloComInfo } from "./instrucoes";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
-import { avaliarForca, corteDinamometriaKgf, limitesRikli } from "@/lib/avaliacao/forca";
+import { avaliarForca, corteDinamometriaKgf, limite5stsPorIdade, limitesRikli } from "@/lib/avaliacao/forca";
 import { paraNumero } from "@/lib/numeros";
 import { calcularTagsPerfil, gruposRecomendados, ROTULOS_GRUPO, type GrupoTesteFuncional } from "@/lib/integracao/tagsPerfil";
 
@@ -117,11 +117,11 @@ export function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacient
   const seloMarcha =
     velocidadeMarcha === null
       ? null
-      : velocidadeMarcha < 0.8
-        ? { tom: "alerta" as TomSelo, texto: "Abaixo de 0,8 m/s" }
+      : velocidadeMarcha <= 0.8
+        ? { tom: "alerta" as TomSelo, texto: "0,8 m/s ou menos (corte EWGSOP2)" }
         : velocidadeMarcha < 1.0
           ? { tom: "atencao" as TomSelo, texto: "Entre 0,8 e 1,0 m/s" }
-          : { tom: "ok" as TomSelo, texto: "Acima de 1,0 m/s" };
+          : { tom: "ok" as TomSelo, texto: "1,0 m/s ou mais" };
 
   const idadeAtual = idadeEfetiva(paciente);
   const sexoAtual = sexoEfetivo(paciente);
@@ -129,6 +129,7 @@ export function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacient
   const dinaD = paraNumero(d.dinamometria_d_kg);
   const dinaE = paraNumero(d.dinamometria_e_kg);
   const corteDina = corteDinamometriaKgf(idadeAtual, sexoAtual);
+  const limite5sts = limite5stsPorIdade(idadeAtual);
   const forcaResultado = avaliarForca({
     dinamometriaKgf: dinaD !== null && dinaE !== null ? Math.max(dinaD, dinaE) : dinaD ?? dinaE,
     fiveStsSeg: paraNumero(d.five_sts_seg),
@@ -209,6 +210,7 @@ export function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacient
           {idadeAtual !== null ? ` (${idadeAtual} anos` : " ("}
           {sexoAtual === "feminino" ? ", mulher)" : sexoAtual === "masculino" ? ", homem)" : ", sexo não informado)"}:{" "}
           {corteDina ? `dinamometria < ${String(corteDina.kgf).replace(".", ",")} kgf (${corteDina.fonte})` : "dinamometria - informe o sexo"}; 5x Sit-to-Stand &gt; 15 s
+          {limite5sts ? ` (atenção a partir de ${String(limite5sts.seg).replace(".", ",")} s)` : ""}
           {limitesForca ? `; Chair Stand < ${limitesForca.chair} reps; Arm Curl < ${limitesForca.curl} reps.` : "; Chair Stand/Arm Curl só a partir dos 60 anos."}
         </p>
         {forcaResultado.classificacao !== "investigar" && (

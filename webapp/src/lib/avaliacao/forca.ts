@@ -8,7 +8,8 @@
 //     - 5x Sit-to-Stand > 15 s (EWGSOP2)
 //     - Chair Stand E Arm Curl (60+) ambos abaixo da faixa normal de Rikli & Jones
 //   ATENÇÃO se: um só teste de Rikli & Jones (60+) abaixo da faixa normal, ou
-//     dado coletado sem corte aplicável.
+//     5x Sit-to-Stand pior que a média da faixa etária (60+, abaixo de 15 s),
+//     ou dado coletado sem corte aplicável.
 //   ADEQUADO se há ao menos um indicador com corte aplicável e nenhum sinalizado.
 //
 // Dinamometria: referência brasileira (60+). Homens 25,3 kgf e mulheres
@@ -34,6 +35,17 @@ export function corteDinamometriaKgf(idade: number | null, sexo: SexoComp): Cort
   }
   if (idade !== null && idade >= 60) return { kgf: 25.3, fonte: "referência brasileira, 60+" };
   return { kgf: 27, fonte: "EWGSOP2" };
+}
+
+// 5x Sit-to-Stand: tempo acima do qual o desempenho é pior que a média da
+// faixa etária (meta-análise descritiva de Bohannon: 11,4 s aos 60-69, 12,6 s
+// aos 70-79 e 14,8 s aos 80-89 anos - CONFIRMAR na fonte). Fica abaixo do
+// corte de força reduzida do EWGSOP2 (15 s) e só gera "atenção".
+export function limite5stsPorIdade(idade: number | null): { seg: number; faixa: string } | null {
+  if (idade === null || idade < 60) return null;
+  if (idade < 70) return { seg: 11.4, faixa: "60-69" };
+  if (idade < 80) return { seg: 12.6, faixa: "70-79" };
+  return { seg: 14.8, faixa: "80+" };
 }
 
 type FaixaRikli = { ate: number; chair: number; curl: number };
@@ -95,9 +107,16 @@ export function avaliarForca(entrada: {
     }
   }
 
+  const stsAtencao: string[] = [];
   if (fiveStsSeg !== null) {
-    const texto = `5x Sit-to-Stand ${fiveStsSeg}s (corte EWGSOP2: até ${CORTE_5STS_SEG}s)`;
-    (fiveStsSeg > CORTE_5STS_SEG ? reduzida : dentro).push(texto);
+    const faixaIdade = limite5stsPorIdade(idade);
+    if (fiveStsSeg > CORTE_5STS_SEG) {
+      reduzida.push(`5x Sit-to-Stand ${fiveStsSeg}s (corte EWGSOP2: até ${CORTE_5STS_SEG}s)`);
+    } else if (faixaIdade && fiveStsSeg > faixaIdade.seg) {
+      stsAtencao.push(`5x Sit-to-Stand ${fiveStsSeg}s (acima de ${String(faixaIdade.seg).replace(".", ",")}s, pior que a média de ${faixaIdade.faixa} anos; corte EWGSOP2: ${CORTE_5STS_SEG}s)`);
+    } else {
+      dentro.push(`5x Sit-to-Stand ${fiveStsSeg}s (corte EWGSOP2: até ${CORTE_5STS_SEG}s)`);
+    }
   }
 
   if (limites) {
@@ -124,9 +143,10 @@ export function avaliarForca(entrada: {
   if (rikliAbaixo.length >= 2) {
     return { classificacao: "prioridade", justificativa: `Força reduzida: ${rikliAbaixo.join("; ")} - dois testes abaixo da faixa normal de Rikli & Jones para idade/sexo.` };
   }
-  if (rikliAbaixo.length === 1) {
+  if (rikliAbaixo.length === 1 || stsAtencao.length > 0) {
+    const alertas = [...rikliAbaixo.map((t) => `${t}, abaixo da faixa normal de Rikli & Jones para idade/sexo`), ...stsAtencao];
     const complemento = dentro.length > 0 ? ` Demais: ${dentro.join("; ")}.` : "";
-    return { classificacao: "atencao", justificativa: `${rikliAbaixo[0]}, abaixo da faixa normal de Rikli & Jones para idade/sexo.${complemento}` };
+    return { classificacao: "atencao", justificativa: `${alertas.join("; ")}.${complemento}` };
   }
 
   if (dentro.length > 0) {

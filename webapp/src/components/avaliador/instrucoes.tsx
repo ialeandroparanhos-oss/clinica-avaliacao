@@ -12,7 +12,7 @@ export const INSTRUCOES_TESTE: Record<string, string> = {
     "Paciente sentado numa cadeira sem apoio de braço, com os braços cruzados sobre o peito. Conte quantas vezes ele consegue levantar e sentar completamente em 30 segundos.",
   five_sts:
     "Mesma posição do Chair Stand. Cronometre o tempo que o paciente leva para levantar e sentar 5 vezes seguidas, o mais rápido possível, sem usar os braços.",
-  tug: "Paciente sentado numa cadeira com apoio de braço. Ao sinal, ele se levanta, caminha 3 metros, dá a volta, retorna e senta novamente. Cronometre o tempo total.",
+  tug: "Paciente sentado numa cadeira com apoio de braço. Ao sinal, ele se levanta, caminha 3 metros, dá a volta, retorna e senta novamente. Cronometre o tempo total. Referências: 12 s (triagem) e 13,5 s (alto risco de queda). Um TUG normal não exclui risco de queda - interprete junto com os demais testes e o histórico de quedas.",
   apoio_unipodal:
     "Peça para o paciente ficar em pé sobre uma perna, sem apoio, olhos abertos. Cronometre até ele perder o equilíbrio ou tocar o chão com o outro pé. Repita para o outro lado.",
   velocidade_marcha:

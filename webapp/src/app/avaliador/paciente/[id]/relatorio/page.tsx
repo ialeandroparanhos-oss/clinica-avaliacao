@@ -15,7 +15,7 @@ import type { PacienteRow } from "@/lib/anamnese/types";
 import { escorePSS10, escoreTSK11, somaSemNulos, escoreCurto, rotuloNivel } from "@/lib/anamnese/alerts";
 import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { calcularRiscoCardiovascular } from "@/lib/anamnese/riscoCardiovascular";
-import { percentualGorduraIdealSugerido } from "@/lib/avaliacao/composicaoCorporal";
+import { classificarRCEst, percentualGorduraIdealSugerido, relacaoCinturaEstatura } from "@/lib/avaliacao/composicaoCorporal";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { CAMPOS_CIRCUNFERENCIA, calcularMassaMagraRelativa, expansibilidadeToracica } from "@/lib/avaliacao/medidasRegionais";
 import { paraNumero } from "@/lib/numeros";
@@ -138,6 +138,7 @@ export default function RelatorioTecnico() {
   const circCintura = paraNumero(paciente.fisica?.circ_cintura);
   const circQuadril = paraNumero(paciente.fisica?.circ_quadril);
   const rcq = circCintura && circQuadril ? circCintura / circQuadril : null;
+  const rcest = relacaoCinturaEstatura(circCintura, paraNumero(paciente.fisica?.altura_cm));
   const expansibilidade = expansibilidadeToracica(paciente.fisica ?? {});
   const linhasMagraRelativa = calcularMassaMagraRelativa(paciente.fisica ?? {});
   const circunferenciasRegistradas = CAMPOS_CIRCUNFERENCIA.filter((c) => paraNumero(paciente.fisica?.[c.chave]) !== null);
@@ -247,6 +248,7 @@ export default function RelatorioTecnico() {
               }
             />
             <L label="RCQ (calculado)" value={rcq !== null ? rcq.toFixed(2) : null} />
+            <L label="RCEst - cintura/estatura (calculado)" value={rcest !== null ? `${rcest.toFixed(2)} (${classificarRCEst(rcest) === "aumentado" ? "≥ 0,5, risco aumentado" : "< 0,5"})` : null} />
             <L label="Expansibilidade torácica" value={expansibilidade !== null ? `${expansibilidade.toFixed(1)} cm` : null} />
             <L
               label="Massa magra relativa por região (cm)"
@@ -356,7 +358,7 @@ export default function RelatorioTecnico() {
                   : null
               }
             />
-            <L label="VO2máx estimado" value={vo2max !== null ? `${vo2max.toFixed(1)} ml/kg/min${classeVo2 ? ` (${ROTULO_CLASSE_VO2[classeVo2]} para idade/sexo)` : ""}` : null} />
+            <L label={paraNumero(cardio.vo2max_manual) !== null ? "VO2máx (medido)" : "VO2máx estimado"} value={vo2max !== null ? `${paraNumero(cardio.vo2max_manual) !== null ? vo2max.toFixed(1) : `≈ ${Math.round(vo2max)}`} ml/kg/min${classeVo2 ? ` (${ROTULO_CLASSE_VO2[classeVo2]} para idade/sexo)` : ""}` : null} />
             <L label="MET" value={metCardio !== null ? metCardio.toFixed(1) : null} />
             <L label="vVO2máx" value={cardio.rampa_velocidade_final_kmh ? `${cardio.rampa_velocidade_final_kmh} km/h` : null} />
             <L label="FC máxima (medida/estimada)" value={fcMaxCardio !== null ? `${fcMaxCardio.toFixed(0)} bpm` : null} />

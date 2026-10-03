@@ -15,9 +15,12 @@ import {
   TODOS_SITIOS_DOBRA,
   calcularPercentualGorduraDobras,
   classificarIMC,
+  classificarRCEst,
   classificarRCQ,
+  confirmarAdiposidade,
   faixaGorduraSugerida,
   percentualGorduraIdealSugerido,
+  relacaoCinturaEstatura,
   sexoNormalizado,
   sugerirProtocoloDobras,
   type ClasseIMC,
@@ -111,6 +114,9 @@ export function AbaFisica({
   const quadril = paraNumero(d.circ_quadril);
   const rcq = cintura && quadril ? cintura / quadril : null;
   const classeRcq = rcq !== null ? classificarRCQ(rcq, sexoNorm) : null;
+  const rcest = relacaoCinturaEstatura(cintura, altura);
+  const classeRcest = rcest !== null ? classificarRCEst(rcest) : null;
+  const adiposidade = confirmarAdiposidade({ imc, cinturaCm: cintura, rcq, rcest, sexo: sexoNorm });
   const expansibilidade = expansibilidadeToracica(d);
 
   // ---- Composição corporal ----
@@ -235,6 +241,15 @@ export function AbaFisica({
                 <Selo tom={TOM_IMC[classeImc.chave]}>{classeImc.rotulo}</Selo>
               </div>
             )}
+            {adiposidade && (
+              <p className="mt-1.5 text-xs text-muted">
+                {adiposidade.estado === "confirmada" && <>Adiposidade central confirmada por: {adiposidade.criterios.join("; ")}.</>}
+                {adiposidade.estado === "nao_confirmada" && (
+                  <>IMC elevado, mas sem sinal de excesso de adiposidade central ({adiposidade.avaliados.join("; ")}) - pode refletir massa muscular; confirme pelo %G.</>
+                )}
+                {adiposidade.estado === "sem_medidas" && <>IMC elevado - adiposidade a confirmar: registre a cintura (e quadril) nas circunferências.</>}
+              </p>
+            )}
           </ValorCalculado>
         </div>
       </div>
@@ -268,6 +283,20 @@ export function AbaFisica({
               <div className="mt-1.5 space-y-1">
                 <Selo tom="neutro">Sexo não informado</Selo>
                 <p className="text-xs text-muted">Informe o sexo acima para aplicar o corte da OMS.</p>
+              </div>
+            )}
+          </ValorCalculado>
+          <ValorCalculado label="RCEst - relação cintura/estatura (calculado)" valor={rcest !== null ? rcest.toFixed(2) : null}>
+            {classeRcest === "adequado" && (
+              <div className="mt-1.5 space-y-1">
+                <Selo tom="ok">Abaixo de 0,5</Selo>
+                <p className="text-xs text-muted">Faixa sem risco aumentado (corte do NICE: 0,5).</p>
+              </div>
+            )}
+            {classeRcest === "aumentado" && (
+              <div className="mt-1.5 space-y-1">
+                <Selo tom="alerta">Risco cardiometabólico aumentado</Selo>
+                <p className="text-xs text-muted">0,5 ou mais (corte do NICE). O corte único tende a superestimar o risco em pessoas mais baixas.</p>
               </div>
             )}
           </ValorCalculado>

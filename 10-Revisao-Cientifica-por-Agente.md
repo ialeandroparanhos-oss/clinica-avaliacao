@@ -173,6 +173,12 @@
 - **Dinamometria:** referência brasileira (60+): homens 25,3 kgf e mulheres 16 kgf. Abaixo de 60 anos e sexo não informado: corte EWGSOP2 (27/16 kgf). Implementado em `lib/avaliacao/forca.ts`.
 - **Força com ponto de corte único**, com ou sem dinamômetro: qualquer indicador abaixo do corte = força reduzida (prioridade). Implementado.
 
+## Implementado em 03/10/2026 (propostas de baixo risco)
+
+- **Marco:** relação cintura/estatura (≥ 0,5) com selo na aba Física, no painel e no relatório; texto "adiposidade a confirmar / confirmada por…" sempre que o IMC for ≥ 25.
+- **Rita / Íris:** marcha ≤ 0,8 m/s (o 0,8 exato agora conta); 5xSTS com faixa de atenção por idade (11,4 / 12,6 / 14,8 s, abaixo do corte de 15 s); TUG ≥ 12 s = atenção e ≥ 13,5 s = prioridade, com a nota de que não deve ser usado isolado.
+- **Caio:** Tanaka como método padrão de FCmáx; aviso de ±11 bpm quando a FCmáx é prevista; VO2 estimado arredondado (≈ 38; só o VO2 medido mantém decimal); sinal de MET < 5; ressalva do teste de Cooper (mais forte aos 60+).
+
 ## Pendências que dependem de você
 
 - **Arm Curl (Rikli & Jones):** conferir os limites com a sua apostila (mínimos da faixa normal; mulheres 60–64 até 90+: 13, 12, 12, 11, 10, 10, 8; homens: 16, 15, 14, 13, 13, 11, 10).
