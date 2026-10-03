@@ -119,50 +119,89 @@ export function vo2maxDeRegistro(d: Record<string, any> | null | undefined): num
 }
 
 // ---------------------------------------------------------------------------
-// Classificação do VO2máx por idade e sexo - tabela de Cooper (a mesma
-// linhagem do teste de 12 minutos), amplamente reproduzida em materiais de
-// avaliação física. Cada faixa guarda os limites INFERIORES de:
-// [fraco, regular, bom, excelente]; abaixo do primeiro = muito fraco.
-// CONFIRMAR os valores com a fonte (apostila) antes do uso clínico formal.
+// Classificação do VO2máx por idade e sexo - percentis FRIEND para esteira
+// (VO2máx MEDIDO por ergoespirometria em adultos dos EUA sem doença
+// cardiovascular conhecida; n = 7.783; Kaminsky, Arena, Myers. Mayo Clin Proc
+// 2015;90(11):1515-1523, Tabela 1 - reproduzida em Kaminsky et al., Prog
+// Cardiovasc Dis 2019, https://doi.org/10.1016/j.pcad.2018.10.003).
+// Colunas: percentis 5, 10, 25, 50, 75, 90 e 95 (mL/kg/min).
+//
+// Limites do uso: a população é norte-americana (o próprio registro mostra
+// valores mais altos em noruegueses) e as nossas estimativas vêm de equação
+// (Bruce/Foster, Cooper), menos precisas que o VO2 medido; a comparação é
+// uma referência, não um diagnóstico.
 // ---------------------------------------------------------------------------
 export type ClasseVO2 = "muito_fraco" | "fraco" | "regular" | "bom" | "excelente";
 
-const LIMITES_VO2: Record<"masculino" | "feminino", { ate: number; limites: [number, number, number, number] }[]> = {
+const PERCENTIS_FRIEND = [5, 10, 25, 50, 75, 90, 95] as const;
+
+const FRIEND_ESTEIRA: Record<"masculino" | "feminino", { faixa: string; ate: number; valores: number[] }[]> = {
   masculino: [
-    { ate: 29, limites: [25, 34, 43, 53] },
-    { ate: 39, limites: [23, 31, 39, 49] },
-    { ate: 49, limites: [20, 27, 36, 45] },
-    { ate: 59, limites: [18, 25, 34, 43] },
-    { ate: 200, limites: [16, 23, 31, 41] },
+    { faixa: "20-29", ate: 29, valores: [29.0, 32.1, 40.1, 48.0, 55.2, 61.8, 66.3] },
+    { faixa: "30-39", ate: 39, valores: [27.2, 30.2, 35.9, 42.4, 49.2, 56.5, 59.8] },
+    { faixa: "40-49", ate: 49, valores: [24.2, 26.8, 31.9, 37.8, 45.0, 52.1, 55.6] },
+    { faixa: "50-59", ate: 59, valores: [20.9, 22.8, 27.1, 32.6, 39.7, 45.6, 50.7] },
+    { faixa: "60-69", ate: 69, valores: [17.4, 19.8, 23.7, 28.2, 34.5, 40.3, 43.0] },
+    { faixa: "70-79", ate: 200, valores: [16.3, 17.1, 20.4, 24.4, 30.4, 36.6, 39.7] },
   ],
   feminino: [
-    { ate: 29, limites: [24, 31, 38, 49] },
-    { ate: 39, limites: [20, 28, 34, 45] },
-    { ate: 49, limites: [17, 24, 31, 42] },
-    { ate: 59, limites: [15, 21, 28, 38] },
-    { ate: 200, limites: [13, 18, 24, 35] },
+    { faixa: "20-29", ate: 29, valores: [21.7, 23.9, 30.5, 37.6, 44.7, 51.3, 56.0] },
+    { faixa: "30-39", ate: 39, valores: [19.0, 20.9, 25.3, 30.2, 36.1, 41.4, 45.8] },
+    { faixa: "40-49", ate: 49, valores: [17.0, 18.8, 22.1, 26.7, 32.4, 38.4, 41.7] },
+    { faixa: "50-59", ate: 59, valores: [16.0, 17.3, 19.9, 23.4, 27.6, 32.0, 35.9] },
+    { faixa: "60-69", ate: 69, valores: [13.4, 14.6, 17.2, 20.0, 23.8, 27.0, 29.4] },
+    { faixa: "70-79", ate: 200, valores: [13.1, 13.6, 15.6, 18.3, 20.8, 23.1, 24.1] },
   ],
 };
 
+// Classes pelas faixas de percentil (escolha deste projeto sobre os cortes
+// FRIEND disponíveis): < P10 muito fraco; P10-P25 fraco; P25-P50 regular
+// (abaixo da mediana); P50-P75 bom; >= P75 excelente.
 export const ROTULO_CLASSE_VO2: Record<ClasseVO2, string> = {
-  muito_fraco: "Muito fraco",
-  fraco: "Fraco",
-  regular: "Regular",
-  bom: "Bom",
-  excelente: "Excelente",
+  muito_fraco: "Muito fraco (< P10)",
+  fraco: "Fraco (P10-P25)",
+  regular: "Regular (P25-P50)",
+  bom: "Bom (P50-P75)",
+  excelente: "Excelente (≥ P75)",
 };
 
-// Abaixo de 20 anos usa a faixa de 20-29 (a tabela não cobre menores).
-export function classificarVO2max(vo2: number, idade: number | null, sexo: SexoComp): ClasseVO2 | null {
-  if (idade === null || sexo === "desconhecido") return null;
-  const faixa = LIMITES_VO2[sexo].find((f) => idade <= f.ate);
+export type AvaliacaoVO2 = {
+  classe: ClasseVO2;
+  // Percentil aproximado por interpolação linear entre os percentis da tabela
+  // (null quando fora do intervalo P5-P95, caso em que textoPercentil traz "< P5" ou "> P95").
+  percentil: number | null;
+  textoPercentil: string;
+  faixaEtaria: string;
+  // true quando a idade está fora de 20-79 e a faixa mais próxima foi usada.
+  extrapolado: boolean;
+};
+
+export function avaliarVO2max(vo2: number, idade: number | null, sexo: SexoComp): AvaliacaoVO2 | null {
+  if (idade === null || sexo === "desconhecido" || !Number.isFinite(vo2)) return null;
+  const faixa = FRIEND_ESTEIRA[sexo].find((f) => idade <= f.ate);
   if (!faixa) return null;
-  const [fraco, regular, bom, excelente] = faixa.limites;
-  if (vo2 < fraco) return "muito_fraco";
-  if (vo2 < regular) return "fraco";
-  if (vo2 < bom) return "regular";
-  if (vo2 < excelente) return "bom";
-  return "excelente";
+  const v = faixa.valores;
+
+  let percentil: number | null = null;
+  let textoPercentil: string;
+  if (vo2 < v[0]) {
+    textoPercentil = "< P5";
+  } else if (vo2 > v[v.length - 1]) {
+    textoPercentil = "> P95";
+  } else {
+    let i = 0;
+    while (i < v.length - 2 && vo2 > v[i + 1]) i++;
+    const fracao = v[i + 1] === v[i] ? 0 : (vo2 - v[i]) / (v[i + 1] - v[i]);
+    percentil = PERCENTIS_FRIEND[i] + fracao * (PERCENTIS_FRIEND[i + 1] - PERCENTIS_FRIEND[i]);
+    textoPercentil = `≈ P${Math.round(percentil)}`;
+  }
+
+  const classe: ClasseVO2 = vo2 < v[1] ? "muito_fraco" : vo2 < v[2] ? "fraco" : vo2 < v[3] ? "regular" : vo2 < v[4] ? "bom" : "excelente";
+  return { classe, percentil, textoPercentil, faixaEtaria: faixa.faixa, extrapolado: idade < 20 || idade >= 80 };
+}
+
+export function classificarVO2max(vo2: number, idade: number | null, sexo: SexoComp): ClasseVO2 | null {
+  return avaliarVO2max(vo2, idade, sexo)?.classe ?? null;
 }
 
 // ---------------------------------------------------------------------------

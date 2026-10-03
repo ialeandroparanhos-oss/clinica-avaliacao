@@ -12,7 +12,7 @@ import { paraNumero } from "@/lib/numeros";
 import {
   ESTAGIOS_BRUCE,
   vo2maxDeRegistro,
-  classificarVO2max,
+  avaliarVO2max,
   ROTULO_CLASSE_VO2,
   descreverPSE,
   PSE_ESFORCO_MAXIMO,
@@ -66,7 +66,8 @@ export function AbaCardio({ pacienteId, dados, paciente, onSalvo }: { pacienteId
   const vo2max = vo2maxDeRegistro(d);
   const sexo = sexoEfetivo(paciente);
   const vo2Medido = paraNumero(d.vo2max_manual) !== null;
-  const classeVo2 = vo2max !== null ? classificarVO2max(vo2max, idade, sexo) : null;
+  const avVo2 = vo2max !== null ? avaliarVO2max(vo2max, idade, sexo) : null;
+  const classeVo2 = avVo2?.classe ?? null;
   const pseNum = paraNumero(d.rpe_borg);
   const pse = pseNum !== null ? descreverPSE(pseNum) : null;
 
@@ -208,9 +209,13 @@ export function AbaCardio({ pacienteId, dados, paciente, onSalvo }: { pacienteId
 
       <div className="pt-4 border-t border-border grid grid-cols-2 sm:grid-cols-3 gap-4">
         <ValorCalculado label={vo2Medido ? "VO2máx (medido)" : "VO2máx estimado"} valor={vo2max !== null ? `${vo2Medido ? vo2max.toFixed(1) : `≈ ${Math.round(vo2max)}`} ml/kg/min` : null}>
-          {classeVo2 && (
-            <div className="mt-1.5">
-              <Selo tom={TOM_CLASSE_VO2[classeVo2]}>{ROTULO_CLASSE_VO2[classeVo2]} para idade/sexo</Selo>
+          {classeVo2 && avVo2 && (
+            <div className="mt-1.5 space-y-1">
+              <Selo tom={TOM_CLASSE_VO2[classeVo2]}>{ROTULO_CLASSE_VO2[classeVo2]}</Selo>
+              <p className="text-xs text-muted">
+                Percentil {avVo2.textoPercentil.replace("≈ ", "aproximado ")} para a idade e o sexo (referência FRIEND, esteira, faixa {avVo2.faixaEtaria} anos
+                {avVo2.extrapolado ? " - usada por aproximação" : ""}). Referência norte-americana com VO2 medido; estimativas por equação são menos precisas.
+              </p>
             </div>
           )}
           {vo2max !== null && !classeVo2 && <p className="mt-1.5 text-xs text-muted">Informe idade e sexo (aba Física) para classificar.</p>}

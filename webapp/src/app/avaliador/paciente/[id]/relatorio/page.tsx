@@ -20,7 +20,7 @@ import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { CAMPOS_CIRCUNFERENCIA, calcularMassaMagraRelativa, expansibilidadeToracica } from "@/lib/avaliacao/medidasRegionais";
 import { paraNumero } from "@/lib/numeros";
 import { triarSarcopeniaDinapenia } from "@/lib/integracao/sarcopenia";
-import { vo2maxDeRegistro, classificarVO2max, ROTULO_CLASSE_VO2, descreverPSE, metDeVo2, fcMaxTanaka, fcMaxFox } from "@/lib/avaliacao/cardiorrespiratoria";
+import { vo2maxDeRegistro, avaliarVO2max, ROTULO_CLASSE_VO2, descreverPSE, metDeVo2, fcMaxTanaka, fcMaxFox } from "@/lib/avaliacao/cardiorrespiratoria";
 import { calcularPerfilIntegrado, type Classificacao } from "@/lib/integracao/perfil";
 import { HORIZONTES, type Plano } from "@/lib/integracao/plano";
 
@@ -118,7 +118,7 @@ export default function RelatorioTecnico() {
 
   const cardio = paciente.cardio ?? {};
   const vo2max = vo2maxDeRegistro(cardio);
-  const classeVo2 = vo2max !== null ? classificarVO2max(vo2max, idadeNum, sexoEfetivo(paciente)) : null;
+  const avVo2 = vo2max !== null ? avaliarVO2max(vo2max, idadeNum, sexoEfetivo(paciente)) : null;
   const pseNum = paraNumero(cardio.rpe_borg);
   const pseDescricao = pseNum !== null ? descreverPSE(pseNum) : null;
   const metCardio = vo2max !== null ? metDeVo2(vo2max) : null;
@@ -358,7 +358,7 @@ export default function RelatorioTecnico() {
                   : null
               }
             />
-            <L label={paraNumero(cardio.vo2max_manual) !== null ? "VO2máx (medido)" : "VO2máx estimado"} value={vo2max !== null ? `${paraNumero(cardio.vo2max_manual) !== null ? vo2max.toFixed(1) : `≈ ${Math.round(vo2max)}`} ml/kg/min${classeVo2 ? ` (${ROTULO_CLASSE_VO2[classeVo2]} para idade/sexo)` : ""}` : null} />
+            <L label={paraNumero(cardio.vo2max_manual) !== null ? "VO2máx (medido)" : "VO2máx estimado"} value={vo2max !== null ? `${paraNumero(cardio.vo2max_manual) !== null ? vo2max.toFixed(1) : `≈ ${Math.round(vo2max)}`} ml/kg/min${avVo2 ? ` (${avVo2.textoPercentil} para idade/sexo, referência FRIEND de esteira: ${ROTULO_CLASSE_VO2[avVo2.classe]})` : ""}` : null} />
             <L label="MET" value={metCardio !== null ? metCardio.toFixed(1) : null} />
             <L label="vVO2máx" value={cardio.rampa_velocidade_final_kmh ? `${cardio.rampa_velocidade_final_kmh} km/h` : null} />
             <L label="FC máxima (medida/estimada)" value={fcMaxCardio !== null ? `${fcMaxCardio.toFixed(0)} bpm` : null} />

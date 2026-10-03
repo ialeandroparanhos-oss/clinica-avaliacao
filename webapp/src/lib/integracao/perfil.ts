@@ -15,7 +15,7 @@ import { paraNumero } from "@/lib/numeros";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { avaliarForca as avaliarForcaIntegrada } from "@/lib/avaliacao/forca";
 import { classificarRCEst, confirmarAdiposidade, relacaoCinturaEstatura } from "@/lib/avaliacao/composicaoCorporal";
-import { classificarVO2max, ROTULO_CLASSE_VO2, vo2maxDeRegistro, type ClasseVO2 } from "@/lib/avaliacao/cardiorrespiratoria";
+import { avaliarVO2max, ROTULO_CLASSE_VO2, vo2maxDeRegistro, type ClasseVO2 } from "@/lib/avaliacao/cardiorrespiratoria";
 
 export type Classificacao = "adequado" | "atencao" | "prioridade" | "investigar";
 
@@ -169,9 +169,13 @@ function avaliarCardio(p: PacienteRow): DomainResult {
     const medido = num(p.cardio?.vo2max_manual) !== null;
     const metTxt = vo2 / 3.5 < 5 ? `; ${(vo2 / 3.5).toFixed(1).replace(".", ",")} METs, aptidão baixa (< 5 METs)` : "";
     const texto = `${medido ? vo2.toFixed(1) : `≈ ${Math.round(vo2)}`} mL/kg/min${metTxt}`;
-    const classe = classificarVO2max(vo2, idadeEfetiva(p), sexoEfetivo(p));
-    if (classe) {
-      notas.push({ nome: `VO2máx ${texto} (${ROTULO_CLASSE_VO2[classe].toLowerCase()} para idade/sexo)`, nota: CLASSE_VO2_NOTA[classe] });
+    const av = avaliarVO2max(vo2, idadeEfetiva(p), sexoEfetivo(p));
+    if (av) {
+      const ressalva = av.extrapolado ? `, faixa ${av.faixaEtaria} usada por aproximação` : "";
+      notas.push({
+        nome: `VO2máx ${texto} (${av.textoPercentil} para idade/sexo na referência FRIEND de esteira - ${ROTULO_CLASSE_VO2[av.classe]}${ressalva})`,
+        nota: CLASSE_VO2_NOTA[av.classe],
+      });
     } else {
       extras.push(`VO2máx ${texto} (faltam idade/sexo para classificar)`);
     }

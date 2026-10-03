@@ -179,10 +179,17 @@
 - **Rita / Íris:** marcha ≤ 0,8 m/s (o 0,8 exato agora conta); 5xSTS com faixa de atenção por idade (11,4 / 12,6 / 14,8 s, abaixo do corte de 15 s); TUG ≥ 12 s = atenção e ≥ 13,5 s = prioridade, com a nota de que não deve ser usado isolado.
 - **Caio:** Tanaka como método padrão de FCmáx; aviso de ±11 bpm quando a FCmáx é prevista; VO2 estimado arredondado (≈ 38; só o VO2 medido mantém decimal); sinal de MET < 5; ressalva do teste de Cooper (mais forte aos 60+).
 
+## Implementado em 03/10/2026 (percentis FRIEND de esteira)
+
+- **Caio:** a classificação do VO2máx deixou de usar a tabela de Cooper (de memória) e passou a usar os **percentis FRIEND de esteira** (Tabela 1 de Kaminsky, Arena & Myers, Mayo Clin Proc 2015;90:1515–1523, reproduzida em Kaminsky, Myers & Arena, Prog Cardiovasc Dis 2019, [DOI](https://doi.org/10.1016/j.pcad.2018.10.003)): percentis 5, 10, 25, 50, 75, 90 e 95 por década (20–79 anos) e sexo, com VO2máx medido.
+- **Classes** (escolha do projeto sobre os cortes disponíveis): < P10 muito fraco; P10–P25 fraco; P25–P50 regular (abaixo da mediana); P50–P75 bom; ≥ P75 excelente. A tela mostra também o **percentil aproximado** (interpolação linear entre os percentis da tabela; "< P5" e "> P95" fora do intervalo). Idades < 20 e ≥ 80 usam a faixa mais próxima, com aviso.
+- **Limites:** referência norte-americana (o registro mostra valores maiores em noruegueses); as nossas estimativas vêm de equação (Bruce/Foster, Cooper), menos precisas que o VO2 medido.
+- **Não usado:** a equação FRIEND de VO2máx previsto (79,9 − 0,39 × idade − 13,7 × sexo − 0,127 × peso em lb; SEE 7,2 mL/kg/min) — erro individual grande demais para classificar um paciente.
+
 ## Pendências que dependem de você
 
 - **Arm Curl (Rikli & Jones):** conferir os limites com a sua apostila (mínimos da faixa normal; mulheres 60–64 até 90+: 13, 12, 12, 11, 10, 10, 8; homens: 16, 15, 14, 13, 13, 11, 10).
-- **Tabela FRIEND:** o arquivo `kaminsky2017.pdf` é a tabela de **bicicleta ergométrica**; não serve para Bruce/Cooper. Falta a de **esteira** (Kaminsky et al., Mayo Clin Proc 2015;90:1515–1523, ou a atualização de 2022).
+- **Tabela FRIEND:** resolvida com o `kaminsky2019.pdf` (esteira). O `kaminsky2017.pdf` é de bicicleta ergométrica e não foi usado.
 - **Siri:** o app já usa a conversão de Siri (495/densidade − 450) nos protocolos de Pollock; não é protocolo à parte.
 - **Weltman mulheres obesas:** equação confirmada no PubMed (Weltman et al., Am J Clin Nutr 1988;48:1179–83, [DOI](https://doi.org/10.1093/ajcn/48.5.1179)): %G = 0,11077 × abdômen(médio) − 0,17666 × estatura + 0,14354 × peso + 51,03301 (SEE ± 2,9). É baseada em circunferências, não em dobras; unidades não constam no resumo (cm e kg são as plausíveis). **Weltman homens obesos:** equação ainda não encontrada. **"Esportes Mulheres":** autor desconhecido sem o livro.
-- **Escolhas clínicas restantes:** corte de classificação do TC6 e adoção dos percentis FRIEND de esteira.
+- **Escolhas clínicas restantes:** corte de classificação do TC6 e confirmação das faixas de percentil das classes de VO2máx.
