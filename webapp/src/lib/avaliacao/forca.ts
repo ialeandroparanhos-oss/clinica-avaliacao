@@ -19,8 +19,16 @@
 // própria: usa o corte do EWGSOP2 (27/16 kgf).
 //
 // Rikli & Jones: limite inferior da faixa normal (percentis 25-75) do Senior
-// Fitness Test. Chair Stand conferido contra a tabela publicada; Arm Curl
-// ainda CONFIRMAR com a apostila.
+// Fitness Test (manual, 2ª ed., 2013; n = 7.183 adultos de 60-94 anos da
+// comunidade, EUA). Chair Stand e Arm Curl conferidos contra duas tabelas
+// secundárias independentes (fitnessnorms.com e topendsports.com/Jones & Rikli
+// 2002): os 14 limites de Arm Curl por sexo/faixa etária coincidem. Pesos do
+// Arm Curl: 2,3 kg (5 lb) mulheres e 3,6 kg (8 lb) homens. Os padrões
+// criteriais de independência funcional (Rikli & Jones, Gerontologist 2013,
+// https://doi.org/10.1093/geront/gns071) existem, mas os valores não foram
+// obtidos. O Arm Curl mede resistência de flexores do cotovelo (correlação
+// apenas moderada com a preensão manual), por isso pesa menos que a
+// dinamometria e o 5xSTS na regra.
 
 import type { SexoComp } from "./composicaoCorporal";
 

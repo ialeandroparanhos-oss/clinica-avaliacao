@@ -186,9 +186,17 @@
 - **Limites:** referência norte-americana (o registro mostra valores maiores em noruegueses); as nossas estimativas vêm de equação (Bruce/Foster, Cooper), menos precisas que o VO2 medido.
 - **Não usado:** a equação FRIEND de VO2máx previsto (79,9 − 0,39 × idade − 13,7 × sexo − 0,127 × peso em lb; SEE 7,2 mL/kg/min) — erro individual grande demais para classificar um paciente.
 
+## Arm Curl — busca de evidências (03/10/2026)
+
+- **Limites conferidos:** os 14 limites inferiores (percentil 25) que o app usa coincidem com duas tabelas secundárias independentes baseadas no Senior Fitness Test de Rikli & Jones (manual, 2ª ed., 2013; n = 7.183, 60–94 anos): [fitnessnorms.com](https://fitnessnorms.com/functional/arm-curl/) e [topendsports.com](https://www.topendsports.com/testing/tests/arm-curl.htm) (esta cita Jones & Rikli, 2002). Mulheres (60–64 … 90–94): 13, 12, 12, 11, 10, 10, 8; homens: 16, 15, 14, 13, 13, 11, 10 repetições em 30 s. Não li o manual original.
+- **Percentis completos (fitnessnorms.com, mediana):** mulheres 16, 15, 14, 14, 13, 12, 11; homens 19, 18, 17, 16, 16, 14, 12.
+- **Padrões criteriais de independência funcional** (Rikli & Jones, [Gerontologist 2013](https://doi.org/10.1093/geront/gns071), n = 2.140, validade/confiabilidade 0,79–0,97): existem para homens e mulheres de 60–94 anos, mas o acesso ao texto foi bloqueado e **não obtive os valores**. Seriam um segundo corte (nível mínimo para manter independência) a somar ao percentil 25.
+- **Valores brasileiros:** só para mulheres e em ativas — Vagetti et al. 2015 (n = 1.783, 60–84 anos, programa público de atividade física em Curitiba; médias 17,5 → 15,1) e Mazo et al. 2015 (n = 335, 60–69 anos, praticantes de exercício; P10 = 13, P50 = 17–19). As medianas ficam acima das norte-americanas, mas as amostras são de mulheres fisicamente ativas e não há dados de homens; **não adotei como corte**.
+- **Peso do teste:** o Arm Curl mede resistência dos flexores do cotovelo e se correlaciona só moderadamente com a preensão manual; por isso, na regra de força, um Arm Curl abaixo vale **atenção** e só a combinação com o Chair Stand vale prioridade.
+
 ## Pendências que dependem de você
 
-- **Arm Curl (Rikli & Jones):** conferir os limites com a sua apostila (mínimos da faixa normal; mulheres 60–64 até 90+: 13, 12, 12, 11, 10, 10, 8; homens: 16, 15, 14, 13, 13, 11, 10).
+- **Arm Curl:** nada a conferir nos limites (ver acima). Opcional: se encontrar o manual ou o artigo de 2013, os padrões criteriais podem ser acrescentados.
 - **Tabela FRIEND:** resolvida com o `kaminsky2019.pdf` (esteira). O `kaminsky2017.pdf` é de bicicleta ergométrica e não foi usado.
 - **Siri:** o app já usa a conversão de Siri (495/densidade − 450) nos protocolos de Pollock; não é protocolo à parte.
 - **Weltman mulheres obesas:** equação confirmada no PubMed (Weltman et al., Am J Clin Nutr 1988;48:1179–83, [DOI](https://doi.org/10.1093/ajcn/48.5.1179)): %G = 0,11077 × abdômen(médio) − 0,17666 × estatura + 0,14354 × peso + 51,03301 (SEE ± 2,9). É baseada em circunferências, não em dobras; unidades não constam no resumo (cm e kg são as plausíveis). **Weltman homens obesos:** equação ainda não encontrada. **"Esportes Mulheres":** autor desconhecido sem o livro.
