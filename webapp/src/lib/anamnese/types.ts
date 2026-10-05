@@ -133,6 +133,11 @@ export type Anamnese = {
   };
   dor: {
     tem_dor: boolean | null;
+    // Dor por região, marcada no mapa corporal: intensidade (0-10) e há quanto
+    // tempo, em cada região. "localizacoes", "intensidade_nrs" (a MAIOR entre as
+    // regiões) e "duracao" (resumo) são derivados daqui e continuam sendo o que
+    // o painel integrado e os alertas leem.
+    por_regiao: Record<string, { intensidade: number | null; duracao: string }>;
     localizacoes: string[];
     intensidade_nrs: number | null;
     duracao: string;

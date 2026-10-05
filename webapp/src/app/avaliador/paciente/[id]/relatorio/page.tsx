@@ -15,6 +15,7 @@ import type { PacienteRow } from "@/lib/anamnese/types";
 import { escorePSS10, escoreTSK11, somaSemNulos, escoreCurto, rotuloNivel } from "@/lib/anamnese/alerts";
 import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { calcularRiscoCardiovascular } from "@/lib/anamnese/riscoCardiovascular";
+import { linhasDorPorRegiao } from "@/lib/anamnese/dorPorRegiao";
 import { classificarRCEst, percentualGorduraIdealSugerido, relacaoCinturaEstatura } from "@/lib/avaliacao/composicaoCorporal";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { CAMPOS_CIRCUNFERENCIA, calcularMassaMagraRelativa, expansibilidadeToracica } from "@/lib/avaliacao/medidasRegionais";
@@ -216,7 +217,7 @@ export default function RelatorioTecnico() {
             <L label="Atividade física atual" value={anamnese.atividade_fisica.pratica_atual === true ? anamnese.atividade_fisica.modalidades || "Sim" : anamnese.atividade_fisica.pratica_atual === false ? "Sedentário(a)" : null} />
             <L label="PSQI - escore global (0-21)" value={psqi ? psqi.global : anamnese.sono.qualidade_percebida ? `${anamnese.sono.qualidade_percebida}/5 (triagem simplificada, PSQI incompleto)` : null} />
             <L label="Estresse percebido (0-10)" value={anamnese.estilo_vida.estresse_percebido} />
-            <L label="Dor atual" value={anamnese.dor.tem_dor === true ? `${anamnese.dor.localizacoes.join(", ")} (NRS ${anamnese.dor.intensidade_nrs ?? "–"})` : anamnese.dor.tem_dor === false ? "Nega dor" : null} />
+            <L label="Dor atual" value={anamnese.dor.tem_dor === true ? (linhasDorPorRegiao(anamnese.dor).join("; ") || `NRS máx. ${anamnese.dor.intensidade_nrs ?? "–"}`) : anamnese.dor.tem_dor === false ? "Nega dor" : null} />
             <L label="TSK-11 / PSEQ" value={anamnese.dor.tem_dor === true ? `${tsk11 ?? "–"} / ${pseq ?? "–"}` : null} />
             <L
               label="PSS-10 / GAD-7 / PHQ-9"

@@ -22,6 +22,7 @@ import { AbaFuncional } from "@/components/avaliador/AbaFuncional";
 import { AbaCardio } from "@/components/avaliador/AbaCardio";
 import { PainelModulos } from "@/components/avaliador/PainelModulos";
 import { statusModulo } from "@/lib/anamnese/modulos";
+import { linhasDorPorRegiao } from "@/lib/anamnese/dorPorRegiao";
 import { idadeEfetiva } from "@/lib/avaliacao/identificacao";
 import { conectarObjetivo } from "@/lib/integracao/objetivo";
 import { triarSarcopeniaDinapenia } from "@/lib/integracao/sarcopenia";
@@ -803,9 +804,8 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
 
       {anamnese.dor.tem_dor && (
         <Capitulo titulo="Dor">
-          <Linha label="Localizações" value={anamnese.dor.localizacoes} />
-          <Linha label="Intensidade (NRS 0-10)" value={anamnese.dor.intensidade_nrs} />
-          <Linha label="Duração" value={anamnese.dor.duracao} />
+          <Linha label="Regiões (intensidade · há quanto tempo)" value={linhasDorPorRegiao(anamnese.dor)} />
+          <Linha label="Intensidade máxima (NRS 0-10)" value={anamnese.dor.intensidade_nrs} />
           <Linha label="Frequência" value={anamnese.dor.frequencia} />
           <Linha label="Características" value={anamnese.dor.caracteristicas} />
           <Linha label="Início" value={anamnese.dor.inicio} />

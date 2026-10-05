@@ -5,10 +5,10 @@ import { createClient } from "@/lib/supabase/client";
 import { anamneseVazia, mesclarComPadrao } from "@/lib/anamnese/defaults";
 import type { Anamnese } from "@/lib/anamnese/types";
 import { calcularAlertas, precisaInstrumentoCompleto } from "@/lib/anamnese/alerts";
-import { Field, TextInput, TextArea, YesNo, ChoiceGroup, CheckboxGroup, Slider, StepShell } from "@/components/forms";
+import { Field, TextInput, TextArea, YesNo, ChoiceGroup, CheckboxGroup, StepShell } from "@/components/forms";
+import { MapaDor } from "@/components/paciente/MapaDor";
 import {
   perguntasParQ,
-  regioesCorporais,
   bandeirasVermelhasDor,
   opcoesTabagismo,
   opcoesDificuldadesDiaADia,
@@ -182,7 +182,11 @@ export default function PacientePage() {
   }
 
   if (stage === "concluido") {
-    const modulosRecomendados = MODULOS.filter((m) => moduloSinalizado(anamnese, m.id) && statusModulo(anamnese, m.id) !== "respondido");
+    // Todos os módulos ainda não respondidos são oferecidos (opcionais); os
+    // recomendados pelas respostas do base vêm primeiro, destacados.
+    const modulosPendentes = MODULOS.filter((m) => statusModulo(anamnese, m.id) !== "respondido")
+      .map((m) => ({ ...m, recomendado: moduloSinalizado(anamnese, m.id) }))
+      .sort((a, b) => Number(b.recomendado) - Number(a.recomendado));
     return (
       <main className="min-h-screen flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-8 text-center">
@@ -195,14 +199,17 @@ export default function PacientePage() {
             preparar sua avaliação presencial. Você pode fechar esta página.
           </p>
 
-          {modulosRecomendados.length > 0 && (
+          {modulosPendentes.length > 0 && (
             <div className="mt-6 pt-6 border-t border-border text-left space-y-3">
-              <p className="text-sm font-medium text-ink">Se quiser, você pode contar mais sobre:</p>
-              {modulosRecomendados.map((m) => (
-                <div key={m.id} className="rounded-lg border border-border p-4">
-                  <p className="font-medium text-ink text-sm">{m.titulo}</p>
+              <p className="text-sm font-medium text-ink">Se quiser, você pode contar mais sobre (todos são opcionais):</p>
+              {modulosPendentes.map((m) => (
+                <div key={m.id} className={`rounded-lg border p-4 ${m.recomendado ? "border-accent/50 bg-accent/5" : "border-border"}`}>
+                  <p className="font-medium text-ink text-sm">
+                    {m.titulo}
+                    {m.recomendado && <span className="ml-2 text-xs font-medium text-accent-dark">sugerido para você</span>}
+                  </p>
                   <p className="text-xs text-muted mt-1 leading-relaxed">
-                    {m.id === "bem-estar"
+                    {m.id === "bem-estar" && m.recomendado
                       ? "Você comentou que o estresse, a ansiedade ou o humor têm pesado no seu dia a dia. Temos um questionário curto, separado e opcional - só a equipe da clínica vê as respostas."
                       : m.descricaoPaciente}{" "}
                     ({m.duracao})
@@ -455,28 +462,13 @@ export default function PacientePage() {
           )}
 
           {step === 3 && (
-            <StepShell title="Dor" subtitle="Se houver dor, queremos saber onde e o quanto incomoda.">
+            <StepShell title="Dor" subtitle="Se houver dor, mostre no desenho onde e o quanto incomoda.">
               <Field label="Você sente alguma dor atualmente?">
                 <YesNo value={anamnese.dor.tem_dor} onChange={(v) => set("dor", { tem_dor: v })} />
               </Field>
               {anamnese.dor.tem_dor && (
                 <>
-                  <Field label="Onde você sente dor? (pode marcar mais de uma região)">
-                    <CheckboxGroup columns={2} options={regioesCorporais} values={anamnese.dor.localizacoes} onChange={(v) => set("dor", { localizacoes: v })} />
-                  </Field>
-                  <Field label="De 0 (sem dor) a 10 (pior dor imaginável), qual a intensidade?">
-                    <Slider
-                      min={0}
-                      max={10}
-                      value={anamnese.dor.intensidade_nrs}
-                      onChange={(v) => set("dor", { intensidade_nrs: v })}
-                      labelMin="sem dor"
-                      labelMax="pior dor imaginável"
-                    />
-                  </Field>
-                  <Field label="Há quanto tempo você sente essa dor?">
-                    <TextInput value={anamnese.dor.duracao} onChange={(e) => set("dor", { duracao: e.target.value })} />
-                  </Field>
+                  <MapaDor dor={anamnese.dor} onChange={(patch) => set("dor", patch)} />
                   <Field label="Você apresenta algum destes sinais junto com a dor? (marque se houver)">
                     <CheckboxGroup
                       columns={1}

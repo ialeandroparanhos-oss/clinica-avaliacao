@@ -82,7 +82,11 @@ export const regioesCorporais = [
   "Tornozelo/pé esquerdo",
 ];
 
-export const caracteristicasDor = ["Queimação", "Pontada", "Peso", "Formigamento", "Latejante", "Aperto", "Outra"];
+// Há quanto tempo sente a dor (clicável). Três meses é o limite comum entre
+// dor aguda/subaguda e crônica.
+export const opcoesDuracaoDor = ["Menos de 1 semana", "1 a 4 semanas", "1 a 3 meses", "3 a 6 meses", "6 meses a 1 ano", "Mais de 1 ano"];
+
+export const caracteristicasDor =["Queimação", "Pontada", "Peso", "Formigamento", "Latejante", "Aperto", "Outra"];
 
 // "Dor torácica" não entra aqui - já é perguntada no PAR-Q+
 // (prontidao.parq.chest_pain), que gera seu próprio alerta.

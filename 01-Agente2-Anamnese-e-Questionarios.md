@@ -271,7 +271,9 @@ O questionário do paciente ficou grande demais. Ele foi dividido em um **questi
 - **Dor em detalhe:** características, início, agravantes/atenuantes, TSK-11, PSEQ. Recomendado se há dor.
 - **Estilo de vida e atividade física:** IPAQ, alimentação, hidratação, álcool, lazer, barreiras, apoio. Sempre opcional.
 
-**Como os módulos chegam ao paciente:** ao concluir o base, a tela final oferece os módulos recomendados ("responder agora, opcional"); o avaliador pode também copiar o link de qualquer módulo na aba Anamnese e enviar quando quiser. O paciente se identifica com nome e data de nascimento (reaproveitados se acabou de responder o base na mesma aba). O módulo de bem-estar mostra, ao final, o CVV (188).
+**Dor no questionário base (mapa corporal):** o paciente toca no desenho (frente e costas) nas regiões com dor; para cada região aparecem uma escala 0–10 em botões coloridos e "há quanto tempo" em botões (menos de 1 semana, 1 a 4 semanas, 1 a 3 meses, 3 a 6 meses, 6 meses a 1 ano, mais de 1 ano). Há também uma lista para quem prefere marcar sem o desenho. Os campos antigos (`localizacoes`, `intensidade_nrs` = a maior entre as regiões, `duracao` = resumo) são derivados do mapa e continuam alimentando o painel integrado, os alertas e o relatório; fichas antigas seguem legíveis.
+
+**Como os módulos chegam ao paciente:** ao concluir o base, a tela final oferece **todos** os módulos ainda não respondidos, todos opcionais, com os recomendados primeiro e marcados como "sugerido para você" ("responder agora, opcional"); o avaliador pode também copiar o link de qualquer módulo na aba Anamnese e enviar quando quiser. O paciente se identifica com nome e data de nascimento (reaproveitados se acabou de responder o base na mesma aba). O módulo de bem-estar mostra, ao final, o CVV (188).
 
 **Avaliador:** a aba Anamnese mostra o painel "Questionários complementares" (status: respondido, em andamento, recomendado, não aplicado; link para copiar). Resposta "sim, bastante" à pergunta inicial gera alerta de nível 2 (Atenção) na categoria Saúde mental.
 

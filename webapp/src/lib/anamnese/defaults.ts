@@ -115,6 +115,7 @@ export const anamneseVazia: Anamnese = {
   },
   dor: {
     tem_dor: null,
+    por_regiao: {},
     localizacoes: [],
     intensidade_nrs: null,
     duracao: "",
