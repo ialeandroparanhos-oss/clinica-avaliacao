@@ -317,20 +317,25 @@ function avaliarEstiloDeVida(p: PacienteRow): DomainResult {
   const pratica = af?.pratica_atual;
 
   if ((estresse === null || estresse === undefined) && (pratica === null || pratica === undefined)) {
-    return resultado("estilo_de_vida", "investigar", "Estresse percebido e atividade física ainda não registrados.");
+    return resultado("estilo_de_vida", "investigar", "Atividade física atual (e, se aplicado, estresse percebido) ainda não registrados.");
   }
 
   if (estresse !== null && estresse !== undefined && estresse >= 8) {
     return resultado("estilo_de_vida", "prioridade", `Estresse percebido ${estresse}/10, nível muito alto.`);
   }
   if ((estresse !== null && estresse !== undefined && estresse >= 5) || pratica === false || barreiras >= 3) {
-    return resultado(
-      "estilo_de_vida",
-      "atencao",
-      `Estresse ${estresse ?? "–"}/10${pratica === false ? ", sedentário(a)" : ""}${barreiras >= 3 ? `, ${barreiras} barreiras a exercício relatadas` : ""}.`
-    );
+    const partes = [
+      estresse !== null && estresse !== undefined ? `estresse ${estresse}/10` : null,
+      pratica === false ? "sedentário(a)" : null,
+      barreiras >= 3 ? `${barreiras} barreiras a exercício relatadas` : null,
+    ].filter(Boolean);
+    return resultado("estilo_de_vida", "atencao", `${partes.join(", ")}.`.replace(/^./, (c) => c.toUpperCase()));
   }
-  return resultado("estilo_de_vida", "adequado", `Estresse ${estresse ?? "–"}/10, pratica atividade física, poucas barreiras relatadas.`);
+  return resultado(
+    "estilo_de_vida",
+    "adequado",
+    `${estresse !== null && estresse !== undefined ? `Estresse ${estresse}/10, p` : "P"}ratica atividade física, poucas barreiras relatadas.`
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -400,7 +405,23 @@ function avaliarBemEstar(p: PacienteRow): DomainResult {
         `Triagem curta negativa (GAD-2 ${gad2 ?? "–"}/6, PHQ-2 ${phq2 ?? "–"}/6) - instrumento completo não foi necessário.`
       );
     }
-    return resultado("bem_estar", "investigar", "GAD-7/PHQ-9 ainda não concluídos.");
+    // Questionário de bem-estar (módulo à parte) ainda não respondido: o que
+    // existe é só a pergunta inicial do questionário base (não é escala
+    // validada, apenas decide se o módulo é oferecido).
+    const sinal = sm.sinalizacao;
+    if (sinal === "sim") {
+      return resultado("bem_estar", "atencao", "O paciente relatou que estresse, ansiedade ou humor atrapalham bastante o dia a dia; o questionário de bem-estar emocional ainda não foi respondido - oferecer e acolher.");
+    }
+    if (sinal === "um_pouco") {
+      return resultado("bem_estar", "investigar", "O paciente relatou que estresse, ansiedade ou humor atrapalham um pouco o dia a dia; o questionário de bem-estar emocional (opcional) ainda não foi respondido.");
+    }
+    if (sinal === "nao") {
+      return resultado("bem_estar", "investigar", "Sem queixa emocional na pergunta inicial (pergunta única, não é escala validada); questionário de bem-estar não aplicado.");
+    }
+    if (sinal === "prefiro_nao_responder") {
+      return resultado("bem_estar", "investigar", "O paciente preferiu não responder à pergunta inicial sobre bem-estar emocional; questionário não aplicado.");
+    }
+    return resultado("bem_estar", "investigar", "Bem-estar emocional ainda não avaliado (pergunta inicial e questionário de bem-estar sem resposta).");
   }
   if ((gad7 !== null && gad7 >= 10) || (phq9 !== null && phq9 >= 10)) {
     return resultado("bem_estar", "atencao", `GAD-7 ${gad7 ?? "–"}/21, PHQ-9 ${phq9 ?? "–"}/27 (faixa leve/moderada) — triagem, não diagnóstico.`);

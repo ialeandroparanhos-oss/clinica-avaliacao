@@ -13,6 +13,7 @@ export const anamneseVazia: Anamnese = {
     motivo_procura: "",
     queixa_principal: "",
     atividades_perdidas: "",
+    dificuldades: [],
     objetivos: "",
     expectativas: "",
   },
@@ -135,6 +136,7 @@ export const anamneseVazia: Anamnese = {
     pseq: Array(10).fill(null),
   },
   saude_mental: {
+    sinalizacao: null,
     percepcao_saude: null,
     pss10: Array(10).fill(null),
     gad7: Array(7).fill(null),

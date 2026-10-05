@@ -22,6 +22,8 @@ export type Anamnese = {
     motivo_procura: string;
     queixa_principal: string;
     atividades_perdidas: string;
+    // Dificuldades do dia a dia (lista de marcação) - pergunta do questionário base.
+    dificuldades: string[];
     objetivos: string;
     expectativas: string;
   };
@@ -153,6 +155,11 @@ export type Anamnese = {
     pseq: (number | null)[]; // 10 itens, 0-6 (Pain Self-Efficacy Questionnaire)
   };
   saude_mental: {
+    // Pergunta única (suave) do questionário base: se o estresse, a ansiedade
+    // ou o humor estão atrapalhando o dia a dia. Quando "um_pouco" ou "sim", o
+    // questionário de bem-estar emocional (módulo à parte) é oferecido. Não é
+    // escala validada - só decide se o módulo é oferecido.
+    sinalizacao: "nao" | "um_pouco" | "sim" | "prefiro_nao_responder" | null;
     percepcao_saude: number | null; // 1-5
     pss10: (number | null)[]; // 10 itens, 0-4
     gad7: (number | null)[]; // 7 itens, 0-3

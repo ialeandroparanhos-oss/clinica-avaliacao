@@ -94,6 +94,30 @@ export const bandeirasVermelhasDor = [
   "Alteração de controle esfincteriano",
 ];
 
+// Dificuldades do dia a dia (questionário base) - lista de marcação.
+export const opcoesDificuldadesDiaADia = [
+  "Levantar da cadeira ou da cama",
+  "Caminhar",
+  "Subir escadas",
+  "Carregar peso (compras, objetos)",
+  "Dormir bem",
+  "Trabalhar",
+  "Fazer exercício",
+  "Cuidar de casa / tarefas domésticas",
+  "Manter o equilíbrio",
+  "Não tenho dificuldades",
+];
+
+// Pergunta suave que decide se o questionário de bem-estar emocional (módulo
+// à parte) é oferecido. A palavra "preferir não responder" é uma resposta
+// legítima - nada é forçado.
+export const opcoesSinalizacaoBemEstar: { value: "nao" | "um_pouco" | "sim" | "prefiro_nao_responder"; label: string }[] = [
+  { value: "nao", label: "Não" },
+  { value: "um_pouco", label: "Um pouco" },
+  { value: "sim", label: "Sim, bastante" },
+  { value: "prefiro_nao_responder", label: "Prefiro não responder" },
+];
+
 export const barreirasExercicioOpcoes = [
   "Falta de tempo",
   "Falta de motivação",

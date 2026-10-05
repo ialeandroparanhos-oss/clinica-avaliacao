@@ -20,6 +20,8 @@ import { SalvarBar, useSalvarSecao } from "@/components/avaliador/campos";
 import { AbaFisica } from "@/components/avaliador/AbaFisica";
 import { AbaFuncional } from "@/components/avaliador/AbaFuncional";
 import { AbaCardio } from "@/components/avaliador/AbaCardio";
+import { PainelModulos } from "@/components/avaliador/PainelModulos";
+import { statusModulo } from "@/lib/anamnese/modulos";
 import { idadeEfetiva } from "@/lib/avaliacao/identificacao";
 import { conectarObjetivo } from "@/lib/integracao/objetivo";
 import { triarSarcopeniaDinapenia } from "@/lib/integracao/sarcopenia";
@@ -670,6 +672,8 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
     <div className="space-y-4">
       <p className="text-xs text-muted uppercase tracking-wide">Status: {status}</p>
 
+      <PainelModulos anamnese={anamnese} />
+
       <Capitulo titulo="Contexto">
         <Linha label="Idade (da data de nascimento)" value={idadeEfetiva(paciente) !== null ? `${idadeEfetiva(paciente)} anos` : null} />
         <Linha label="Profissão" value={anamnese.contexto.profissao} />
@@ -683,6 +687,7 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
       <Capitulo titulo="Motivo da procura">
         <Linha label="Motivo" value={anamnese.motivo.motivo_procura} />
         <Linha label="Queixa principal" value={anamnese.motivo.queixa_principal} />
+        <Linha label="Dificuldades no dia a dia" value={anamnese.motivo.dificuldades} />
         <Linha label="Atividades perdidas" value={anamnese.motivo.atividades_perdidas} />
         <Linha label="Objetivos / o que gostaria de melhorar" value={anamnese.motivo.objetivos} />
         <Linha label="Expectativas" value={anamnese.motivo.expectativas} />
@@ -759,7 +764,11 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
         <Linha label="Horas sentado/dia (IPAQ)" value={anamnese.atividade_fisica.ipaq.horas_sentado_dia} />
       </Capitulo>
 
-      <Capitulo titulo="Sono (PSQI)">
+      <Capitulo titulo="Sono">
+        <Linha label="Horas de sono por noite" value={anamnese.sono.horas_sono} />
+        <Linha label="Qualidade percebida (1-5)" value={anamnese.sono.qualidade_percebida} />
+        <Linha label="Dificuldade para pegar no sono" value={anamnese.sono.dificuldade_iniciar === null ? null : anamnese.sono.dificuldade_iniciar ? "Sim" : "Não"} />
+        <Linha label="Acorda durante a noite" value={anamnese.sono.despertares_noturnos === null ? null : anamnese.sono.despertares_noturnos ? "Sim" : "Não"} />
         <Linha label="PSQI - escore global (0-21)" value={psqi ? `${psqi.global}${psqi.global > 5 ? " (acima do corte de má qualidade)" : ""}` : null} />
         <Linha label="Componente 1 - qualidade subjetiva (0-3)" value={psqi?.componentes.qualidadeSubjetiva} />
         <Linha label="Componente 2 - latência (0-3)" value={psqi?.componentes.latencia} />
@@ -769,7 +778,12 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
         <Linha label="Componente 6 - uso de medicação (0-3)" value={psqi?.componentes.medicacao} />
         <Linha label="Componente 7 - disfunção diurna (0-3)" value={psqi?.componentes.disfuncaoDiurna} />
         <Linha label="Outro motivo relatado" value={anamnese.psqi.outro_motivo_texto} />
-        {!psqi && <Linha label="Status" value="PSQI incompleto - respostas insuficientes para calcular o escore." />}
+        {!psqi && (
+          <Linha
+            label="PSQI"
+            value={statusModulo(anamnese, "sono") === "em_andamento" ? "Incompleto - respostas insuficientes para calcular o escore." : "Módulo de sono em detalhe não respondido."}
+          />
+        )}
       </Capitulo>
 
       <Capitulo titulo="Estilo de vida">
@@ -808,6 +822,16 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
       )}
 
       <Capitulo titulo="Saúde mental e bem-estar (triagem)">
+        <Linha
+          label="Pergunta inicial: estresse/ansiedade/humor atrapalham o dia a dia?"
+          value={
+            anamnese.saude_mental.sinalizacao
+              ? { nao: "Não", um_pouco: "Um pouco", sim: "Sim, bastante", prefiro_nao_responder: "Prefere não responder" }[anamnese.saude_mental.sinalizacao]
+              : null
+          }
+        />
+        {statusModulo(anamnese, "bem-estar") === "nao_aplicado" && <Linha label="Questionário de bem-estar" value="Não aplicado." />}
+        {statusModulo(anamnese, "bem-estar") === "sinalizado" && <Linha label="Questionário de bem-estar" value="Recomendado (o paciente sinalizou), ainda não respondido." />}
         <Linha label="Percepção geral de saúde (1-5)" value={anamnese.saude_mental.percepcao_saude} />
         <Linha label="PSS-10 (estresse, 0-40)" value={pss10} />
         <Linha label="GAD-7 (ansiedade, 0-21)" value={gad7} />

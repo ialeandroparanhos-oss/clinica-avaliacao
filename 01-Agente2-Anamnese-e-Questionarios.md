@@ -259,6 +259,24 @@ Este bloco é aplicado **antes** de qualquer teste físico/funcional (bloqueio e
 
 ---
 
+## REVISÃO 05/10/2026 — QUESTIONÁRIO BASE CURTO + MÓDULOS COMPLEMENTARES
+
+O questionário do paciente ficou grande demais. Ele foi dividido em um **questionário base (7 etapas)** e **módulos complementares opcionais**, cada um em link próprio (`/paciente/modulo/<módulo>`).
+
+**Base (o que o paciente responde sempre):** sobre você (profissão, rotina, esforço físico no trabalho); o que trouxe o paciente (motivo, queixa, dificuldades do dia a dia em lista de marcação, atividades que deixou de fazer, objetivo); sua saúde (doenças, cirurgias, lesões, quedas, medicamentos com nome e finalidade, colesterol/HDL/glicemia, histórico familiar); dor (onde, intensidade, há quanto tempo, bandeiras vermelhas); hábitos e bem-estar (atividade física atual, 4 perguntas rápidas de sono, tabagismo e **uma pergunta suave** sobre estresse/ansiedade/humor atrapalharem o dia a dia); segurança para exercício (PAR-Q+); confirmação.
+
+**Módulos (à parte, opcionais):**
+- **Bem-estar emocional:** estresse percebido (0–10), PSS-10, GAD-2→GAD-7, PHQ-2→PHQ-9 (item de ideação sempre perguntado dentro do módulo). Oferecido quando a pergunta inicial é "um pouco" ou "sim, bastante"; "prefiro não responder" é uma resposta válida e nada é forçado.
+- **Sono em detalhe:** PSQI. Recomendado se a qualidade do sono é ≤ 2/5 ou há dificuldade para dormir/despertares.
+- **Dor em detalhe:** características, início, agravantes/atenuantes, TSK-11, PSEQ. Recomendado se há dor.
+- **Estilo de vida e atividade física:** IPAQ, alimentação, hidratação, álcool, lazer, barreiras, apoio. Sempre opcional.
+
+**Como os módulos chegam ao paciente:** ao concluir o base, a tela final oferece os módulos recomendados ("responder agora, opcional"); o avaliador pode também copiar o link de qualquer módulo na aba Anamnese e enviar quando quiser. O paciente se identifica com nome e data de nascimento (reaproveitados se acabou de responder o base na mesma aba). O módulo de bem-estar mostra, ao final, o CVV (188).
+
+**Avaliador:** a aba Anamnese mostra o painel "Questionários complementares" (status: respondido, em andamento, recomendado, não aplicado; link para copiar). Resposta "sim, bastante" à pergunta inicial gera alerta de nível 2 (Atenção) na categoria Saúde mental.
+
+**Efeito no painel integrado:** sem o módulo de bem-estar, o domínio Saúde mental e bem-estar fica "investigar" (ou "atenção" se o paciente disse "sim, bastante"); a pergunta inicial é única e **não é escala validada** — só decide se o módulo é oferecido. A triagem curta e o item de ideação do PHQ-9 só existem para quem responde o módulo.
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 3 — Avaliação Física e Antropométrica** (Etapa 4 do prompt-mestre): sinais vitais, peso, altura, IMC, circunferências, composição corporal — cada medida com objetivo, instrumento, calibração, preparação, execução passo a passo, registro, valores de referência, interpretação, erros comuns e referências, conforme o padrão da Seção 11 do prompt-mestre.

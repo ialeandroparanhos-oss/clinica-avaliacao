@@ -65,6 +65,14 @@ export function calcularAlertas(a: Anamnese): Alerta[] {
     add(4, `Bandeira(s) vermelha(s) de dor relatada(s): ${a.dor.bandeiras_vermelhas.join(", ")}.`, "Dor");
   }
 
+  if (a.saude_mental.sinalizacao === "sim") {
+    add(
+      2,
+      "O paciente relatou que estresse, ansiedade ou humor atrapalham bastante o dia a dia (pergunta inicial). Oferecer o questionário de bem-estar emocional e acolher.",
+      "Saúde mental"
+    );
+  }
+
   const phq9Item9 = a.saude_mental.phq9[indicePHQ9Ideacao];
   if (phq9Item9 !== null && phq9Item9 !== undefined && phq9Item9 > 0) {
     add(
