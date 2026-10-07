@@ -13,7 +13,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { PacienteRow } from "@/lib/anamnese/types";
 import { calcularPerfilIntegrado, type DomainKey } from "@/lib/integracao/perfil";
-import { HORIZONTES, type Plano } from "@/lib/integracao/plano";
+import { HORIZONTES, HORIZONTE_LEGADO, itemAprovado, type ItemPlano, type Plano } from "@/lib/integracao/plano";
 import { INDICADORES, extrairSerie, type LinhaHistorico } from "@/lib/integracao/historico";
 import { SerieChart } from "@/components/SerieChart";
 
@@ -66,12 +66,20 @@ export default function RelatorioPaciente() {
 
   const perfil = calcularPerfilIntegrado(paciente);
   const plano = paciente.plano as Plano | undefined;
-  const itensPorHorizonte = HORIZONTES.map((h) => ({
-    ...h,
-    titulosDominio: Array.from(
-      new Set((plano?.itens ?? []).filter((it) => it.horizonte === h.chave).map((it) => it.origem.split(" — ")[1] ?? it.origem))
-    ),
-  })).filter((h) => h.titulosDominio.length > 0);
+  // Só o que o avaliador aprovou. Para o paciente, cada horizonte lista as FRENTES
+  // (domínios) em foco, sem jargão técnico nem evidência.
+  const tituloFrente = (it: ItemPlano): string => {
+    if (it.dominio) return perfil.dominios.find((d) => d.chave === it.dominio)?.titulo ?? it.origem.split(" — ")[1] ?? it.origem;
+    if (it.categoria === "reavaliacao") return "Reavaliação do seu progresso";
+    if (it.categoria === "seguranca") return "Segurança antes de intensificar o exercício";
+    return it.origem.split(" — ")[1] ?? it.origem;
+  };
+  const itensPorHorizonte = [...HORIZONTES, HORIZONTE_LEGADO]
+    .map((h) => ({
+      ...h,
+      titulosDominio: Array.from(new Set((plano?.itens ?? []).filter((it) => it.horizonte === h.chave && itemAprovado(it)).map(tituloFrente))),
+    }))
+    .filter((h) => h.titulosDominio.length > 0);
 
   const indicadoresComDados = INDICADORES.filter((ind) => INDICADORES_PACIENTE.includes(ind.chave))
     .map((ind) => ({ ind, serie: extrairSerie(historico, ind) }))
@@ -141,10 +149,10 @@ export default function RelatorioPaciente() {
           </Secao>
         )}
 
-        {plano?.encaminhamentos && plano.encaminhamentos.length > 0 && (
+        {plano?.encaminhamentos && plano.encaminhamentos.filter(itemAprovado).length > 0 && (
           <Secao titulo="Também recomendamos consultar">
             <ul className="space-y-1.5">
-              {plano.encaminhamentos.map((e) => (
+              {plano.encaminhamentos.filter(itemAprovado).map((e) => (
                 <li key={e.id} className="text-[15px] text-ink">
                   <strong>{e.especialidade}</strong> — {e.motivo}
                 </li>

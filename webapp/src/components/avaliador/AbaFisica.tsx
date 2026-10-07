@@ -4,7 +4,7 @@
 
 import { Fragment, useMemo, useState } from "react";
 import type { PacienteRow } from "@/lib/anamnese/types";
-import { CheckboxGroup, Field, TextArea, TextInput } from "@/components/forms";
+import { Field, TextArea, TextInput } from "@/components/forms";
 import { CampoComSugestao, NumField, SalvarBar, SelectField, Selo, ValorCalculado, useSalvarSecao, type TomSelo } from "./campos";
 import { AvatarCorporal } from "./AvatarCorporal";
 import { normalizarDecimal, paraNumero } from "@/lib/numeros";
@@ -14,6 +14,8 @@ import {
   SITIOS_JP7,
   TODOS_SITIOS_DOBRA,
   calcularPercentualGorduraDobras,
+  CORTES_CIRC_ABDOMINAL,
+  classificarCircAbdominal,
   classificarIMC,
   classificarRCEst,
   classificarRCQ,
@@ -23,18 +25,24 @@ import {
   relacaoCinturaEstatura,
   sexoNormalizado,
   sugerirProtocoloDobras,
+  type ClasseCircAbdominal,
   type ClasseIMC,
   type ProtocoloDobras,
+  type SexoComp,
 } from "@/lib/avaliacao/composicaoCorporal";
 import {
   CAMPOS_CIRCUNFERENCIA,
   CIRC_MEMBROS,
   CIRC_TRONCO,
+  LIMITE_ASSIMETRIA_PCT,
   NIVEIS_COXA,
+  assimetriaLados,
   calcularMassaMagraRelativa,
+  circunferenciaCoxaPrincipal,
   expansibilidadeToracica,
 } from "@/lib/avaliacao/medidasRegionais";
 import { idadeAutomatica, sexoAutomatico } from "@/lib/avaliacao/identificacao";
+import { EscolhaMultipla } from "./cliques";
 
 const TOM_IMC: Record<ClasseIMC, TomSelo> = {
   baixo_peso: "info",
@@ -46,6 +54,45 @@ const TOM_IMC: Record<ClasseIMC, TomSelo> = {
 };
 
 const f1 = (n: number | null) => (n === null ? "–" : n.toFixed(1));
+
+// Selo do corte da circunferência da cintura/abdômen (OMS), com os cortes do sexo.
+function SeloCircAbdominal({ classe, sexo, umbilical, temValor }: { classe: ClasseCircAbdominal | null; sexo: SexoComp; umbilical: boolean; temValor: boolean }) {
+  if (!temValor) return null;
+  if (sexo === "desconhecido" || classe === null) {
+    return (
+      <p className="mt-1.5 text-xs text-muted">
+        <Selo tom="neutro">Sexo não informado</Selo> Informe o sexo acima para aplicar o corte da OMS.
+      </p>
+    );
+  }
+  const c = CORTES_CIRC_ABDOMINAL[sexo];
+  const tom: TomSelo = classe === "adequado" ? "ok" : classe === "aumentado" ? "atencao" : "alerta";
+  const texto = classe === "adequado" ? "Abaixo do corte" : classe === "aumentado" ? "Risco aumentado" : "Risco muito aumentado";
+  return (
+    <div className="mt-1.5 space-y-1">
+      <Selo tom={tom}>{texto}</Selo>
+      <p className="text-xs text-muted">
+        Corte OMS ({sexo === "masculino" ? "homem" : "mulher"}): ≥ {c.aumentado} cm aumentado · ≥ {c.muitoAumentado} cm muito aumentado.
+        {umbilical && " Definido para a cintura; a medida no umbigo costuma ser maior."}
+      </p>
+    </div>
+  );
+}
+
+// Diferença entre o lado direito e o esquerdo de um segmento.
+function CelulaDiferenca({ direito, esquerdo }: { direito: string; esquerdo: string }) {
+  const a = assimetriaLados(paraNumero(direito), paraNumero(esquerdo));
+  if (!a) return <span className="text-muted">–</span>;
+  const alta = a.pct >= LIMITE_ASSIMETRIA_PCT;
+  return (
+    <div className="space-y-0.5 min-w-[9rem]">
+      <p className="text-xs tabular-nums text-ink leading-snug">
+        {a.maior === "igual" ? "iguais" : `${a.maior} maior em ${a.difCm.toFixed(1)} cm`} <span className="text-muted">({a.pct.toFixed(1)}%)</span>
+      </p>
+      {alta && <Selo tom="atencao">Diferença ≥ {LIMITE_ASSIMETRIA_PCT}%</Selo>}
+    </div>
+  );
+}
 
 export function AbaFisica({
   pacienteId,
@@ -87,20 +134,57 @@ export function AbaFisica({
     };
     for (const s of TODOS_SITIOS_DOBRA) base[s.chave] = dados?.[s.chave] ?? "";
     for (const c of CAMPOS_CIRCUNFERENCIA) base[c.chave] = dados?.[c.chave] ?? "";
+    // Ficha antiga: um nível só (coxa_nivel) com o valor no campo único da coxa.
+    // Leva o valor para o campo do nível correspondente.
+    const nivelLegado = dados?.coxa_nivel;
+    if (nivelLegado && !Array.isArray(dados?.coxa_niveis)) {
+      for (const lado of ["d", "e"]) {
+        const chaveNivel = `circ_coxa_${nivelLegado}_${lado}`;
+        if (chaveNivel in base && !base[chaveNivel] && dados?.[`circ_coxa_${lado}`]) base[chaveNivel] = String(dados[`circ_coxa_${lado}`]);
+      }
+    }
     return base;
   });
+  // Níveis da coxa em que houve medida (um, dois ou os três). Fichas antigas
+  // tinham um só nível (coxa_nivel).
+  const [niveisCoxa, setNiveisCoxa] = useState<string[]>(() =>
+    Array.isArray(dados?.coxa_niveis) ? dados.coxa_niveis : dados?.coxa_nivel ? [dados.coxa_nivel] : []
+  );
   const { salvar, salvando, ok } = useSalvarSecao(pacienteId, "fisica");
   const set = (k: string, v: string) => setD((prev) => ({ ...prev, [k]: v }));
 
   const idadeNum = paraNumero(d.idade);
   const sexoNorm = sexoNormalizado(d.sexo);
 
+  // Dados com a coxa "principal" (médio > proximal > distal > valor antigo) nos
+  // campos circ_coxa_d/e - é o que alimenta a massa magra relativa, o avatar e o
+  // histórico, que continuam lendo um único valor por lado.
+  const coxaD = circunferenciaCoxaPrincipal(d, "d");
+  const coxaE = circunferenciaCoxaPrincipal(d, "e");
+  const dDeriv = useMemo<Record<string, string>>(
+    () => ({
+      ...d,
+      circ_coxa_d: coxaD.valor !== null ? String(coxaD.valor) : d.circ_coxa_d,
+      circ_coxa_e: coxaE.valor !== null ? String(coxaE.valor) : d.circ_coxa_e,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [d]
+  );
+
   // Só o que foi alterado manualmente é guardado - o automático segue o cadastro.
   function salvarFisica() {
     const { idade, sexo, ...resto } = d;
     const idadeManual = idade && idade !== String(idadeAuto) ? idade : "";
     const sexoManual = sexo && sexo !== sexoAuto ? sexo : "";
-    return salvar({ ...resto, idade_manual: idadeManual, sexo_manual: sexoManual }).then(onSalvo);
+    return salvar({
+      ...resto,
+      circ_coxa_d: dDeriv.circ_coxa_d,
+      circ_coxa_e: dDeriv.circ_coxa_e,
+      coxa_niveis: niveisCoxa,
+      coxa_nivel: coxaD.nivel ?? coxaE.nivel ?? niveisCoxa[0] ?? "",
+      idade_manual: idadeManual,
+      sexo_manual: sexoManual,
+    }).then(onSalvo);
   }
 
   // ---- IMC ----
@@ -114,6 +198,9 @@ export function AbaFisica({
   const quadril = paraNumero(d.circ_quadril);
   const rcq = cintura && quadril ? cintura / quadril : null;
   const classeRcq = rcq !== null ? classificarRCQ(rcq, sexoNorm) : null;
+  const abdomenCm = paraNumero(d.circ_abdomen);
+  const classeCintura = cintura !== null ? classificarCircAbdominal(cintura, sexoNorm) : null;
+  const classeAbdomen = abdomenCm !== null ? classificarCircAbdominal(abdomenCm, sexoNorm) : null;
   const rcest = relacaoCinturaEstatura(cintura, altura);
   const classeRcest = rcest !== null ? classificarRCEst(rcest) : null;
   const adiposidade = confirmarAdiposidade({ imc, cinturaCm: cintura, rcq, rcest, sexo: sexoNorm });
@@ -159,10 +246,10 @@ export function AbaFisica({
   const chavesProtocolo = new Set(sitiosProtocolo.map((s) => s.chave));
 
   // ---- Massa magra relativa por região ----
-  const linhasMagra = useMemo(() => calcularMassaMagraRelativa(d), [d]);
+  const linhasMagra = useMemo(() => calcularMassaMagraRelativa(dDeriv), [dDeriv]);
 
   const linhasAvatar = useMemo(() => {
-    const circ = (k: string) => paraNumero(d[k]);
+    const circ = (k: string) => paraNumero(dDeriv[k]);
     const um = (k: string) => (circ(k) !== null ? [`${f1(circ(k))} cm`] : []);
     const par = (a: string, b: string) => (circ(a) !== null || circ(b) !== null ? [`D ${f1(circ(a))} · E ${f1(circ(b))} cm`] : []);
     const magra = (idD: string, idE?: string) => {
@@ -171,7 +258,12 @@ export function AbaFisica({
       const b = linhasMagra.find((l) => l.regiao.id === idE)?.corrigida ?? null;
       return a !== null || b !== null ? [`mag. rel. D ${f1(a)} · E ${f1(b)}`] : [];
     };
-    const nivelCoxa = NIVEIS_COXA.find((n) => n.value === d.coxa_nivel)?.label;
+    // Coxa: um resumo por nível medido (proximal/médio/distal), D e E.
+    const coxaPorNivel = NIVEIS_COXA.filter((n) => niveisCoxa.includes(n.value)).flatMap((n) => {
+      const dir = circ(`circ_coxa_${n.value}_d`);
+      const esq = circ(`circ_coxa_${n.value}_e`);
+      return dir !== null || esq !== null ? [`${n.label.toLowerCase()}: D ${f1(dir)} · E ${f1(esq)} cm`] : [];
+    });
     return {
       ombro: um("circ_ombro"),
       peitoral: [...um("circ_peitoral"), ...magra("peitoral")],
@@ -180,10 +272,33 @@ export function AbaFisica({
       quadril: um("circ_quadril"),
       braco: [...par("circ_braco_d", "circ_braco_e"), ...magra("braco_d_triceps", "braco_e_triceps")],
       antebraco: par("circ_antebraco_d", "circ_antebraco_e"),
-      coxa: [...par("circ_coxa_d", "circ_coxa_e"), ...(nivelCoxa ? [`nível ${nivelCoxa.toLowerCase()}`] : []), ...magra("coxa_d", "coxa_e")],
+      coxa: [...(coxaPorNivel.length > 0 ? coxaPorNivel : par("circ_coxa_d", "circ_coxa_e")), ...magra("coxa_d", "coxa_e")],
       panturrilha: [...par("circ_panturrilha_d", "circ_panturrilha_e"), ...magra("panturrilha_d", "panturrilha_e")],
     } as Record<string, string[]>;
-  }, [d, linhasMagra]);
+  }, [dDeriv, linhasMagra, niveisCoxa]);
+
+  // Uma linha da tabela de segmentos: D, E e a diferença entre os lados.
+  function linhaMembro(chaveD: string, chaveE: string, rotulo: string, rotuloAria: string, feminino: boolean) {
+    return (
+      <tr key={chaveD} className="border-b border-border last:border-0">
+        <td className="py-2 pr-2 text-ink">{rotulo}</td>
+        {([chaveD, chaveE] as const).map((chave, i) => (
+          <td key={chave} className="py-2 px-2">
+            <TextInput
+              inputMode="decimal"
+              value={d[chave]}
+              onChange={(e) => set(chave, normalizarDecimal(e.target.value))}
+              className="max-w-[7rem]"
+              aria-label={`${rotuloAria} ${feminino ? (i === 0 ? "direita" : "esquerda") : i === 0 ? "direito" : "esquerdo"}`}
+            />
+          </td>
+        ))}
+        <td className="py-2 px-2 align-middle">
+          <CelulaDiferenca direito={d[chaveD]} esquerdo={d[chaveE]} />
+        </td>
+      </tr>
+    );
+  }
 
   const dicaIdade =
     idadeAuto === null
@@ -260,7 +375,14 @@ export function AbaFisica({
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {CIRC_TRONCO.map((c) => (
             <div key={c.chave} className="contents">
-              <NumField label={c.rotulo} suffix="cm" value={d[c.chave]} onChange={(v) => set(c.chave, v)} />
+              {c.chave === "circ_cintura" || c.chave === "circ_abdomen" ? (
+                <div>
+                  <NumField label={c.rotulo} suffix="cm" value={d[c.chave]} onChange={(v) => set(c.chave, v)} />
+                  <SeloCircAbdominal classe={c.chave === "circ_cintura" ? classeCintura : classeAbdomen} sexo={sexoNorm} umbilical={c.chave === "circ_abdomen"} temValor={c.chave === "circ_cintura" ? cintura !== null : abdomenCm !== null} />
+                </div>
+              ) : (
+                <NumField label={c.rotulo} suffix="cm" value={d[c.chave]} onChange={(v) => set(c.chave, v)} />
+              )}
               {c.chave === "circ_torax_insp_min" && (
                 <ValorCalculado label="Expansibilidade torácica (máx − mín)" valor={expansibilidade !== null ? `${expansibilidade.toFixed(1)} cm` : null} />
               )}
@@ -309,49 +431,41 @@ export function AbaFisica({
                 <th className="py-2 pr-2 font-medium">Segmento</th>
                 <th className="py-2 px-2 font-medium">Direito (cm)</th>
                 <th className="py-2 px-2 font-medium">Esquerdo (cm)</th>
+                <th className="py-2 px-2 font-medium">Diferença D − E</th>
               </tr>
             </thead>
             <tbody>
-              {CIRC_MEMBROS.map((m) => (
-                <Fragment key={m.id}>
-                  <tr className="border-b border-border last:border-0">
-                    <td className="py-2 pr-2 text-ink">{m.rotulo}</td>
-                    {(["d", "e"] as const).map((lado) => (
-                      <td key={lado} className="py-2 px-2">
-                        <TextInput
-                          inputMode="decimal"
-                          value={d[`circ_${m.id}_${lado}`]}
-                          onChange={(e) => set(`circ_${m.id}_${lado}`, normalizarDecimal(e.target.value))}
-                          className="max-w-[7rem]"
-                          aria-label={`${m.rotulo} ${m.feminino ? (lado === "d" ? "direita" : "esquerda") : lado === "d" ? "direito" : "esquerdo"}`}
+              {CIRC_MEMBROS.map((m) =>
+                m.id === "coxa" ? (
+                  <Fragment key={m.id}>
+                    <tr className="border-b border-border">
+                      <td className="py-2 pr-2 text-ink align-top">Coxa</td>
+                      <td colSpan={3} className="py-2 px-2">
+                        <p className="text-xs text-muted mb-1.5">Níveis medidos - marque quantos usar (um, dois ou os três):</p>
+                        <EscolhaMultipla
+                          opcoes={NIVEIS_COXA.map((n) => n.label)}
+                          valores={NIVEIS_COXA.filter((n) => niveisCoxa.includes(n.value)).map((n) => n.label)}
+                          onChange={(marcados) => setNiveisCoxa(NIVEIS_COXA.filter((n) => marcados.includes(n.label)).map((n) => n.value))}
                         />
                       </td>
-                    ))}
-                  </tr>
-                  {m.id === "coxa" && (
-                    <tr className="border-b border-border">
-                      <td className="py-2 pr-2 text-muted text-xs align-top">Nível da coxa</td>
-                      <td colSpan={2} className="py-2 px-2">
-                        <div className="max-w-md">
-                          <CheckboxGroup
-                            columns={3}
-                            options={NIVEIS_COXA.map((n) => n.label)}
-                            values={NIVEIS_COXA.filter((n) => n.value === d.coxa_nivel).map((n) => n.label)}
-                            onChange={(marcados) => {
-                              const atual = NIVEIS_COXA.find((n) => n.value === d.coxa_nivel)?.label;
-                              const novo = marcados.find((m) => m !== atual);
-                              set("coxa_nivel", NIVEIS_COXA.find((n) => n.label === novo)?.value ?? "");
-                            }}
-                          />
-                        </div>
-                      </td>
                     </tr>
-                  )}
-                </Fragment>
-              ))}
+                    {niveisCoxa.length === 0
+                      ? linhaMembro("circ_coxa_d", "circ_coxa_e", "Coxa (nível não informado)", "Coxa", true)
+                      : NIVEIS_COXA.filter((n) => niveisCoxa.includes(n.value)).map((n) =>
+                          linhaMembro(`circ_coxa_${n.value}_d`, `circ_coxa_${n.value}_e`, `Coxa ${n.label.toLowerCase()}`, `Coxa ${n.label.toLowerCase()}`, true)
+                        )}
+                  </Fragment>
+                ) : (
+                  linhaMembro(`circ_${m.id}_d`, `circ_${m.id}_e`, m.rotulo, m.rotulo, !!m.feminino)
+                )
+              )}
             </tbody>
           </table>
         </div>
+        <p className="mt-2 text-xs text-muted">
+          A diferença entre os lados é só informativa: não há corte validado para circunferências; {LIMITE_ASSIMETRIA_PCT}% é uma referência prática de assimetria de membros, e a dominância lateral explica
+          parte da diferença (sobretudo nos braços).
+        </p>
       </div>
 
       <div className="pt-4 border-t border-border">
@@ -548,6 +662,30 @@ export function AbaFisica({
             <span className="inline-block h-2.5 w-2.5 rounded-sm bg-warn" /> gordura subcutânea (π × dobra)
           </span>
         </p>
+        {(() => {
+          // Diferença D − E da massa magra relativa nos segmentos pareados.
+          const pares: [string, string, string][] = [
+            ["Braço (tríceps)", "braco_d_triceps", "braco_e_triceps"],
+            ["Braço (bíceps)", "braco_d_biceps", "braco_e_biceps"],
+            ["Coxa", "coxa_d", "coxa_e"],
+            ["Panturrilha", "panturrilha_d", "panturrilha_e"],
+          ];
+          const itens = pares.flatMap(([rotulo, idD, idE]) => {
+            const a = assimetriaLados(linhasMagra.find((l) => l.regiao.id === idD)?.corrigida ?? null, linhasMagra.find((l) => l.regiao.id === idE)?.corrigida ?? null);
+            return a ? [`${rotulo}: ${a.maior === "igual" ? "iguais" : `${a.maior} maior ${a.difCm.toFixed(1)} cm`} (${a.pct.toFixed(1)}%)`] : [];
+          });
+          const nivelUsado = coxaD.nivel ?? coxaE.nivel;
+          return (
+            <>
+              {itens.length > 0 && <p className="mt-2 text-xs text-muted">Diferença D − E na massa magra relativa - {itens.join(" · ")}.</p>}
+              {nivelUsado && nivelUsado !== "medio" && (
+                <p className="mt-1 text-xs text-warn">
+                  A coxa usada aqui é a do nível {nivelUsado}, mas a dobra de coxa é do ponto médio: interprete a massa magra relativa da coxa com cautela (meça também o nível médio).
+                </p>
+              )}
+            </>
+          );
+        })()}
       </div>
 
       <div className="pt-4 border-t border-border">

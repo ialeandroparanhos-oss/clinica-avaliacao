@@ -7,6 +7,7 @@ import type { PacienteRow } from "@/lib/anamnese/types";
 import { Field, TextArea, TextInput } from "@/components/forms";
 import { NumField, SalvarBar, Selo, ValorCalculado, useSalvarSecao, type TomSelo } from "./campos";
 import { RotuloComInfo } from "./instrucoes";
+import { EscolhaMultipla, EscolhaUnica } from "./cliques";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { avaliarForca, corteDinamometriaKgf, limite5stsPorIdade, limitesRikli } from "@/lib/avaliacao/forca";
 import { paraNumero } from "@/lib/numeros";
@@ -24,6 +25,68 @@ const ROTULO_CLASSIFICACAO: Record<"adequado" | "atencao" | "prioridade" | "inve
   prioridade: "Prioridade",
   investigar: "Investigar",
 };
+
+// Opções clicáveis (mais rápido que digitar); as anotações livres continuam ao lado.
+const EXERCICIOS_MUSCULACAO = [
+  "Supino reto",
+  "Leg press",
+  "Agachamento",
+  "Remada",
+  "Puxada na frente",
+  "Cadeira extensora",
+  "Mesa flexora",
+  "Desenvolvimento",
+  "Rosca direta",
+  "Levantamento terra",
+];
+
+const MOVIMENTOS_GONIOMETRIA = [
+  "Flexão de ombro",
+  "Extensão de ombro",
+  "Abdução de ombro",
+  "Rotação interna de ombro",
+  "Rotação externa de ombro",
+  "Flexão de cotovelo",
+  "Extensão de cotovelo",
+  "Flexão de quadril",
+  "Extensão de quadril",
+  "Abdução de quadril",
+  "Rotação interna de quadril",
+  "Rotação externa de quadril",
+  "Flexão de joelho",
+  "Extensão de joelho",
+  "Dorsiflexão de tornozelo",
+  "Flexão plantar de tornozelo",
+  "Flexão de coluna cervical",
+  "Rotação de coluna cervical",
+];
+
+const ACHADOS_AGACHAMENTO = [
+  "Profundidade completa",
+  "Profundidade limitada",
+  "Valgo dinâmico D",
+  "Valgo dinâmico E",
+  "Varo de joelho",
+  "Inclinação anterior do tronco",
+  "Calcanhares saem do chão",
+  "Compensação lombar",
+  "Desvio de carga para um lado",
+  "Pés rodam para fora",
+  "Dor durante o movimento",
+  "Sem compensações",
+];
+
+const ACHADOS_CORE = [
+  "Mantém o alinhamento",
+  "Quadril cai (lombar em extensão)",
+  "Quadril sobe",
+  "Escápulas aladas",
+  "Tremor excessivo",
+  "Dor lombar",
+  "Interrompeu por fadiga",
+];
+
+const FORMATOS_TC6 = ["Corredor de 30 m (padrão)", "Corredor mais curto", "Esteira (autoajustada)"];
 
 type LinhaGoniometria = { id: string; articulacao: string; lado: string; graus: string };
 
@@ -85,6 +148,8 @@ export function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacient
     marcha_distancia_m: dados?.marcha_distancia_m ?? "",
     marcha_tempo_s: dados?.marcha_tempo_s ?? "",
     tc6_metros: dados?.tc6_metros ?? "",
+    tc6_formato: dados?.tc6_formato ?? "",
+    tc6_corredor_m: dados?.tc6_corredor_m ?? "",
     dinamometria_d_kg: dados?.dinamometria_d_kg ?? "",
     dinamometria_e_kg: dados?.dinamometria_e_kg ?? "",
     pushup_reps: dados?.pushup_reps ?? "",
@@ -105,6 +170,8 @@ export function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacient
     observacoes: dados?.observacoes ?? "",
   });
   const [goniometria, setGoniometria] = useState<LinhaGoniometria[]>(dados?.goniometria ?? []);
+  const [achadosAgachamento, setAchadosAgachamento] = useState<string[]>(Array.isArray(dados?.agachamento_achados) ? dados.agachamento_achados : []);
+  const [achadosCore, setAchadosCore] = useState<string[]>(Array.isArray(dados?.core_achados) ? dados.core_achados : []);
   const { salvar, salvando, ok } = useSalvarSecao(pacienteId, "funcional");
   const set = (k: string, v: string) => setD((prev) => ({ ...prev, [k]: v }));
 
@@ -146,7 +213,15 @@ export function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacient
     let velocidade = d.velocidade_marcha_ms;
     if (marchaPorCalculo) velocidade = (distanciaMarcha / tempoMarcha).toFixed(2);
     else if (d.marcha_distancia_m || d.marcha_tempo_s) velocidade = "";
-    return { ...d, velocidade_marcha_ms: velocidade, goniometria };
+    return {
+      ...d,
+      rm_exercicio: d.rm_exercicio.trim(),
+      falha_exercicio: d.falha_exercicio.trim(),
+      velocidade_marcha_ms: velocidade,
+      goniometria: goniometria.map((l) => ({ ...l, articulacao: l.articulacao.trim() })),
+      agachamento_achados: achadosAgachamento,
+      core_achados: achadosCore,
+    };
   }
 
   function adicionarGoniometria() {
@@ -171,6 +246,24 @@ export function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacient
         <NumField label={<RotuloComInfo texto="TC6" chave="tc6" />} suffix="m" value={d.tc6_metros} onChange={(v) => set("tc6_metros", v)} />
         <NumField label={<RotuloComInfo texto="Dinamometria D" chave="dinamometria" />} suffix="kgf" value={d.dinamometria_d_kg} onChange={(v) => set("dinamometria_d_kg", v)} />
         <NumField label={<RotuloComInfo texto="Dinamometria E" chave="dinamometria" />} suffix="kgf" value={d.dinamometria_e_kg} onChange={(v) => set("dinamometria_e_kg", v)} />
+      </div>
+
+      <div className="rounded-xl border border-border bg-bg p-4 space-y-2">
+        <p className="text-sm font-medium text-ink">Como o TC6 foi realizado?</p>
+        <EscolhaUnica opcoes={FORMATOS_TC6} valor={d.tc6_formato} onChange={(v) => set("tc6_formato", v)} />
+        {d.tc6_formato === "Corredor mais curto" && (
+          <div className="max-w-[10rem]">
+            <NumField label="Comprimento do corredor" suffix="m" value={d.tc6_corredor_m} onChange={(v) => set("tc6_corredor_m", v)} />
+          </div>
+        )}
+        {(d.tc6_formato === "Corredor mais curto" || d.tc6_formato === "Esteira (autoajustada)") && (
+          <p className="text-xs text-warn leading-relaxed">
+            {d.tc6_formato === "Esteira (autoajustada)"
+              ? "A esteira de ritmo externo não é recomendada para o TC6 (distâncias bem menores); esteira autoajustada (o paciente controla a velocidade) dá valores em geral mais baixos que o corredor e não tem referência validada aqui. "
+              : "Corredor menor que 30 m reduz a distância por causa das viradas (em estudo, ~43 m a menos em 15 m e ~93 m a menos em 10 m). "}
+            Não compare a distância com valores previstos (que valem para o corredor de 30 m); use-a só para acompanhar o próprio paciente, sempre no mesmo formato.
+          </p>
+        )}
       </div>
 
       <div className="pt-4 border-t border-border">
@@ -230,9 +323,11 @@ export function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacient
           direto de 1RM.
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <Field label="Exercício">
-            <TextInput value={d.rm_exercicio} onChange={(e) => set("rm_exercicio", e.target.value)} placeholder="Ex.: Supino, Leg press" />
-          </Field>
+          <div className="col-span-2 sm:col-span-3">
+            <Field label="Exercício">
+              <EscolhaUnica opcoes={EXERCICIOS_MUSCULACAO} valor={d.rm_exercicio} onChange={(v) => set("rm_exercicio", v)} permitirOutro placeholderOutro="Qual exercício?" />
+            </Field>
+          </div>
           <NumField label="Carga utilizada" suffix="kg" value={d.rm_carga_kg} onChange={(v) => set("rm_carga_kg", v)} />
           <NumField label="Repetições realizadas" value={d.rm_repeticoes} onChange={(v) => set("rm_repeticoes", v)} />
           <Field label="1RM estimado">
@@ -248,9 +343,11 @@ export function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacient
           <RotuloComInfo texto="Repetições até a falha (carga fixa)" chave="falha_carga_fixa" />
         </h4>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <Field label="Exercício">
-            <TextInput value={d.falha_exercicio} onChange={(e) => set("falha_exercicio", e.target.value)} />
-          </Field>
+          <div className="col-span-2 sm:col-span-3">
+            <Field label="Exercício">
+              <EscolhaUnica opcoes={EXERCICIOS_MUSCULACAO} valor={d.falha_exercicio} onChange={(v) => set("falha_exercicio", v)} permitirOutro placeholderOutro="Qual exercício?" />
+            </Field>
+          </div>
           <NumField label="Carga fixa" suffix="kg" value={d.falha_carga_kg} onChange={(v) => set("falha_carga_kg", v)} />
           <NumField label="Repetições até a falha" value={d.falha_repeticoes} onChange={(v) => set("falha_repeticoes", v)} />
         </div>
@@ -270,37 +367,44 @@ export function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacient
         ) : (
           <div className="space-y-2">
             {goniometria.map((linha) => (
-              <div key={linha.id} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-end">
-                <Field label="Articulação/movimento">
-                  <TextInput
-                    value={linha.articulacao}
-                    onChange={(e) => atualizarGoniometria(linha.id, { articulacao: e.target.value })}
-                    placeholder="Ex.: Flexão de ombro"
-                  />
-                </Field>
-                <Field label="Lado">
-                  <TextInput
-                    value={linha.lado}
-                    onChange={(e) => atualizarGoniometria(linha.id, { lado: e.target.value })}
-                    placeholder="D/E"
-                    className="w-16"
-                  />
-                </Field>
-                <Field label="Graus">
-                  <TextInput
-                    inputMode="decimal"
-                    value={linha.graus}
-                    onChange={(e) => atualizarGoniometria(linha.id, { graus: e.target.value })}
-                    className="w-20"
-                  />
-                </Field>
-                <button
-                  type="button"
-                  onClick={() => removerGoniometria(linha.id)}
-                  className="text-xs text-muted hover:text-danger pb-2.5"
-                >
-                  remover
-                </button>
+              <div key={linha.id} className="rounded-lg border border-border p-3 space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <Field label="Articulação/movimento">
+                      <select
+                        value={MOVIMENTOS_GONIOMETRIA.includes(linha.articulacao) ? linha.articulacao : linha.articulacao.trim() ? "__outro" : ""}
+                        onChange={(e) => atualizarGoniometria(linha.id, { articulacao: e.target.value === "__outro" ? " " : e.target.value })}
+                        className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-[15px]"
+                      >
+                        <option value="">Selecione...</option>
+                        {MOVIMENTOS_GONIOMETRIA.map((m) => (
+                          <option key={m} value={m}>
+                            {m}
+                          </option>
+                        ))}
+                        <option value="__outro">Outro (digitar)</option>
+                      </select>
+                    </Field>
+                    {linha.articulacao !== "" && !MOVIMENTOS_GONIOMETRIA.includes(linha.articulacao) && (
+                      <TextInput
+                        value={linha.articulacao.trimStart()}
+                        onChange={(e) => atualizarGoniometria(linha.id, { articulacao: e.target.value || " " })}
+                        placeholder="Qual movimento?"
+                      />
+                    )}
+                  </div>
+                  <button type="button" onClick={() => removerGoniometria(linha.id)} className="text-xs text-muted hover:text-danger shrink-0">
+                    remover
+                  </button>
+                </div>
+                <div className="flex flex-wrap items-end gap-4">
+                  <Field label="Lado">
+                    <EscolhaUnica opcoes={["D", "E", "Bilateral"]} valor={linha.lado} onChange={(v) => atualizarGoniometria(linha.id, { lado: v })} />
+                  </Field>
+                  <Field label="Graus">
+                    <TextInput inputMode="decimal" value={linha.graus} onChange={(e) => atualizarGoniometria(linha.id, { graus: e.target.value })} className="w-24" />
+                  </Field>
+                </div>
               </div>
             ))}
           </div>
@@ -320,18 +424,24 @@ export function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacient
 
       <div className="pt-4 border-t border-border space-y-4">
         <h4 className="font-display text-base text-ink">Testes funcionais observacionais</h4>
-        <Field label={<RotuloComInfo texto="Agachamento livre - observações (profundidade, valgo dinâmico, compensações...)" chave="agachamento_livre" />}>
+        <Field label={<RotuloComInfo texto="Agachamento livre - o que você observou? (marque o que se aplica)" chave="agachamento_livre" />}>
+          <EscolhaMultipla opcoes={ACHADOS_AGACHAMENTO} valores={achadosAgachamento} onChange={setAchadosAgachamento} exclusivas={["Sem compensações"]} />
+        </Field>
+        <Field label="Agachamento livre - anotações">
           <TextArea value={d.agachamento_livre_obs} onChange={(e) => set("agachamento_livre_obs", e.target.value)} />
         </Field>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <NumField label={<RotuloComInfo texto="Estabilidade do core - prancha" chave="core_prancha" />} suffix="s" value={d.core_prancha_seg} onChange={(v) => set("core_prancha_seg", v)} />
         </div>
-        <Field label="Estabilidade do core - observações">
+        <Field label="Estabilidade do core - o que você observou? (marque o que se aplica)">
+          <EscolhaMultipla opcoes={ACHADOS_CORE} valores={achadosCore} onChange={setAchadosCore} exclusivas={["Mantém o alinhamento"]} />
+        </Field>
+        <Field label="Estabilidade do core - anotações">
           <TextArea value={d.core_estabilidade_obs} onChange={(e) => set("core_estabilidade_obs", e.target.value)} />
         </Field>
       </div>
 
-      <Field label="Observações gerais do avaliador">
+      <Field label="Anotações gerais do avaliador">
         <TextArea value={d.observacoes} onChange={(e) => set("observacoes", e.target.value)} />
       </Field>
       <SalvarBar salvando={salvando} ok={ok} onSalvar={() => salvar(dadosParaSalvar()).then(onSalvo)} />

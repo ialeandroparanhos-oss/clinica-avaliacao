@@ -21,9 +21,9 @@ import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { CAMPOS_CIRCUNFERENCIA, calcularMassaMagraRelativa, expansibilidadeToracica } from "@/lib/avaliacao/medidasRegionais";
 import { paraNumero } from "@/lib/numeros";
 import { triarSarcopeniaDinapenia } from "@/lib/integracao/sarcopenia";
-import { vo2maxDeRegistro, avaliarVO2max, ROTULO_CLASSE_VO2, descreverPSE, metDeVo2, fcMaxTanaka, fcMaxFox } from "@/lib/avaliacao/cardiorrespiratoria";
+import { vo2maxDeRegistro, vo2maxDeTeste, testePrincipalDoRegistro, avaliarVO2max, ROTULO_CLASSE_VO2, descreverPSE, metDeVo2, fcMaxTanaka, fcMaxFox } from "@/lib/avaliacao/cardiorrespiratoria";
 import { calcularPerfilIntegrado, type Classificacao } from "@/lib/integracao/perfil";
-import { HORIZONTES, type Plano } from "@/lib/integracao/plano";
+import { HORIZONTES, HORIZONTE_LEGADO, ROTULO_CATEGORIA, itemAprovado, type Plano } from "@/lib/integracao/plano";
 
 const ROTULO_CLASSIFICACAO: Record<Classificacao, string> = {
   adequado: "Adequado",
@@ -123,6 +123,21 @@ export default function RelatorioTecnico() {
   const pseNum = paraNumero(cardio.rpe_borg);
   const pseDescricao = pseNum !== null ? descreverPSE(pseNum) : null;
   const metCardio = vo2max !== null ? metDeVo2(vo2max) : null;
+  // Vários testes: uma linha por teste (o principal alimenta o restante desta seção).
+  const testesCardio: any[] = Array.isArray(cardio.testes) ? cardio.testes : [];
+  const principalCardio = testePrincipalDoRegistro(cardio);
+  const linhasTestesCardio =
+    testesCardio.length > 1
+      ? testesCardio.map((t, i) => {
+          const v = vo2maxDeTeste(t);
+          const medido = paraNumero(t.vo2max_manual) !== null;
+          const av = v !== null ? avaliarVO2max(v, idadeNum, sexoEfetivo(paciente)) : null;
+          const nomes: Record<string, string> = { bruce: "Bruce", rampa: "Rampa de velocidade", cooper: "Cooper 12 min", outro: "Outro" };
+          return `Teste ${i + 1}${t.data_teste ? ` (${new Date(t.data_teste + "T12:00:00").toLocaleDateString("pt-BR")})` : ""} - ${nomes[t.protocolo] ?? "protocolo não informado"}: ${
+            v !== null ? `VO2máx ${medido ? v.toFixed(1) : `≈ ${Math.round(v)}`} ml/kg/min${av ? `, ${av.textoPercentil}` : ""}` : "sem VO2máx calculável"
+          }${t.fc_maxima_atingida ? `, FCmáx ${t.fc_maxima_atingida} bpm` : ""}${t.rpe_borg ? `, PSE ${t.rpe_borg}` : ""}${principalCardio && t.id === principalCardio.id ? " [principal]" : ""}`;
+        })
+      : [];
   const fcMaxMedida = paraNumero(cardio.fc_maxima_atingida);
   const fcMaxManual = paraNumero(cardio.fc_max_manual);
   const fcMaxCardio =
@@ -301,7 +316,22 @@ export default function RelatorioTecnico() {
             <L label="TUG" value={paciente.funcional?.tug_seg ? `${paciente.funcional.tug_seg} s` : null} />
             <L label="Apoio unipodal D/E" value={paciente.funcional?.apoio_unipodal_d_seg ? `${paciente.funcional.apoio_unipodal_d_seg}s / ${paciente.funcional.apoio_unipodal_e_seg || "–"}s` : null} />
             <L label="Velocidade de marcha" value={paciente.funcional?.velocidade_marcha_ms ? `${paciente.funcional.velocidade_marcha_ms} m/s` : null} />
-            <L label="TC6" value={paciente.funcional?.tc6_metros ? `${paciente.funcional.tc6_metros} m` : null} />
+            <L
+              label="TC6"
+              value={
+                paciente.funcional?.tc6_metros
+                  ? `${paciente.funcional.tc6_metros} m${paciente.funcional.tc6_formato ? ` (${paciente.funcional.tc6_formato}${paciente.funcional.tc6_corredor_m ? `, ${paciente.funcional.tc6_corredor_m} m` : ""})` : ""}`
+                  : null
+              }
+            />
+            <L
+              label="Agachamento livre (observado)"
+              value={[...(Array.isArray(paciente.funcional?.agachamento_achados) ? paciente.funcional.agachamento_achados : []), paciente.funcional?.agachamento_livre_obs].filter(Boolean).join("; ") || null}
+            />
+            <L
+              label="Estabilidade do core (observado)"
+              value={[...(paciente.funcional?.core_prancha_seg ? [`prancha ${paciente.funcional.core_prancha_seg}s`] : []), ...(Array.isArray(paciente.funcional?.core_achados) ? paciente.funcional.core_achados : []), paciente.funcional?.core_estabilidade_obs].filter(Boolean).join("; ") || null}
+            />
             <L label="Dinamometria D/E" value={paciente.funcional?.dinamometria_d_kg ? `${paciente.funcional.dinamometria_d_kg} / ${paciente.funcional.dinamometria_e_kg || "–"} kgf` : null} />
             <L label="Push-up test" value={paciente.funcional?.pushup_reps ? `${paciente.funcional.pushup_reps} reps` : null} />
             <L label="Arm Curl Test" value={paciente.funcional?.arm_curl_reps ? `${paciente.funcional.arm_curl_reps} reps/30s` : null} />
@@ -351,8 +381,9 @@ export default function RelatorioTecnico() {
 
         <Secao titulo="5. Avaliação cardiorrespiratória (VO2)">
           <dl>
+            {linhasTestesCardio.length > 0 && <L label="Testes realizados" value={linhasTestesCardio.join(" | ")} />}
             <L
-              label="Protocolo"
+              label={linhasTestesCardio.length > 0 ? "Protocolo do teste principal" : "Protocolo"}
               value={
                 cardio.protocolo
                   ? ({ bruce: "Bruce (com inclinação)", rampa: "Rampa de velocidade (sem inclinação)", cooper: "Teste de Cooper (12 min)", outro: "Outro" } as Record<string, string>)[cardio.protocolo]
@@ -411,29 +442,34 @@ export default function RelatorioTecnico() {
         </Secao>
 
         <Secao titulo="9. Plano de intervenção">
-          {!plano || (plano.itens ?? []).length === 0 ? (
-            <p className="text-sm text-muted">Plano ainda não elaborado.</p>
+          {!plano || (plano.itens ?? []).filter(itemAprovado).length === 0 ? (
+            <p className="text-sm text-muted">Plano ainda não elaborado (ou sem itens aprovados).</p>
           ) : (
-            HORIZONTES.map((h) => {
-              const itensDoHorizonte = (plano.itens ?? []).filter((i) => i.horizonte === h.chave);
+            [...HORIZONTES, HORIZONTE_LEGADO].map((h) => {
+              const itensDoHorizonte = (plano.itens ?? []).filter((i) => i.horizonte === h.chave && itemAprovado(i));
               if (itensDoHorizonte.length === 0) return null;
               return (
                 <div key={h.chave} className="mb-3">
                   <p className="text-sm font-semibold text-ink">{h.titulo}</p>
-                  <ul className="list-disc list-inside text-sm text-muted">
+                  <ul className="list-disc list-inside text-sm text-muted space-y-1">
                     {itensDoHorizonte.map((i) => (
-                      <li key={i.id}>{i.descricao}</li>
+                      <li key={i.id}>
+                        {i.categoria ? <strong className="text-ink">[{ROTULO_CATEGORIA[i.categoria]}] </strong> : null}
+                        {i.descricao}
+                        {i.indicador ? <span className="block ml-5 text-xs">Indicador: {i.indicador}</span> : null}
+                        {i.evidencia ? <span className="block ml-5 text-xs">Base: {i.evidencia.referencias.map((r) => r.rotulo).join("; ")}</span> : null}
+                      </li>
                     ))}
                   </ul>
                 </div>
               );
             })
           )}
-          {plano?.encaminhamentos && plano.encaminhamentos.length > 0 && (
+          {plano?.encaminhamentos && plano.encaminhamentos.filter(itemAprovado).length > 0 && (
             <div className="mt-3">
-              <p className="text-sm font-semibold text-ink">Encaminhamentos sugeridos</p>
+              <p className="text-sm font-semibold text-ink">Encaminhamentos</p>
               <ul className="list-disc list-inside text-sm text-muted">
-                {plano.encaminhamentos.map((e) => (
+                {plano.encaminhamentos.filter(itemAprovado).map((e) => (
                   <li key={e.id}>
                     {e.especialidade} — {e.motivo}
                   </li>

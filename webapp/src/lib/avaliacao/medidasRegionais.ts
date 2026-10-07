@@ -29,19 +29,53 @@ export const CIRC_MEMBROS: { id: string; rotulo: string; feminino?: boolean }[] 
   { id: "panturrilha", rotulo: "Panturrilha", feminino: true },
 ];
 
+// A coxa pode ser medida em até três níveis (proximal, médio, distal), todos ou
+// só um; o avaliador escolhe quantos usar. Chaves: circ_coxa_<nivel>_d / _e.
+export const NIVEIS_COXA: { value: string; label: string }[] = [
+  { value: "proximal", label: "Proximal" },
+  { value: "medio", label: "Médio" },
+  { value: "distal", label: "Distal" },
+];
+
+export const CAMPOS_COXA_NIVEIS: CampoCirc[] = NIVEIS_COXA.flatMap((n) => [
+  { chave: `circ_coxa_${n.value}_d`, rotulo: `Coxa ${n.label.toLowerCase()} D` },
+  { chave: `circ_coxa_${n.value}_e`, rotulo: `Coxa ${n.label.toLowerCase()} E` },
+]);
+
 export const CAMPOS_CIRCUNFERENCIA: CampoCirc[] = [
   ...CIRC_TRONCO,
   ...CIRC_MEMBROS.flatMap((m) => [
     { chave: `circ_${m.id}_d`, rotulo: `${m.rotulo} D` },
     { chave: `circ_${m.id}_e`, rotulo: `${m.rotulo} E` },
   ]),
+  ...CAMPOS_COXA_NIVEIS,
 ];
 
-export const NIVEIS_COXA: { value: string; label: string }[] = [
-  { value: "proximal", label: "Proximal" },
-  { value: "medio", label: "Médio" },
-  { value: "distal", label: "Distal" },
-];
+// Circunferência de coxa "principal" de um lado, usada na massa magra relativa,
+// no avatar e no histórico: nível médio (onde fica a dobra de coxa), senão
+// proximal, senão distal, senão o valor único antigo (circ_coxa_d/e).
+export function circunferenciaCoxaPrincipal(dados: Record<string, any>, lado: "d" | "e"): { valor: number | null; nivel: string | null } {
+  for (const nivel of ["medio", "proximal", "distal"]) {
+    const v = paraNumero(dados[`circ_coxa_${nivel}_${lado}`]);
+    if (v !== null) return { valor: v, nivel };
+  }
+  return { valor: paraNumero(dados[`circ_coxa_${lado}`]), nivel: null };
+}
+
+// Diferença entre os lados de um segmento bilateral (direito x esquerdo).
+export type Assimetria = { difCm: number; pct: number; maior: "D" | "E" | "igual" };
+
+export function assimetriaLados(direito: number | null, esquerdo: number | null): Assimetria | null {
+  if (direito === null || esquerdo === null || direito <= 0 || esquerdo <= 0) return null;
+  const dif = direito - esquerdo;
+  const maior = Math.max(direito, esquerdo);
+  return { difCm: Math.abs(dif), pct: (Math.abs(dif) / maior) * 100, maior: dif > 0.0001 ? "D" : dif < -0.0001 ? "E" : "igual" };
+}
+
+// Diferença a partir da qual vale chamar atenção. Não há corte validado para
+// circunferências: 10% é a referência prática usada para assimetrias de membros
+// (a dominância lateral explica parte da diferença, sobretudo nos braços).
+export const LIMITE_ASSIMETRIA_PCT = 10;
 
 export type RegiaoMagra = {
   id: string;

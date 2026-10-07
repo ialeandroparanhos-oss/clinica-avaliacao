@@ -89,6 +89,25 @@ export function confirmarAdiposidade(entrada: {
   return { estado: "sem_medidas" };
 }
 
+// Circunferência da cintura/abdominal - cortes da OMS (também adotados pelas
+// diretrizes brasileiras de obesidade): risco AUMENTADO >= 94 cm (homens) e
+// >= 80 cm (mulheres); risco MUITO AUMENTADO >= 102 cm (homens) e >= 88 cm
+// (mulheres). Os cortes foram definidos para a cintura (ponto médio entre a
+// última costela e a crista ilíaca); a medida na altura do umbigo costuma sair
+// maior, então é uma aproximação.
+export type ClasseCircAbdominal = "adequado" | "aumentado" | "muito_aumentado";
+
+export const CORTES_CIRC_ABDOMINAL: Record<"masculino" | "feminino", { aumentado: number; muitoAumentado: number }> = {
+  masculino: { aumentado: 94, muitoAumentado: 102 },
+  feminino: { aumentado: 80, muitoAumentado: 88 },
+};
+
+export function classificarCircAbdominal(cm: number, sexo: SexoComp): ClasseCircAbdominal | null {
+  if (sexo === "desconhecido" || !Number.isFinite(cm) || cm <= 0) return null;
+  const c = CORTES_CIRC_ABDOMINAL[sexo];
+  return cm >= c.muitoAumentado ? "muito_aumentado" : cm >= c.aumentado ? "aumentado" : "adequado";
+}
+
 export function sexoNormalizado(sexo?: string | null): SexoComp {
   const s = (sexo || "").trim().toLowerCase();
   if (s.startsWith("m")) return "masculino";

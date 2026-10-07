@@ -3,7 +3,7 @@
 // Instruções rápidas de aplicação dos testes, em português, exibidas num
 // popover (i) ao lado do rótulo de cada teste.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Instruções de aplicação em português, para o avaliador consultar sem sair
 // da tela - não é protocolo oficial fechado, é um lembrete rápido de campo.
@@ -43,39 +43,76 @@ export const INSTRUCOES_TESTE: Record<string, string> = {
   bruce_protocolo:
     "Teste progressivo em esteira com inclinação, 7 estágios de 3 minutos cada (velocidade e inclinação aumentam a cada estágio). Continue até o paciente atingir exaustão voluntária ou um critério de interrupção. Registre a FC ao final de cada estágio completado e o tempo total até a parada (em minutos decimais, ex.: 9min30s = 9.5).",
   rampa_protocolo:
-    "Esteira sem inclinação (0%). Comece numa velocidade confortável (ex.: 6-8 km/h) e aumente cerca de 1 km/h a cada 1-2 minutos, sem pausas, até a exaustão. A velocidade do último estágio completado é a vVO2máx.",
+    "Esteira com inclinação fixa (0% ou 1%, informe no campo). Comece numa velocidade confortável (ex.: 6-8 km/h) e aumente cerca de 1 km/h a cada 1-2 minutos, sem pausas, até a exaustão. A velocidade do último estágio completado é a vVO2máx e, com a inclinação, permite estimar o VO2máx pela equação do ACSM.",
   cooper_protocolo:
     "Teste de campo: o paciente percorre a maior distância possível em 12 minutos, correndo ou caminhando conforme sua capacidade, em pista ou esteira sem inclinação. Registre a distância total percorrida.",
 };
 
+// Dica "como aplicar": abre ao clicar (ou passar o mouse) e FECHA SOZINHA ao
+// tirar o ponteiro de cima. Em telas de toque, abre ao tocar e fecha ao tocar
+// fora; Esc também fecha.
 export function InfoPopover({ texto }: { texto: string }) {
   const [aberto, setAberto] = useState(false);
+  const raiz = useRef<HTMLSpanElement>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cancelar = () => {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+  };
+  const abrir = () => {
+    cancelar();
+    setAberto(true);
+  };
+  // Pequeno atraso: dá tempo de o ponteiro ir do "i" até o texto sem fechar.
+  const fecharComAtraso = () => {
+    cancelar();
+    timer.current = setTimeout(() => setAberto(false), 150);
+  };
+
+  useEffect(() => {
+    if (!aberto) return;
+    const aoTocarFora = (e: PointerEvent) => {
+      if (raiz.current && !raiz.current.contains(e.target as Node)) setAberto(false);
+    };
+    document.addEventListener("pointerdown", aoTocarFora);
+    return () => document.removeEventListener("pointerdown", aoTocarFora);
+  }, [aberto]);
+
+  useEffect(() => cancelar, []);
+
   return (
-    <span className="relative inline-block align-middle ml-1">
+    <span
+      ref={raiz}
+      className="relative inline-block align-middle ml-1"
+      onMouseEnter={abrir}
+      onMouseLeave={fecharComAtraso}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") setAberto(false);
+      }}
+    >
       <button
         type="button"
         onClick={(e) => {
           e.preventDefault();
-          setAberto((v) => !v);
+          abrir();
         }}
+        onFocus={abrir}
+        onBlur={fecharComAtraso}
         className="w-4 h-4 inline-flex items-center justify-center rounded-full bg-accent/15 text-accent-dark text-[10px] font-bold leading-none hover:bg-accent/25"
         aria-label="Como aplicar este teste"
+        aria-expanded={aberto}
       >
         i
       </button>
       {aberto && (
-        <span className="absolute z-20 top-6 left-0 w-64 rounded-lg border border-border bg-surface shadow-lg p-3 text-xs font-normal normal-case text-ink whitespace-normal block text-left">
+        <span
+          role="tooltip"
+          className="absolute z-20 top-5 left-0 w-64 rounded-lg border border-border bg-surface shadow-lg p-3 text-xs font-normal normal-case text-ink whitespace-normal block text-left"
+        >
           {texto}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              setAberto(false);
-            }}
-            className="block mt-2 text-accent-dark text-xs font-medium"
-          >
-            Fechar
-          </button>
         </span>
       )}
     </span>

@@ -14,7 +14,7 @@ import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { paraNumero } from "@/lib/numeros";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { avaliarForca as avaliarForcaIntegrada } from "@/lib/avaliacao/forca";
-import { classificarRCEst, confirmarAdiposidade, relacaoCinturaEstatura } from "@/lib/avaliacao/composicaoCorporal";
+import { classificarCircAbdominal, classificarRCEst, confirmarAdiposidade, relacaoCinturaEstatura } from "@/lib/avaliacao/composicaoCorporal";
 import { avaliarVO2max, ROTULO_CLASSE_VO2, vo2maxDeRegistro, type ClasseVO2 } from "@/lib/avaliacao/cardiorrespiratoria";
 
 export type Classificacao = "adequado" | "atencao" | "prioridade" | "investigar";
@@ -220,8 +220,8 @@ function avaliarComposicaoCorporal(p: PacienteRow): DomainResult {
 
   const imc = peso !== null && altura !== null ? peso / Math.pow(altura / 100, 2) : null;
 
-  if (imc === null && cintura === null) {
-    return resultado("composicao_corporal", "investigar", "Peso/altura e circunferência de cintura ainda não registrados.");
+  if (imc === null && cintura === null && num(p.fisica?.circ_abdomen) === null) {
+    return resultado("composicao_corporal", "investigar", "Peso/altura e circunferência de cintura/abdômen ainda não registrados.");
   }
 
   const severidade: Record<Classificacao, number> = { adequado: 0, atencao: 1, investigar: 1, prioridade: 2 };
@@ -266,20 +266,24 @@ function avaliarComposicaoCorporal(p: PacienteRow): DomainResult {
     }
   }
 
-  if (cintura !== null && sexo !== "desconhecido") {
-    const muitoAumentado = sexo === "masculino" ? cintura >= 102 : cintura >= 88;
-    const aumentado = sexo === "masculino" ? cintura >= 94 : cintura >= 80;
-    if (muitoAumentado) {
+  // Cintura (corte da OMS); se não houve cintura, o abdômen medido no umbigo
+  // entra como aproximação, com o aviso de que o corte foi definido p/ cintura.
+  const abdomen = num(p.fisica?.circ_abdomen);
+  const medidaTronco = cintura !== null ? cintura : abdomen;
+  const nomeMedida = cintura !== null ? "cintura" : "abdômen (usado como aproximação da cintura)";
+  if (medidaTronco !== null && sexo !== "desconhecido") {
+    const classe = classificarCircAbdominal(medidaTronco, sexo);
+    if (classe === "muito_aumentado") {
       elevar("prioridade");
-      notas.push(`circunferência de cintura ${cintura}cm (risco cardiometabólico substancialmente aumentado, critério OMS)`);
-    } else if (aumentado) {
+      notas.push(`circunferência de ${nomeMedida} ${medidaTronco}cm (risco cardiometabólico substancialmente aumentado, critério OMS)`);
+    } else if (classe === "aumentado") {
       elevar("atencao");
-      notas.push(`circunferência de cintura ${cintura}cm (risco aumentado, critério OMS)`);
+      notas.push(`circunferência de ${nomeMedida} ${medidaTronco}cm (risco aumentado, critério OMS)`);
     } else {
-      notas.push(`circunferência de cintura ${cintura}cm (dentro da faixa esperada)`);
+      notas.push(`circunferência de ${nomeMedida} ${medidaTronco}cm (dentro da faixa esperada)`);
     }
-  } else if (cintura !== null) {
-    notas.push(`circunferência de cintura ${cintura}cm (sexo não registrado — corte OMS não aplicado)`);
+  } else if (medidaTronco !== null) {
+    notas.push(`circunferência de ${nomeMedida} ${medidaTronco}cm (sexo não registrado — corte OMS não aplicado)`);
   }
 
   return resultado("composicao_corporal", pior, notas.join("; ") + ".");

@@ -194,6 +194,12 @@
 - **Valores brasileiros:** só para mulheres e em ativas — Vagetti et al. 2015 (n = 1.783, 60–84 anos, programa público de atividade física em Curitiba; médias 17,5 → 15,1) e Mazo et al. 2015 (n = 335, 60–69 anos, praticantes de exercício; P10 = 13, P50 = 17–19). As medianas ficam acima das norte-americanas, mas as amostras são de mulheres fisicamente ativas e não há dados de homens; **não adotei como corte**.
 - **Peso do teste:** o Arm Curl mede resistência dos flexores do cotovelo e se correlaciona só moderadamente com a preensão manual; por isso, na regra de força, um Arm Curl abaixo vale **atenção** e só a combinação com o Chair Stand vale prioridade.
 
+## Implementado em 07/10/2026
+
+- **Caio (Cardio):** vários testes por paciente (cada um com protocolo, resultados, FC, PA e PSE próprios), tabela de comparação e escolha do teste **principal** (alimenta o painel, o histórico e o relatório). **Rampa de velocidade:** passou a estimar o VO2máx pela equação metabólica do ACSM (velocidade final + inclinação; corrida ≥ 8 km/h, caminhada abaixo), com a ressalva de superestimativa (~3 ml/kg/min em estudo); antes só exibia a vVO2máx. Cooper mostra a velocidade média em 12 min. Registros antigos migram sozinhos.
+- **Theo (Plano):** horizontes 30/60/90/anual, sugestões com dose, evidência e indicador, decisão item a item (ver `06-Agente7-Plano-de-Intervencao.md`).
+- **Marco e Rita:** ver `02-Agente3-...` e `04-Agente5-...` (cortes da cintura/abdômen, diferença D−E, coxa em 3 níveis, registro por clique, formato do TC6).
+
 ## Pendências que dependem de você
 
 - **Arm Curl:** nada a conferir nos limites (ver acima). Opcional: se encontrar o manual ou o artigo de 2013, os padrões criteriais podem ser acrescentados.

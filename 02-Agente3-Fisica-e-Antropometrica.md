@@ -231,6 +231,13 @@ Como em toda etapa do projeto (Seção 14 do prompt-mestre), separar sempre:
 
 ---
 
+## REVISÃO 07/10/2026 — CIRCUNFERÊNCIAS
+
+- **Corte da cintura e do abdômen (OMS):** risco aumentado ≥ 94 cm (homens) e ≥ 80 cm (mulheres); muito aumentado ≥ 102 cm e ≥ 88 cm. O corte foi definido para a **cintura** (ponto médio entre a última costela e a crista ilíaca); a medida no umbigo costuma ser maior, então no abdômen é aproximação. No painel, se não houver cintura, o abdômen entra como aproximação, com aviso.
+- **Diferença entre os lados (D − E)** em cada segmento (braço, antebraço, coxa e panturrilha), em cm e em %; destaque a partir de 10%. Não há corte validado para circunferências: 10% é uma referência prática de assimetria de membros, e a dominância lateral explica parte da diferença (sobretudo nos braços).
+- **Coxa em até 3 níveis (proximal, médio, distal):** o avaliador marca quantos níveis usar (um, dois ou os três) e preenche D e E em cada um. Para a massa magra relativa, o avatar e o histórico vale a coxa "principal" (médio, senão proximal, senão distal); como a dobra de coxa é do ponto médio, usar outro nível gera aviso de cautela. Fichas antigas (um nível só) migram sozinhas.
+- **Peso ideal** = massa magra atual ÷ (1 − %G ideal), com %G ideal igual ao ponto médio da faixa saudável por idade e sexo (Gallagher et al., 2000: homens 8-19% até 39 anos, 11-21% de 40-59 e 13-24% a partir de 60; mulheres 21-32%, 23-33% e 24-35%) ou o valor que o avaliador informar. Assume massa magra constante; o ponto médio é uma escolha do sistema, não uma diretriz.
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 4 — Avaliação Postural e Biomecânica** (Etapa 5 do prompt-mestre): protocolo fotográfico padronizado (vistas anterior, posterior, lateral direita e esquerda), pontos anatômicos de referência, instrumentos (câmera, tripé, simetrógrafo, prumo, goniômetro, inclinômetro), e a linguagem científica obrigatória para não transformar achado postural isolado em causa de dor.

@@ -139,6 +139,27 @@ A partir dessa comparação, o plano é atualizado: itens que atingiram a meta s
 
 ---
 
+## REVISÃO 07/10/2026 — PLANO COM CIÊNCIA E DECISÃO DO AVALIADOR
+
+**Horizontes:** 30, 60, 90 dias e **anual (365)**. O horizonte de 180 dias foi retirado; itens antigos nele aparecem numa seção "plano anterior" para serem movidos.
+
+**O que o sistema sugere (apoio à decisão, nunca prescrição automática).** A partir do Perfil Integrado e dos dados do paciente (FC alvo calculada, dor por região, testes, objetivo declarado), cada domínio em "prioridade" ou "atenção" gera sugestões por horizonte com:
+- a **dose** (frequência, volume, intensidade, progressão);
+- o **resultado do paciente** que a motivou;
+- a **evidência** (resumo, nível de certeza, ressalva e links das fontes);
+- o **indicador** de sucesso (como saber se funcionou);
+- a frase do paciente ligada à prioridade, quando existe.
+
+Domínios cobertos: força (inclui conduta na triagem de sarcopenia/dinapenia), equilíbrio/quedas, capacidade cardiorrespiratória, composição corporal, dor (com sinais de alerta e fatores psicossociais), sono, bem-estar emocional, estilo de vida, mobilidade e funcionalidade. Além disso: **segurança** (liberação médica quando PAR-Q+ positivo, risco cardiovascular alto ou alerta de precaução), **pendências** de avaliação e **reavaliações programadas** em 30/60/90/365 dias.
+
+**Regras de sequência.** No início entram no máximo **3 frentes de intervenção** ao mesmo tempo (adesão); as demais começam um horizonte depois, com aviso no texto. Ordem de precedência: prioridade antes de atenção; dentro da classe, dor e bem-estar (condicionam o exercício); depois o que se liga ao objetivo do paciente; depois a ordem funcional (equilíbrio, força, cardio, função, composição, sono, mobilidade, estilo de vida). O avaliador pode mover qualquer item de horizonte.
+
+**Decisão item a item.** Todo item chega "a revisar". O avaliador marca **Concordo**, **Discordo** (com o motivo, que fica registrado), **Editar** (guarda o texto sugerido original) ou **adiciona** itens manuais. Só os itens aprovados (concordo, editado, manual) entram no resumo, no relatório técnico e no relatório do paciente. "Gerar sugestões" de novo só acrescenta o que falta: não duplica nem altera o que já foi decidido. Planos antigos (sem status) contam como aprovados. O salvamento do plano deixou de apagar as metas da aba Reavaliação.
+
+**Base científica usada** (consultada em resumos e páginas de síntese entre 02 e 07/10/2026; confirmar na fonte): OMS 2020; ACSM 2026 (treino de força, adultos saudáveis), 2011 (aeróbio e flexibilidade), 2009 (peso) e 2015 (triagem); Cochrane 2019 (quedas); ICFSR 2021; EWGSOP2; PROT-AGE e ESPEN (proteína); AHA 2016, Mandsager 2018 e Kodama 2009 (aptidão e mortalidade); meta-análise 2023 de HIIT; Singh 2023 (exercício e saúde mental); ACP 2016 (insônia); NICE NG59 e modelo de monitoramento da dor; Michie 2009 (técnicas de mudança de comportamento).
+
+**Limites.** As doses seguem a literatura de adultos saudáveis e devem ser adaptadas a doenças, dor e risco cardiovascular. A evidência de dor vem de diretriz de dor lombar e de ensaios em tendinopatias (extrapolar com cautela). O motor ordena e sugere, mas não substitui o raciocínio clínico.
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 8 — Relatório e Devolutiva** (Etapas 7 e 8 do prompt-mestre): como transformar o Perfil Integrado e o Plano de Intervenção em um relatório compreensível ao paciente e tecnicamente adequado ao profissional, seguindo o roteiro de conversa RECONHECER → MOSTRAR → EXPLICAR → PRIORIZAR → PROJETAR → PLANEJAR, sem linguagem alarmista.

@@ -107,15 +107,52 @@ export function duploProduto(fc: number, paSistolica: number): number {
 // VO2máx do registro salvo (qualquer protocolo) - fonte única usada pela
 // aba, pelo painel integrado, pelo histórico e pelo relatório.
 // ---------------------------------------------------------------------------
+// VO2 na esteira pela equação metabólica do ACSM: corrida (>= 8 km/h) =
+// 3,5 + 0,2 x v + 0,9 x v x inclinação; caminhada (< 8 km/h) = 3,5 + 0,1 x v +
+// 1,8 x v x inclinação (v em m/min). Descreve o custo em ESTADO ESTÁVEL: aplicada
+// ao último estágio de um teste máximo tende a SUPERESTIMAR o VO2 medido (em
+// estudo, em média ~3 mL/kg/min na esteira) - por isso o valor é arredondado e
+// tratado como estimativa.
+export function vo2RampaAcsm(velocidadeKmh: number, inclinacaoPct = 0): number {
+  const v = (velocidadeKmh * 1000) / 60;
+  const g = inclinacaoPct / 100;
+  return velocidadeKmh >= 8 ? 3.5 + 0.2 * v + 0.9 * v * g : 3.5 + 0.1 * v + 1.8 * v * g;
+}
+
+// Velocidade média de um Cooper (12 min), em km/h - referência de pace, não vVO2máx medida.
+export function velocidadeMediaCooperKmh(distanciaM: number): number {
+  return distanciaM / 200;
+}
+
+// VO2máx de UM teste (qualquer protocolo): medido (ergoespirometria) > estimado.
+export function vo2maxDeTeste(t: Record<string, any> | null | undefined): number | null {
+  if (!t) return null;
+  const manual = paraNumero(t.vo2max_manual);
+  if (manual !== null) return manual;
+  const tempo = paraNumero(t.bruce_tempo_total_min);
+  if (t.protocolo === "bruce" && tempo !== null) return vo2maxBruceFoster(tempo);
+  const distancia = paraNumero(t.cooper_distancia_m);
+  if (t.protocolo === "cooper" && distancia !== null) return vo2maxCooper(distancia);
+  const velocidade = paraNumero(t.rampa_velocidade_final_kmh);
+  if (t.protocolo === "rampa" && velocidade !== null) return vo2RampaAcsm(velocidade, paraNumero(t.rampa_inclinacao_pct) ?? 0);
+  return null;
+}
+
+// Teste que alimenta o painel integrado: o escolhido pelo avaliador
+// (teste_principal) ou, na falta, o primeiro com VO2 calculável.
+export function testePrincipalDoRegistro(d: Record<string, any> | null | undefined): Record<string, any> | null {
+  if (!d) return null;
+  const testes: Record<string, any>[] = Array.isArray(d.testes) ? d.testes : [];
+  if (testes.length === 0) return null;
+  return testes.find((t) => t.id === d.teste_principal) ?? testes.find((t) => vo2maxDeTeste(t) !== null) ?? testes[0];
+}
+
+// Registros novos têm "testes" (vários); registros antigos têm os campos de um
+// teste soltos na raiz (e os novos também guardam uma cópia do principal ali).
 export function vo2maxDeRegistro(d: Record<string, any> | null | undefined): number | null {
   if (!d) return null;
-  const manual = paraNumero(d.vo2max_manual);
-  if (manual !== null) return manual;
-  const tempo = paraNumero(d.bruce_tempo_total_min);
-  if (d.protocolo === "bruce" && tempo !== null) return vo2maxBruceFoster(tempo);
-  const distancia = paraNumero(d.cooper_distancia_m);
-  if (d.protocolo === "cooper" && distancia !== null) return vo2maxCooper(distancia);
-  return null;
+  const principal = testePrincipalDoRegistro(d);
+  return vo2maxDeTeste(principal ?? d);
 }
 
 // ---------------------------------------------------------------------------
