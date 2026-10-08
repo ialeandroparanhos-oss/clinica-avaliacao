@@ -12,6 +12,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Field, TextArea } from "@/components/forms";
 import { SalvarBar, Selo, useAutoSalvar, useSalvarSecao, type TomSelo } from "./campos";
 import { SobreposicaoPostural } from "./SobreposicaoPostural";
+import { MarcacaoEscapula } from "./MarcacaoEscapula";
+import { temMarcacaoEscapula, type MarcacaoEscapula as DadosEscapula } from "@/lib/avaliacao/escapula";
 import { PainelParecer, estiloPreferido, lerParecer, type ParecerSalvo } from "./PainelParecer";
 import { analisarVista, gerarParecer, ROTULO_VISTA, type AnaliseVistaSalva, type Vista } from "@/lib/avaliacao/analisePostural";
 import { detectarPontos, prepararImagem, type ImagemPreparada } from "@/lib/avaliacao/poseModelo";
@@ -20,6 +22,7 @@ const BUCKET_FOTOS_POSTURAIS = "fotos-posturais";
 const VISTAS: Vista[] = ["anterior", "posterior", "lateral_d", "lateral_e"];
 
 type Vistas = Partial<Record<Vista, AnaliseVistaSalva>>;
+type EstadoAnalise = { vistas: Vistas; parecer: ParecerSalvo | null; escapula?: DadosEscapula };
 
 // Fichas gravadas antes do parecer ganhar estilos guardavam o texto em analise.parecer.
 function parecerInicial(dados: any): ParecerSalvo | null {
@@ -138,7 +141,11 @@ function AnaliseVista({
   sinal,
   grade,
   onResultado,
+  escapula,
+  onEscapula,
 }: {
+  escapula?: DadosEscapula;
+  onEscapula?: (m: DadosEscapula) => void;
   vista: Vista;
   caminho: string;
   versao: number;
@@ -271,6 +278,15 @@ function AnaliseVista({
           <img src={imagem.urlExibicao} alt={ROTULO_VISTA[vista]} className="w-full h-auto rounded-xl border border-border" />
         ))}
 
+      {vista === "posterior" && imagem && onEscapula && (
+        <details className="rounded-lg border border-border p-3" open={temMarcacaoEscapula(escapula)}>
+          <summary className="cursor-pointer text-sm font-medium text-accent">Marcar as escápulas (opcional, manual)</summary>
+          <div className="mt-3">
+            <MarcacaoEscapula urlImagem={imagem.urlExibicao} largura={imagem.largura} altura={imagem.altura} marcacao={escapula ?? {}} onChange={onEscapula} />
+          </div>
+        </details>
+      )}
+
       {resultado && (
         <div className="space-y-2">
           <ul className="space-y-1.5 text-sm">
@@ -311,7 +327,7 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
     foto_lateral_d_path: dados?.foto_lateral_d_path ?? "",
     foto_lateral_e_path: dados?.foto_lateral_e_path ?? "",
   });
-  const [analise, setAnalise] = useState<{ vistas: Vistas; parecer: ParecerSalvo | null }>(() => ({ vistas: dados?.analise?.vistas ?? {}, parecer: parecerInicial(dados) }));
+  const [analise, setAnalise] = useState<EstadoAnalise>(() => ({ vistas: dados?.analise?.vistas ?? {}, parecer: parecerInicial(dados), escapula: dados?.analise?.escapula }));
   const [versaoFotos, setVersaoFotos] = useState<Record<Vista, number>>({ anterior: 0, posterior: 0, lateral_d: 0, lateral_e: 0 });
   const [sinal, setSinal] = useState(0);
   const [grade, setGrade] = useState(true);
@@ -321,13 +337,13 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
 
   // O parecer acompanha as análises enquanto o avaliador não o edita; depois de
   // editado, o texto dele nunca é sobrescrito (aparece o aviso de "dados mudaram").
-  function comVistas(prev: { vistas: Vistas; parecer: ParecerSalvo | null }, vistas: Vistas) {
+  function comVistas(prev: EstadoAnalise, vistas: Vistas): EstadoAnalise {
     const p = prev.parecer;
     const seguiaAuto = !p || p.texto === "" || p.texto === p.automatico;
     if (!seguiaAuto) return { ...prev, vistas };
     const estilo = p?.estilo ?? estiloPreferido();
-    const novo = gerarParecer(vistas, estilo);
-    return { vistas, parecer: novo ? { texto: novo, estilo, automatico: novo, revisado: false } : null };
+    const novo = gerarParecer(vistas, estilo, prev.escapula);
+    return { ...prev, vistas, parecer: novo ? { texto: novo, estilo, automatico: novo, revisado: false } : null };
   }
 
   function aoMudarFoto(vista: Vista, caminho: string) {
@@ -335,17 +351,26 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
     setVersaoFotos((prev) => ({ ...prev, [vista]: prev[vista] + 1 }));
     // Foto nova ou removida: a análise antiga dessa vista deixa de valer.
     setAnalise((prev) => {
-      if (!prev.vistas[vista]) return prev;
-      const { [vista]: _removida, ...resto } = prev.vistas;
-      return comVistas(prev, resto);
+      let atual = prev;
+      // A marcação das escápulas vale para a foto posterior daquele momento.
+      if (vista === "posterior" && prev.escapula) atual = { ...atual, escapula: undefined };
+      if (atual.vistas[vista]) {
+        const { [vista]: _removida, ...resto } = atual.vistas;
+        return comVistas(atual, resto);
+      }
+      return atual !== prev ? comVistas(atual, atual.vistas) : prev;
     });
+  }
+
+  function aoEscapula(m: DadosEscapula) {
+    setAnalise((prev) => comVistas({ ...prev, escapula: m }, prev.vistas));
   }
 
   function aoResultado(vista: Vista, resultado: AnaliseVistaSalva) {
     setAnalise((prev) => comVistas(prev, { ...prev.vistas, [vista]: resultado }));
   }
 
-  const dadosAtuais = { ...d, analise: { versao: 2, vistas: analise.vistas }, parecer: analise.parecer };
+  const dadosAtuais = { ...d, analise: { versao: 2, vistas: analise.vistas, escapula: analise.escapula }, parecer: analise.parecer };
   const estadoAuto = useAutoSalvar(dadosAtuais, rascunho);
   const vistasComFoto = VISTAS.filter((v) => caminhoDe(v));
 
@@ -390,7 +415,7 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
         ) : (
           <div className="grid lg:grid-cols-2 gap-4">
             {VISTAS.map((v) => (
-              <AnaliseVista key={v} vista={v} caminho={caminhoDe(v)} versao={versaoFotos[v]} salva={analise.vistas[v]} sinal={sinal} grade={grade} onResultado={(r) => aoResultado(v, r)} />
+              <AnaliseVista key={v} vista={v} caminho={caminhoDe(v)} versao={versaoFotos[v]} salva={analise.vistas[v]} sinal={sinal} grade={grade} onResultado={(r) => aoResultado(v, r)} escapula={v === "posterior" ? analise.escapula : undefined} onEscapula={v === "posterior" ? aoEscapula : undefined} />
             ))}
           </div>
         )}
@@ -400,7 +425,7 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
         agente="paula"
         valor={analise.parecer}
         onChange={(p) => setAnalise((prev) => ({ ...prev, parecer: p }))}
-        gerar={(estilo) => gerarParecer(analise.vistas, estilo)}
+        gerar={(estilo) => gerarParecer(analise.vistas, estilo, analise.escapula)}
         mensagemVazia="Analise ao menos uma foto para o agente redigir o parecer."
         linhas={analise.parecer?.estilo === "explicativo" ? 16 : 8}
       />

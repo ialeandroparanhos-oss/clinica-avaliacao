@@ -13,7 +13,7 @@ import { calcularAlertas } from "@/lib/anamnese/alerts";
 import { Field, TextInput, StepShell } from "@/components/forms";
 import { moduloPorId, type ModuloId } from "@/lib/anamnese/modulos";
 import { CHAVE_IDENTIFICACAO } from "@/lib/anamnese/identificacaoSessao";
-import { ModuloBemEstar, ModuloDorDetalhes, ModuloEstiloDeVida, ModuloSono, type SetAnamnese } from "@/components/paciente/modulos";
+import { ModuloBemEstar, ModuloCapacidade, ModuloDorDetalhes, ModuloEstiloDeVida, ModuloSono, type SetAnamnese } from "@/components/paciente/modulos";
 
 type Stage = "identificacao" | "modulo" | "concluido";
 
@@ -196,6 +196,7 @@ export default function ModuloPage() {
               </>
             )}
             {modulo.id === ("estilo-de-vida" as ModuloId) && <ModuloEstiloDeVida anamnese={anamnese} set={set} />}
+            {modulo.id === ("capacidade-60" as ModuloId) && <ModuloCapacidade anamnese={anamnese} set={set} />}
           </StepShell>
 
           {erro && <p className="text-sm text-danger mt-4">{erro}</p>}

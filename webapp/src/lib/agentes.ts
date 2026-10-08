@@ -64,6 +64,11 @@ const R: Referencia[] = [
   { id: "pss", curta: "Cohen 1983", citacao: "Cohen S, et al. J Health Soc Behav 1983;24:385", pmid: "6668417", apoia: "escala de estresse percebido (PSS)" },
   { id: "acsm2015", curta: "ACSM 2015", citacao: "Riebe D, et al. Med Sci Sports Exerc 2015;47:2473", pmid: "26473759", apoia: "triagem de saúde antes do exercício: nível atual de atividade, sinais/sintomas ou doença conhecida e intensidade pretendida" },
   { id: "oms2020", curta: "OMS 2020", citacao: "Bull FC, et al. Br J Sports Med 2020;54:1451", pmid: "33239350", apoia: "diretrizes da OMS: 150 a 300 min/semana de atividade moderada e fortalecimento muscular em 2 ou mais dias" },
+  { id: "macedo2008", curta: "Macedo & Magee 2008", citacao: "Macedo LG, Magee DJ. J Manipulative Physiol Ther 2008;31:577", pmid: "18984240", apoia: "em 90 mulheres saudáveis de 18 a 59 anos, a maior diferença média entre lado dominante e não dominante foi de 7,5° (base do corte de assimetria de 8°); não há corte absoluto de amplitude" },
+  { id: "britto2013", curta: "Britto 2013", citacao: "Britto RR, et al. Braz J Phys Ther 2013;17:556", pmid: "24271092", apoia: "equação brasileira do TC6 previsto (617 adultos saudáveis); o resumo não traz limite inferior da normalidade, por isso só o % do previsto é mostrado, sem classificar" },
+  { id: "sobestiansky2021", curta: "Sobestiansky 2021", citacao: "Sobestiansky S, et al. Clin Nutr ESPEN 2021;45:442", pmid: "34620352", apoia: "panturrilha < 31 cm como proxy de massa muscular e associação com mortalidade; 56 idosos internados (média de 84 anos): amostra pequena e hospitalar, não é corte validado para a comunidade" },
+  { id: "donini2022", curta: "ESPEN/EASO 2022", citacao: "Donini LM, et al. Clin Nutr 2022;41:990", pmid: "35227529", apoia: "obesidade sarcopênica = excesso de adiposidade + baixa função ou massa muscular; avaliar função primeiro e depois a composição corporal" },
+  { id: "dhondt2020", curta: "D'hondt 2020", citacao: "D'hondt NE, et al. J Orthop Sports Phys Ther 2020;50:632", pmid: "33131391", apoia: "revisão sistemática de 31 instrumentos: não há evidência suficiente para recomendar nenhum instrumento clínico de avaliação da escápula; validade de critério insuficiente para postura assimétrica, amplitude e teste de deslizamento lateral; instrumentos de discinesia estão sujeitos a má interpretação" },
   { id: "gomez2024", curta: "Gómez-Redondo 2024", citacao: "Gómez-Redondo P, et al. Sports Med 2024;54:1877", pmid: "38647999", apoia: "34 ensaios com pessoas de 60 anos ou mais: exercício supervisionado e não supervisionado foram seguros, com presença semelhante (81%); a supervisão trouxe ganho extra, só robusto na força de extensão do joelho, e os autores pedem mais pesquisa" },
   { id: "richter2020", curta: "Richter 2020", citacao: "Richter R, et al. PLoS One 2020;15:e0236751", pmid: "32790675", apoia: "comunicação de risco ao paciente é complexa; o equilíbrio entre informar e não gerar ansiedade (estudo qualitativo com 15 clínicos)" },
 ];
@@ -74,8 +79,8 @@ const REFS_POR_AGENTE: Record<Exclude<AgenteId, "iris">, string[]> = {
   nina: ["acsm2015"],
   sofia: ["psqi", "phq9", "gad7", "pss", "acsm2015"],
   marco: ["rubino2025"],
-  paula: ["rani2023"],
-  rita: ["ewgsop2", "rikli2013", "fernandes2021", "barry2014", "podsiadlo1991"],
+  paula: ["rani2023", "dhondt2020"],
+  rita: ["ewgsop2", "rikli2013", "fernandes2021", "barry2014", "podsiadlo1991", "macedo2008", "britto2013"],
   caio: ["friend2015", "mandsager2018", "ross2016", "tanaka2001"],
   theo: ["oms2020", "acsm2015", "gomez2024"],
   clara: ["richter2020", "oms2020", "gomez2024"],
@@ -83,7 +88,7 @@ const REFS_POR_AGENTE: Record<Exclude<AgenteId, "iris">, string[]> = {
 
 // A Íris integra todas as áreas: usa as referências dos agentes que alimentam o perfil.
 export function referenciasDoAgente(id: AgenteId): Referencia[] {
-  const ids = id === "iris" ? Array.from(new Set(["sofia", "marco", "paula", "rita", "caio"].flatMap((a) => REFS_POR_AGENTE[a as Exclude<AgenteId, "iris">]))) : REFS_POR_AGENTE[id];
+  const ids = id === "iris" ? Array.from(new Set([...["sofia", "marco", "paula", "rita", "caio"].flatMap((a) => REFS_POR_AGENTE[a as Exclude<AgenteId, "iris">]), "sobestiansky2021", "donini2022"])) : REFS_POR_AGENTE[id];
   return ids.map((i) => POR_ID.get(i)!).filter(Boolean);
 }
 

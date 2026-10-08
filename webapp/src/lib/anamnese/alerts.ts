@@ -27,13 +27,21 @@ export function escoreTSK11(itens: (number | null)[]): number | null {
 // pena aplicar o instrumento completo. Isso permite manter a anamnese
 // mais curta para quem tria negativo, sem perder a pontuação completa
 // para quem precisa dela.
+// Porta do instrumento completo: GAD-2 >= 3 (corte padrão). PHQ-2 >= 2: o corte de 3 tem
+// sensibilidade de 0,72 a 0,76, e o corte de 2 sobe a sensibilidade para ~0,91 (especificidade
+// cai de ~0,85 para ~0,67) - o custo de baixar é só perguntar mais itens (revisão do PHQ-2,
+// documento 10-Revisao-Cientifica-por-Agente.md). Para o GAD-2 não há dado conferido para
+// mudar o corte.
+export const CORTE_PORTA_GAD2 = 3;
+export const CORTE_PORTA_PHQ2 = 2;
+
 export function escoreCurto(itens: (number | null)[]): number | null {
   return somaSemNulos(itens.slice(0, 2));
 }
 
-export function precisaInstrumentoCompleto(itens: (number | null)[]): boolean {
+export function precisaInstrumentoCompleto(itens: (number | null)[], corte: number = CORTE_PORTA_GAD2): boolean {
   const curto = escoreCurto(itens);
-  return curto !== null && curto >= 3;
+  return curto !== null && curto >= corte;
 }
 
 // Gera a lista de alertas (Nível 1-4) a partir das respostas da anamnese,

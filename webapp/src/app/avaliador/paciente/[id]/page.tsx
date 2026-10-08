@@ -233,8 +233,9 @@ function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
         </h4>
         <p className="text-sm text-muted mb-1">{sarcopenia.justificativa}</p>
         <p className="text-xs text-muted">
-          Usa força (dinamometria/chair stand, critério EWGSOP2) e massa magra total comparada à meta calculada
-          para este paciente - não é o padrão-ouro (massa muscular apendicular por DXA). Nunca é diagnóstico;
+          Usa força (dinamometria, 5x Sit-to-Stand ou Rikli &amp; Jones, critério EWGSOP2) e, para a massa muscular, a circunferência
+          da panturrilha (&lt; 31 cm, a partir dos 60 anos) ou, sem ela, a massa magra total comparada à meta do paciente (regra do
+          sistema, sem validação publicada). Não é o padrão-ouro (massa muscular apendicular por DXA). Nunca é diagnóstico;
           confirmação requer avaliação validada.
         </p>
       </div>
@@ -501,7 +502,7 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
     <div className="space-y-4">
       <p className="text-xs text-muted uppercase tracking-wide">Status: {status}</p>
 
-      <PainelModulos anamnese={anamnese} />
+      <PainelModulos anamnese={anamnese} idade={idadeEfetiva(paciente)} />
 
       <ParecerNoPlano paciente={paciente} agente="anamnese" />
 
@@ -593,7 +594,21 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
         <Linha label="IPAQ - dias/min moderada" value={`${anamnese.atividade_fisica.ipaq.dias_moderada || "–"} / ${anamnese.atividade_fisica.ipaq.min_moderada_dia || "–"}`} />
         <Linha label="IPAQ - dias/min caminhada" value={`${anamnese.atividade_fisica.ipaq.dias_caminhada || "–"} / ${anamnese.atividade_fisica.ipaq.min_caminhada_dia || "–"}`} />
         <Linha label="Horas sentado/dia (IPAQ)" value={anamnese.atividade_fisica.ipaq.horas_sentado_dia} />
+        <p className="text-xs text-muted pt-1">O IPAQ é autorrelato e costuma superestimar a atividade física (em média cerca de 84% na versão curta, em revisão sistemática): cruze com os testes funcionais e cardiorrespiratórios.</p>
       </Capitulo>
+
+      {(statusModulo(anamnese, "capacidade-60", idadeEfetiva(paciente)) !== "nao_aplicado") && (
+        <Capitulo titulo="Visão, audição e memória (módulo 60+)">
+          <Linha label="Dificuldade para enxergar" value={({ nenhuma: "Nenhuma", alguma: "Alguma", muita: "Muita" } as Record<string, string>)[anamnese.capacidade.visao_dificuldade ?? ""] ?? null} />
+          <Linha label="Usa óculos ou lentes" value={anamnese.capacidade.usa_oculos === null ? null : anamnese.capacidade.usa_oculos ? "Sim" : "Não"} />
+          <Linha label="Exame de vista nos últimos 12 meses" value={anamnese.capacidade.exame_vista_12m === null ? null : anamnese.capacidade.exame_vista_12m ? "Sim" : "Não"} />
+          <Linha label="Dificuldade para ouvir" value={({ nenhuma: "Nenhuma", alguma: "Alguma", muita: "Muita" } as Record<string, string>)[anamnese.capacidade.audicao_dificuldade ?? ""] ?? null} />
+          <Linha label="Usa aparelho auditivo" value={anamnese.capacidade.usa_aparelho_auditivo === null ? null : anamnese.capacidade.usa_aparelho_auditivo ? "Sim" : "Não"} />
+          <Linha label="Esquecimentos que atrapalham" value={({ nao: "Não", as_vezes: "Às vezes", frequentemente: "Com frequência" } as Record<string, string>)[anamnese.capacidade.memoria_esquecimentos ?? ""] ?? null} />
+          <Linha label="Família comentou sobre esquecimentos" value={anamnese.capacidade.familia_comentou_memoria === null ? null : anamnese.capacidade.familia_comentou_memoria ? "Sim" : "Não"} />
+          <p className="text-xs text-muted pt-1">Autorrelato (triagem, não diagnóstico). Dificuldade para ver ou ouvir, ou esquecimentos frequentes, pedem testes objetivos (voz sussurrada, lembrar palavras) e, se confirmados, encaminhamento: eles também mudam como o treino de equilíbrio e as instruções devem ser dados.</p>
+        </Capitulo>
+      )}
 
       <Capitulo titulo="Sono">
         <Linha label="Horas de sono por noite" value={anamnese.sono.horas_sono} />

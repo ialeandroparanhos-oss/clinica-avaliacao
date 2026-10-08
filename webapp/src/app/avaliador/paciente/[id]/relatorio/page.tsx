@@ -21,6 +21,8 @@ import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { CAMPOS_CIRCUNFERENCIA, calcularMassaMagraRelativa, expansibilidadeToracica } from "@/lib/avaliacao/medidasRegionais";
 import { paraNumero } from "@/lib/numeros";
 import { mensagemTecnica } from "@/lib/avaliacao/whatsapp";
+import { avaliarMobilidadeObjetiva, paresDeMobilidade } from "@/lib/avaliacao/mobilidade";
+import { percentualDoPrevisto, tc6Previsto } from "@/lib/avaliacao/tc6";
 import { nomeComTitulo, textoRevisao, type AgenteId } from "@/lib/agentes";
 import { NOME_PROFISSIONAL } from "@/lib/marca";
 import { EnvioWhatsApp } from "@/components/avaliador/EnvioWhatsApp";
@@ -47,6 +49,13 @@ function L({ label, value }: { label: string; value: any }) {
 }
 
 // Parecer do agente (no estilo escolhido pelo avaliador), com a marca de revisão.
+// Lista de exercícios (RM submáximo / repetições até a falha), com os campos antigos como reserva.
+function linhasExercicio(lista: any, ex: any, carga: any, reps: any, sufixo: string): string | null {
+  const itens: { exercicio?: string; carga?: string; reps?: string }[] = Array.isArray(lista) && lista.length > 0 ? lista : [{ exercicio: ex, carga, reps }];
+  const linhas = itens.filter((l) => l.carga || l.reps).map((l) => `${l.exercicio || "Exercício"}: ${l.carga || "–"}kg x ${l.reps || "–"} reps${sufixo}`);
+  return linhas.length > 0 ? linhas.join("; ") : null;
+}
+
 function ParecerRelatorio({ agente, parecer }: { agente: AgenteId; parecer: { texto?: string; revisado?: boolean } | null | undefined }) {
   if (!parecer?.texto) return null;
   return (
@@ -182,6 +191,14 @@ export default function RelatorioTecnico() {
   const massaMagraKg = pesoKg && massaGordaKg !== null ? pesoKg - massaGordaKg : null;
 
   const sexoNorm = sexoEfetivo(paciente);
+  const mobilidadeClasse = avaliarMobilidadeObjetiva(paciente.funcional);
+  const mobilidadeTexto = mobilidadeClasse.classificacao === "investigar" ? null : mobilidadeClasse.justificativa;
+  const alturaCmRel = paraNumero(paciente.fisica?.altura_cm);
+  const imcRel = pesoKg && alturaCmRel ? pesoKg / Math.pow(alturaCmRel / 100, 2) : null;
+  const formatoTc6 = paciente.funcional?.tc6_formato;
+  const previstoTc6 = !formatoTc6 || formatoTc6 === "Corredor de 30 m (padrão)" ? tc6Previsto(idadeNum, sexoNorm, imcRel) : null;
+  const pctTc6 = percentualDoPrevisto(paraNumero(paciente.funcional?.tc6_metros), previstoTc6);
+  const tc6Texto = previstoTc6 !== null ? `${Math.round(previstoTc6)} m${pctTc6 !== null ? ` (realizado = ${Math.round(pctTc6)}% do previsto; sem corte de classificação adotado)` : ""}` : null;
   const percentualIdealSugerido = percentualGorduraIdealSugerido(idadeNum, sexoNorm);
   const percentualIdealEfetivo = paraNumero(paciente.fisica?.percentual_gordura_ideal) ?? percentualIdealSugerido;
   const percentualExcedente = percentualGordura && percentualIdealEfetivo !== null ? percentualGordura - percentualIdealEfetivo : null;
@@ -371,19 +388,11 @@ export default function RelatorioTecnico() {
             <L label="Arm Curl Test" value={paciente.funcional?.arm_curl_reps ? `${paciente.funcional.arm_curl_reps} reps/30s` : null} />
             <L
               label="RM submáximo (estimado)"
-              value={
-                paciente.funcional?.rm_carga_kg && paciente.funcional?.rm_repeticoes
-                  ? `${paciente.funcional.rm_exercicio || "Exercício"}: ${paciente.funcional.rm_carga_kg}kg x ${paciente.funcional.rm_repeticoes} reps`
-                  : null
-              }
+              value={linhasExercicio(paciente.funcional?.rm_lista, paciente.funcional?.rm_exercicio, paciente.funcional?.rm_carga_kg, paciente.funcional?.rm_repeticoes, "")}
             />
             <L
               label="Repetições até a falha (carga fixa)"
-              value={
-                paciente.funcional?.falha_carga_kg
-                  ? `${paciente.funcional.falha_exercicio || "Exercício"}: ${paciente.funcional.falha_carga_kg}kg x ${paciente.funcional.falha_repeticoes || "–"} reps até a falha`
-                  : null
-              }
+              value={linhasExercicio(paciente.funcional?.falha_lista, paciente.funcional?.falha_exercicio, paciente.funcional?.falha_carga_kg, paciente.funcional?.falha_repeticoes, " até a falha")}
             />
             <L
               label="Amplitude articular (goniometria)"
@@ -403,6 +412,18 @@ export default function RelatorioTecnico() {
                   : null
               }
             />
+            <L
+              label="Mobilidade articular (D/E)"
+              value={
+                paresDeMobilidade(paciente.funcional)
+                  .filter((p) => p.id.startsWith("tornozelo") || p.id.startsWith("quadril"))
+                  .filter((p) => p.d !== null || p.e !== null)
+                  .map((p) => `${p.rotulo}: D ${p.d ?? "–"}${p.unidade} / E ${p.e ?? "–"}${p.unidade}`)
+                  .join("; ") || null
+              }
+            />
+            <L label="Mobilidade - classificação do painel" value={mobilidadeTexto} />
+            <L label="TC6 previsto (Britto 2013, informativo)" value={tc6Texto} />
             <L label="Agachamento livre - observações" value={paciente.funcional?.agachamento_livre_obs} />
             <L
               label="Estabilidade do core - prancha"
@@ -465,8 +486,8 @@ export default function RelatorioTecnico() {
             — {sarcopenia.justificativa}
           </p>
           <p className="text-xs text-muted mt-1">
-            Usa massa magra total (não a massa muscular apendicular por DXA exigida pelo EWGSOP2) - triagem, não
-            diagnóstico.
+            Massa muscular estimada pela panturrilha (&lt; 31 cm, a partir dos 60 anos) ou pela massa magra total (não a massa
+            muscular apendicular por DXA exigida pelo EWGSOP2) - triagem, não diagnóstico.
           </p>
         </Secao>
 

@@ -170,6 +170,17 @@ export type Anamnese = {
     gad7: (number | null)[]; // 7 itens, 0-3
     phq9: (number | null)[]; // 9 itens, 0-3 (item[8] = ideação, alerta crítico)
   };
+  // Módulo complementar (60+): visão, audição e memória por autorrelato. É triagem; testes
+  // objetivos (voz sussurrada, lembrar palavras) ficam para o avaliador.
+  capacidade: {
+    visao_dificuldade: "nenhuma" | "alguma" | "muita" | null;
+    usa_oculos: boolean | null;
+    exame_vista_12m: boolean | null;
+    audicao_dificuldade: "nenhuma" | "alguma" | "muita" | null;
+    usa_aparelho_auditivo: boolean | null;
+    memoria_esquecimentos: "nao" | "as_vezes" | "frequentemente" | null;
+    familia_comentou_memoria: boolean | null;
+  };
   prontidao: {
     parq: {
       heart_condition: boolean | null;

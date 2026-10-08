@@ -21,6 +21,7 @@ import { avaliarVO2max, fcAlvoKarvonen, fcMaxTanaka, testePrincipalDoRegistro, v
 import { paraNumero } from "@/lib/numeros";
 import { triarSarcopeniaDinapenia } from "./sarcopenia";
 import { conectarObjetivo } from "./objetivo";
+import { liberacaoPara } from "@/lib/avaliacao/liberacaoTeste";
 import type { DomainKey, DomainResult, PerfilIntegrado } from "./perfil";
 import type { Categoria, Encaminhamento, Evidencia, Horizonte, ItemPlano, Referencia, SugestaoPlano } from "./plano";
 
@@ -541,12 +542,11 @@ export function sugerirItensComCiencia(perfil: PerfilIntegrado, paciente: Pacien
     certeza: "Posição de consenso.",
     referencias: [R.ACSM_TRIAGEM_2015],
   };
-  if (ctx.parqPositivos.length > 0 || ctx.riscoCV === "alto" || ctx.alertaGrave) {
-    const motivos = [
-      ctx.parqPositivos.length > 0 ? `PAR-Q+ com ${ctx.parqPositivos.length} resposta(s) positiva(s)` : "",
-      ctx.riscoCV === "alto" ? "risco cardiovascular alto na triagem" : "",
-      ctx.alertaGrave ? "alerta de precaução/encaminhamento na anamnese" : "",
-    ].filter(Boolean);
+  // Critério ACSM 2015 (lib/avaliacao/liberacaoTeste.ts): atividade atual + sinais/sintomas ou doença
+  // conhecida + intensidade. Considera a intensidade vigorosa porque o plano pode chegar a ela.
+  const liberacao = liberacaoPara(paciente, "vigorosa_maxima");
+  if (liberacao.nivel === "liberacao_necessaria" || liberacao.nivel === "liberacao_recomendada" || ctx.alertaGrave) {
+    const motivos = [...liberacao.nivel === "liberacao_necessaria" || liberacao.nivel === "liberacao_recomendada" ? liberacao.motivos.slice(0, 2) : [], ctx.alertaGrave ? "alerta de precaução/encaminhamento na anamnese" : ""].filter(Boolean);
     itens.push({
       id: gerarId(),
       horizonte: "30",
@@ -592,6 +592,39 @@ export function sugerirItensComCiencia(perfil: PerfilIntegrado, paciente: Pacien
     if (!regra) return;
     regra(ctx, d, criarEmissor(ctx, d, i >= MAX_FRENTES_INICIAIS, itens), encaminhamentos);
   });
+
+  // 3b) Base de todo plano: força em >= 2 dias por semana (OMS 2020), mesmo quando a força
+  // não é a prioridade. Sem isso, um plano focado em dor, sono ou condicionamento deixaria
+  // de fora o componente que a OMS recomenda a todos os adultos. Só entra se a regra de
+  // força do domínio ainda não gerou os seus itens.
+  if (!itens.some((i) => i.regra?.startsWith("forca|") && i.categoria === "intervencao")) {
+    const forcaDom = ctx.dom("forca");
+    if (forcaDom) {
+      const evidBase: Evidencia = {
+        resumo:
+          "A OMS recomenda a todos os adultos atividade de fortalecimento muscular dos grandes grupos em 2 ou mais dias por semana, além do aeróbio; qualquer quantidade de treino de força se associa a menor mortalidade (estudo observacional).",
+        certeza: "Diretriz (OMS 2020); observacional para mortalidade.",
+        ressalva: "Adapte a doenças, dor e risco cardiovascular; com sinais de alerta ou doença conhecida, obtenha liberação antes de cargas altas.",
+        referencias: [R.OMS_2020, R.FORCA_MORTALIDADE],
+      };
+      const base = (h: Horizonte, descricao: string, indicador: string) =>
+        itens.push({
+          id: gerarId(),
+          horizonte: h,
+          descricao,
+          origem: "Base de todo plano — Força",
+          categoria: "intervencao",
+          dominio: "forca",
+          regra: `forca|base-${h}`,
+          resultado: forcaDom.justificativa,
+          evidencia: evidBase,
+          indicador,
+          status: "sugerido",
+        });
+      base("30", "Treino de força 2x/semana (dias não consecutivos), 6-8 exercícios para os grandes grupos, 1-2 séries de 10-15 repetições com carga leve a moderada e técnica supervisionada, adaptado às demais frentes e à dor. É a base do plano, mesmo quando a prioridade for outra.", "Adesão ≥ 2 sessões/semana na maior parte das semanas.");
+      base("365", "Manter o treino de força em ≥ 2 dias/semana de forma contínua e reavaliar a força a cada 90 dias.", "Força mantida ou melhor nas reavaliações trimestrais.");
+    }
+  }
 
   // 4) Reavaliações programadas (30/60/90/365), dos domínios em foco.
   const emFoco = ordenados.map((d) => TESTES_POR_DOMINIO[d.chave]).filter(Boolean) as string[];

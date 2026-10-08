@@ -121,6 +121,13 @@ A aba Postural analisa as 4 fotos e redige um parecer descritivo, que o avaliado
 - Há parecer em: Anamnese (Sofia), Física (Marco), Postural (Agente 4), Funcional (Rita), Cardiorrespiratória (Caio) e Perfil Integrado (Íris). Todos usam os mesmos resultados do painel integrado; não criam classificação nova.
 - Tudo o que é digitado, as fotos enviadas, as análises e os pareceres são **gravados automaticamente como rascunho** (cerca de 1,5 s após a última alteração e ao sair da aba). O rascunho atualiza a ficha atual do paciente; o botão **Salvar** é o que registra a avaliação no histórico usado nas reavaliações.
 
+**Escápulas: marcação manual (opcional) na foto posterior.** O modelo de pose não enxerga as escápulas, então o avaliador clica nos pontos, de preferência sobre **marcadores adesivos colocados na pele antes da foto**:
+- Protocolo: paciente de pé, relaxado, braços ao lado do corpo; câmera na altura do meio das costas, na mesma distância em todas as reavaliações; marcadores em C7, no início da prega entre os glúteos (linha média), no ângulo inferior de cada escápula e na raiz da espinha da escápula de cada lado; dois adesivos a distância conhecida (ex.: 10 cm) como referência de escala.
+- Medidas: inclinação da linha dos ângulos inferiores e da linha das raízes da espinha (°); distância de cada ponto à linha média (cm com a escala; sem ela, só a razão D/E).
+- **Limite (D'hondt et al. 2020, PMID 33131391):** em revisão de 31 instrumentos, não há evidência suficiente para recomendar nenhum instrumento clínico de avaliação da escápula. Por isso não há corte de normalidade, o termo "discinesia" não é usado e o registro serve apenas para comparar o mesmo paciente, com a mesma técnica, no tempo. O teste de deslizamento lateral clássico exige fotos com o braço em 3 posições; aqui só se registra a posição de repouso.
+
+**Outras ideias de registro (ainda não implementadas):** teste de Thomas modificado (flexores do quadril), rotação torácica, rotação cervical, flexão e rotação externa de ombro por goniometria (já disponíveis na goniometria livre) e Y-Balance para estabilidade dinâmica.
+
 **O que o método NÃO mede:** escápulas, curvaturas da coluna, inclinação pélvica e rotações. O erro cresce com câmera inclinada, pessoa pequena no quadro, roupa larga e pés cortados; o sistema avisa quando detecta enquadramento ruim (tornozelos fora do quadro, pessoa ocupando < 55% da altura).
 
 ---

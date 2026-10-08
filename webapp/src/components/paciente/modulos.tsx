@@ -5,7 +5,7 @@
 
 import type { ReactNode } from "react";
 import type { Anamnese } from "@/lib/anamnese/types";
-import { precisaInstrumentoCompleto } from "@/lib/anamnese/alerts";
+import { CORTE_PORTA_PHQ2, precisaInstrumentoCompleto } from "@/lib/anamnese/alerts";
 import { Field, TextInput, TextArea, YesNo, ChoiceGroup, CheckboxGroup, Slider, LikertItem } from "@/components/forms";
 import {
   itensPSS10,
@@ -119,7 +119,7 @@ export function ModuloBemEstar({ anamnese, set }: ModuloProps) {
                     }}
                   />
                 ))}
-                {precisaInstrumentoCompleto(anamnese.saude_mental.phq9) &&
+                {precisaInstrumentoCompleto(anamnese.saude_mental.phq9, CORTE_PORTA_PHQ2) &&
                   itensPHQ9.slice(2, indicePHQ9Ideacao).map((texto, idx) => {
                     const i = idx + 2;
                     return (
@@ -471,6 +471,53 @@ export function ModuloEstiloDeVida({ anamnese, set }: ModuloProps) {
                   </Field>
                 </div>
               </div>
+    </>
+  );
+}
+
+export function ModuloCapacidade({ anamnese, set }: ModuloProps) {
+  const c = anamnese.capacidade;
+  const dificuldade = [
+    { value: "nenhuma", label: "Nenhuma" },
+    { value: "alguma", label: "Alguma" },
+    { value: "muita", label: "Muita" },
+  ];
+  return (
+    <>
+      <p className="text-sm text-muted leading-relaxed">São só perguntas simples sobre o seu dia a dia, sem certo ou errado. Servem para a equipe cuidar melhor de você.</p>
+
+      <Field label="Você tem dificuldade para enxergar, de longe ou de perto, mesmo usando óculos ou lentes (se usa)?">
+        <ChoiceGroup columns={3} options={dificuldade} value={c.visao_dificuldade} onChange={(v) => set("capacidade", { visao_dificuldade: v })} />
+      </Field>
+      <Field label="Você usa óculos ou lentes?">
+        <YesNo value={c.usa_oculos} onChange={(v) => set("capacidade", { usa_oculos: v })} />
+      </Field>
+      <Field label="Fez exame de vista nos últimos 12 meses?">
+        <YesNo value={c.exame_vista_12m} onChange={(v) => set("capacidade", { exame_vista_12m: v })} />
+      </Field>
+
+      <Field label="Você tem dificuldade para ouvir uma conversa, mesmo usando aparelho auditivo (se usa)?">
+        <ChoiceGroup columns={3} options={dificuldade} value={c.audicao_dificuldade} onChange={(v) => set("capacidade", { audicao_dificuldade: v })} />
+      </Field>
+      <Field label="Você usa aparelho auditivo?">
+        <YesNo value={c.usa_aparelho_auditivo} onChange={(v) => set("capacidade", { usa_aparelho_auditivo: v })} />
+      </Field>
+
+      <Field label="Você tem notado esquecimentos que atrapalham o seu dia a dia (compromissos, nomes, onde guardou as coisas)?">
+        <ChoiceGroup
+          columns={3}
+          options={[
+            { value: "nao", label: "Não" },
+            { value: "as_vezes", label: "Às vezes" },
+            { value: "frequentemente", label: "Com frequência" },
+          ]}
+          value={c.memoria_esquecimentos}
+          onChange={(v) => set("capacidade", { memoria_esquecimentos: v })}
+        />
+      </Field>
+      <Field label="Alguém da família ou amigo comentou sobre esquecimentos seus?">
+        <YesNo value={c.familia_comentou_memoria} onChange={(v) => set("capacidade", { familia_comentou_memoria: v })} />
+      </Field>
     </>
   );
 }

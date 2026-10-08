@@ -143,6 +143,15 @@ export const anamneseVazia: Anamnese = {
     gad7: Array(7).fill(null),
     phq9: Array(9).fill(null),
   },
+  capacidade: {
+    visao_dificuldade: null,
+    usa_oculos: null,
+    exame_vista_12m: null,
+    audicao_dificuldade: null,
+    usa_aparelho_auditivo: null,
+    memoria_esquecimentos: null,
+    familia_comentou_memoria: null,
+  },
   prontidao: {
     parq: {
       heart_condition: null,

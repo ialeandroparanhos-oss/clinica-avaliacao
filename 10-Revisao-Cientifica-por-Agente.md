@@ -225,6 +225,20 @@ Pergunta feita a cada agente: o que você faz hoje no sistema, isso corresponde 
 | Dr. Theo | Sim: plano 30/60/90/anual com evidência e decisão item a item. | Todo plano deve ter força em 2 ou mais dias por semana, mesmo quando a prioridade for outra (OMS 2020). |
 | Dra. Clara | Sim: versão do paciente, WhatsApp e slides, sem jargão. | Revisar com você o tom do convite final; manter só afirmações com fonte (regra 3 e 4 acima). |
 
+## Implementado em 08/10/2026 (aprovado pelo profissional: "todas as sugestões recomendadas")
+
+- **Nina:** a liberação para teste máximo e exercício vigoroso passou a seguir o ACSM 2015 (nível atual de atividade + sinais/sintomas ou doença conhecida + intensidade), e não a contagem de fatores de risco, que continua como informação na Anamnese. Painel na aba Cardio e item de segurança do plano. Código: `lib/avaliacao/liberacaoTeste.ts`.
+- **Sofia (a anamnese base não mudou):** porta do PHQ-2 baixada para 2 pontos (o GAD-2 segue em 3; não há dado conferido para mudar); nota de que o IPAQ superestima (ficha, parecer); **novo módulo complementar "Visão, audição e memória (a partir de 60 anos)"** por autorrelato, oferecido só a quem tem 60 anos ou mais.
+- **Dr. Marco:** aviso de soma de dobras acima de 120 mm (referência de fonte secundária, **não encontrada no PubMed: [confirmar]**, e a tela diz isso) e nota de que %G por dobras/bioimpedância é estimativa.
+- **Dra. Paula / Dra. Rita (Mobilidade):** o domínio deixou de ler palavras-chave das observações posturais. Agora usa assimetria D/E em graus (corte de 8°: Macedo & Magee 2008, maior diferença média entre lados de 7,5° em mulheres saudáveis) e restrição observada no agachamento; **não há corte absoluto de amplitude**, porque as tabelas clássicas divergem. Novos testes: dorsiflexão de tornozelo (avanço em parede, cm, e ângulo da tíbia) e rotação interna/externa do quadril, D e E.
+- **Dra. Rita:** vários exercícios no RM submáximo e nas repetições até a falha; todos os testes ficam visíveis e os **sugeridos pela idade e pelo perfil aparecem em amarelo**; mais opções na observação do core; **TC6 previsto** (Britto 2013) e % do previsto, **sem corte de classificação** (o resumo do artigo não traz o limite inferior da normalidade).
+- **Dr. Caio:** faixas de percentil das classes de VO2máx confirmadas pelo profissional (mantidas).
+- **Dra. Íris:** a triagem de sarcopenia usa panturrilha < 31 cm a partir dos 60 anos (Sobestiansky 2021, **amostra pequena e hospitalar**; fallback: massa magra total, regra sem validação) e sinaliza possível obesidade sarcopênica (ESPEN/EASO 2022).
+- **Dr. Theo:** todo plano inclui treino de força em 2 ou mais dias por semana (OMS 2020), como "base de todo plano", mesmo quando a prioridade for outra.
+- **Dra. Paula (escápulas):** marcação manual sobre a foto posterior. **Achado de integridade:** uma revisão sistemática de 2020 (D'hondt et al., PMID 33131391) não encontrou instrumento clínico com evidência suficiente para avaliar a função da escápula; por isso o registro só mede posição e diferença entre lados, sem corte e sem o termo "discinesia", para comparar o mesmo paciente no tempo.
+
+**Referências novas conferidas no PubMed (08/10/2026):** Macedo & Magee 2008 (PMID 18984240); Sobestiansky 2021 (34620352); Donini 2022 ESPEN/EASO (35227529); D'hondt 2020 (33131391).
+
 ## Registro de referências verificadas no PubMed (08/10/2026)
 
 Todas abaixo tiveram a existência e o título conferidos no PubMed (consulta por revista, ano, volume e primeira página). Conferir a existência **não** é o mesmo que ler o texto completo: o que cada uma sustenta no sistema está descrito em `src/lib/agentes.ts`.

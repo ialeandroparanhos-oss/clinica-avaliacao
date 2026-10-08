@@ -16,6 +16,8 @@ import {
   SITIOS_JP7,
   TODOS_SITIOS_DOBRA,
   calcularPercentualGorduraDobras,
+  somaDobrasProtocolo,
+  SOMA_DOBRAS_CAUTELA_MM,
   CORTES_CIRC_ABDOMINAL,
   classificarCircAbdominal,
   classificarIMC,
@@ -217,6 +219,7 @@ export function AbaFisica({
   // ---- Composição corporal ----
   const { protocolo: protocoloSugerido, motivo: motivoProtocolo } = sugerirProtocoloDobras(idadeNum);
   const percentualDobrasCalc = calcularPercentualGorduraDobras(d.protocolo_dobras as ProtocoloDobras, d, idadeNum, sexoNorm);
+  const somaDobras = somaDobrasProtocolo(d.protocolo_dobras as ProtocoloDobras, d, sexoNorm);
   const percentualBioInformado = paraNumero(d.bio_percentual_gordura);
 
   const percentualGorduraEncontrado = paraNumero(d.percentual_gordura);
@@ -527,6 +530,18 @@ export function AbaFisica({
                 usar como %G de referência
               </button>
             )}
+          </div>
+        )}
+        {(d.protocolo_dobras === "jp3" || d.protocolo_dobras === "jp7" || d.protocolo_dobras === "faulkner4") && (
+          <div className="mt-2 text-xs space-y-1">
+            {somaDobras !== null && (
+              <p className={somaDobras > SOMA_DOBRAS_CAUTELA_MM ? "text-warn" : "text-muted"}>
+                Soma das dobras do protocolo: <strong className="font-mono">{somaDobras.toFixed(0)} mm</strong>
+                {somaDobras > SOMA_DOBRAS_CAUTELA_MM &&
+                  ` - acima de ${SOMA_DOBRAS_CAUTELA_MM} mm o %G por dobras merece mais cautela (referência de fonte secundária, ainda não conferida no PubMed: confirmar).`}
+              </p>
+            )}
+            <p className="text-muted">O %G por dobras (e por bioimpedância) é uma estimativa, com erro individual relevante: o valor absoluto é menos confiável que a tendência. Use o mesmo método e o mesmo avaliador nas reavaliações.</p>
           </div>
         )}
       </div>

@@ -41,8 +41,8 @@ const EXPLICACAO: Record<DomainKey, { avalia: string; criterio: string }> = {
       "ponto de corte único: qualquer indicador abaixo do corte conta como força reduzida (dinamometria: referência brasileira para 60+ e EWGSOP2 nas demais idades; 5x Sentar-e-Levantar acima de 15 s; ou dois testes de Rikli & Jones abaixo do limite).",
   },
   mobilidade: {
-    avalia: "mobilidade e padrões de movimento, a partir das observações posturais e de movimento registradas pelo avaliador.",
-    criterio: "o sistema só procura palavras de atenção no texto (assimetria, compensação, restrição, valgo...). É um aviso para leitura, não uma medida: leia sempre o texto completo.",
+    avalia: "mobilidade articular e do agachamento, a partir de testes objetivos: medidas D/E de tornozelo (dorsiflexão) e quadril (rotações), goniometria e observação estruturada do agachamento.",
+    criterio: "atenção se houver diferença entre os lados acima de 8° (maior diferença média entre lados em mulheres saudáveis: 7,5°, Macedo & Magee 2008) ou restrição observada no agachamento. Não há corte absoluto de amplitude validado: compare com o manual de goniometria que você adota. As observações posturais em texto livre não entram.",
   },
   equilibrio: {
     avalia: "equilíbrio e risco de queda.",
@@ -287,6 +287,37 @@ function blocoAnamnese(p: PacienteRow, estilo: EstiloParecer): string[] {
     linhas.push(`- ${escalas.join("\n- ")}`);
     linhas.push("- Escalas de autorrelato: servem para acompanhar a evolução e orientar a conversa, não para diagnosticar.");
     linhas.push("");
+  }
+  // Atividade física autorrelatada (IPAQ) e módulo 60+ (visão, audição, memória).
+  const ip = a.atividade_fisica.ipaq;
+  const temIpaq = Object.values(ip).some((v) => v !== "");
+  if (temIpaq && estilo === "explicativo") {
+    linhas.push("ATIVIDADE FÍSICA AUTORRELATADA");
+    linhas.push("- O IPAQ é autorrelato e costuma superestimar a atividade física (em revisão sistemática, cerca de 84% a mais na versão curta): cruze com os testes funcionais e cardiorrespiratórios.");
+    linhas.push("");
+  }
+  const cap = a.capacidade;
+  const ROT_DIF: Record<string, string> = { nenhuma: "sem dificuldade", alguma: "alguma dificuldade", muita: "muita dificuldade" };
+  const ROT_MEM: Record<string, string> = { nao: "sem esquecimentos que atrapalhem", as_vezes: "esquecimentos às vezes", frequentemente: "esquecimentos frequentes" };
+  const capItens = [
+    cap.visao_dificuldade ? `visão: ${ROT_DIF[cap.visao_dificuldade]}` : null,
+    cap.audicao_dificuldade ? `audição: ${ROT_DIF[cap.audicao_dificuldade]}` : null,
+    cap.memoria_esquecimentos ? `memória: ${ROT_MEM[cap.memoria_esquecimentos]}` : null,
+  ].filter(Boolean);
+  if (capItens.length > 0) {
+    const alerta = cap.visao_dificuldade === "muita" || cap.audicao_dificuldade === "muita" || cap.memoria_esquecimentos === "frequentemente";
+    if (estilo === "sucinto") {
+      linhas.push(`- Visão, audição e memória (autorrelato): ${capItens.join("; ")}${alerta ? "; confirmar com testes objetivos" : ""}.`);
+    } else {
+      linhas.push("VISÃO, AUDIÇÃO E MEMÓRIA (módulo 60+)");
+      linhas.push(`- ${capItens.join("\n- ")}`);
+      linhas.push(
+        alerta
+          ? "- Dificuldade importante relatada: confirme com testes objetivos (voz sussurrada, lembrar palavras) e considere encaminhamento; isso muda como dar instruções e como conduzir o treino de equilíbrio."
+          : "- Autorrelato sem dificuldade importante; é triagem, não diagnóstico."
+      );
+      linhas.push("");
+    }
   }
   return linhas;
 }

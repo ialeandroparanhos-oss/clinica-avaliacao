@@ -18,7 +18,7 @@ import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import { calcularPerfilIntegrado, type Classificacao } from "@/lib/integracao/perfil";
 import { itemAprovado, type Plano } from "@/lib/integracao/plano";
 import { INDICADORES, extrairSerie, type LinhaHistorico } from "@/lib/integracao/historico";
-import { COMBINADOS, FONTE_PORQUE, PORQUE_VALE_A_PENA, perfilParaPaciente, ROTULO_SITUACAO, TEXTO_DOMINIO, fasesDoPlano, frentesPrioritarias, objetivoDoPaciente, primeiroNome } from "@/lib/integracao/devolutiva";
+import { COMBINADOS, FONTE_PORQUE, PORQUE_VALE_A_PENA, ROTULO_SITUACAO, TEXTO_DOMINIO, fasesDoPlano, frentesPrioritarias, objetivoDoPaciente, primeiroNome } from "@/lib/integracao/devolutiva";
 import { NOME_PROFISSIONAL } from "@/lib/marca";
 import { SerieChart } from "@/components/SerieChart";
 
@@ -69,7 +69,7 @@ export default function Apresentacao() {
 
   const slides = useMemo<SlideDef[]>(() => {
     if (!paciente) return [];
-    const perfil = perfilParaPaciente(calcularPerfilIntegrado(paciente), paciente);
+    const perfil = calcularPerfilIntegrado(paciente);
     const plano = paciente.plano as Plano | undefined;
     const motivo = mesclarComPadrao(paciente.anamnese).motivo;
     const objetivo = objetivoDoPaciente(motivo);
@@ -113,10 +113,12 @@ export default function Apresentacao() {
         notas: ["Leia a frase com a própria pessoa e confirme: isso ainda é o que você mais quer?", "Se o objetivo mudou, ajuste o plano antes de seguir: tudo o que vem depois parte daqui."],
         conteudo: (
           <Quadro titulo={`${primeiroNome(paciente.nome)}, o que você nos contou`}>
-            <div className="h-full flex items-center">
-              <blockquote className="border-l-[10px] border-accent bg-accent-soft rounded-r-3xl px-14 py-12 font-display text-[44px] leading-snug text-ink">“{objetivo}”</blockquote>
+            <div className="h-full flex flex-col">
+              <div className="flex-1 min-h-0 flex items-center">
+                <blockquote className={`border-l-[10px] border-accent bg-accent-soft rounded-r-3xl px-14 py-10 font-display leading-snug text-ink ${objetivo.length > 220 ? "text-[30px]" : objetivo.length > 110 ? "text-[36px]" : "text-[44px]"}`}>“{objetivo}”</blockquote>
+              </div>
+              <p className="text-[26px] text-muted pt-4">Este plano foi montado a partir disso.</p>
             </div>
-            <p className="text-[26px] text-muted mt-6">Este plano foi montado a partir disso.</p>
           </Quadro>
         ),
       });
@@ -310,15 +312,15 @@ export default function Apresentacao() {
       notas: ["Sem promessa de resultado e sem pressão: o objetivo é informar. Fontes: diretrizes de atividade física da OMS (2020) e a meta-análise de 2024 sobre exercício supervisionado e não supervisionado em ≥ 60 anos (Gómez-Redondo et al., Sports Med, PMID 38647999).", "Cada pessoa responde de um jeito: acompanhamos o ritmo dela. A frase sobre supervisão vem de estudo em pessoas com 60 anos ou mais: se o paciente for mais jovem, não generalize."],
       conteudo: (
         <Quadro titulo="Por que vale a pena começar agora">
-          <ul className="space-y-6">
+          <ul className="space-y-4">
             {PORQUE_VALE_A_PENA.map((t) => (
-              <li key={t} className="flex items-start gap-5 text-[27px] text-ink leading-snug">
+              <li key={t} className="flex items-start gap-5 text-[24px] text-ink leading-snug">
                 <span className="text-accent-dark text-[36px] leading-none">✓</span>
                 {t}
               </li>
             ))}
           </ul>
-          <p className="text-[18px] text-muted mt-6">{FONTE_PORQUE}</p>
+          <p className="text-[16px] text-muted mt-4">{FONTE_PORQUE}</p>
         </Quadro>
       ),
     });

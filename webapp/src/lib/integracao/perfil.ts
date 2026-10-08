@@ -9,12 +9,13 @@
 // omissão - vira "investigar".
 
 import type { PacienteRow } from "@/lib/anamnese/types";
-import { escorePSS10, somaSemNulos, escoreCurto } from "@/lib/anamnese/alerts";
+import { CORTE_PORTA_PHQ2, escorePSS10, somaSemNulos, escoreCurto } from "@/lib/anamnese/alerts";
 import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { paraNumero } from "@/lib/numeros";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { avaliarForca as avaliarForcaIntegrada } from "@/lib/avaliacao/forca";
 import { classificarCircAbdominal, classificarRCEst, confirmarAdiposidade, relacaoCinturaEstatura } from "@/lib/avaliacao/composicaoCorporal";
+import { avaliarMobilidadeObjetiva } from "@/lib/avaliacao/mobilidade";
 import { avaliarVO2max, ROTULO_CLASSE_VO2, vo2maxDeRegistro, type ClasseVO2 } from "@/lib/avaliacao/cardiorrespiratoria";
 
 export type Classificacao = "adequado" | "atencao" | "prioridade" | "investigar";
@@ -89,32 +90,13 @@ function avaliarForca(p: PacienteRow): DomainResult {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Mobilidade — dado qualitativo (observações posturais); heurística de
-//    palavras-chave, deixada explícita para o avaliador conferir sempre.
+// 2. Mobilidade — testes objetivos (assimetria D/E em graus e restrição observada
+//    no agachamento; ver lib/avaliacao/mobilidade.ts). As observações posturais em
+//    texto livre NÃO entram: achado postural isolado não é medida nem risco.
 // ---------------------------------------------------------------------------
 function avaliarMobilidade(p: PacienteRow): DomainResult {
-  const textos = [
-    p.postural?.obs_anterior,
-    p.postural?.obs_posterior,
-    p.postural?.obs_lateral_d,
-    p.postural?.obs_lateral_e,
-    p.postural?.obs_movimento,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-
-  if (!textos.trim()) {
-    return resultado("mobilidade", "investigar", "Nenhuma observação postural/de movimento registrada ainda.");
-  }
-
-  const palavrasDeAtencao = ["assimetria", "compensa", "limita", "restri", "desvio", "dor", "instabilidade", "valgo"];
-  const achou = palavrasDeAtencao.find((palavra) => textos.includes(palavra));
-
-  if (achou) {
-    return resultado("mobilidade", "atencao", `Observação do avaliador menciona "${achou}" — merece leitura conjunta com os demais achados (nunca causa isolada).`);
-  }
-  return resultado("mobilidade", "adequado", "Observações registradas sem termos de atenção identificados (revisão automática apenas por palavra-chave — leia o texto completo do avaliador).");
+  const r = avaliarMobilidadeObjetiva(p.funcional);
+  return resultado("mobilidade", r.classificacao, r.justificativa);
 }
 
 // ---------------------------------------------------------------------------
@@ -401,7 +383,7 @@ function avaliarBemEstar(p: PacienteRow): DomainResult {
     const gad2 = escoreCurto(sm.gad7);
     const phq2 = escoreCurto(sm.phq9);
     const gad2Negativo = gad2 !== null && gad2 < 3;
-    const phq2Negativo = phq2 !== null && phq2 < 3;
+    const phq2Negativo = phq2 !== null && phq2 < CORTE_PORTA_PHQ2;
     if (gad2Negativo && phq2Negativo) {
       return resultado(
         "bem_estar",

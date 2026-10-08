@@ -184,6 +184,19 @@ function somaValida(valores: (string | undefined)[]): number | null {
   return (nums as number[]).reduce((a, b) => a + b, 0);
 }
 
+// Soma das dobras (mm) do protocolo escolhido, ou null se faltar algum sítio.
+export function somaDobrasProtocolo(protocolo: ProtocoloDobras, dados: Record<string, string>, sexo: SexoComp): number | null {
+  if (protocolo === "faulkner4") return somaValida(SITIOS_FAULKNER.map((s) => dados[s.chave]));
+  if (protocolo === "jp7") return somaValida(SITIOS_JP7.map((s) => dados[s.chave]));
+  if (protocolo === "jp3") return sexo === "desconhecido" ? null : somaValida(SITIOS_JP3[sexo].map((s) => dados[s.chave]));
+  return null;
+}
+
+// Acima deste valor, tratar o %G por dobras com mais cautela. Referência: um estudo de comparação com
+// o modelo de 4 compartimentos citado em fonte secundária (não encontrado no PubMed na conferência de
+// 08/10/2026): [confirmar]. Por isso o aviso na tela diz que o corte não está conferido.
+export const SOMA_DOBRAS_CAUTELA_MM = 120;
+
 // Retorna %G (equação de Siri a partir da densidade corporal de Jackson &
 // Pollock) ou null se faltar alguma dobra do protocolo ou a idade/sexo.
 export function calcularPercentualGorduraDobras(

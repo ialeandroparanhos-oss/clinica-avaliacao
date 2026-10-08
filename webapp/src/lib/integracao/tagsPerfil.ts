@@ -11,6 +11,7 @@ import { idadeEfetiva } from "@/lib/avaliacao/identificacao";
 
 export type TagPerfilChave =
   | "idoso"
+  | "adulto"
   | "risco_queda"
   | "sedentario"
   | "alta_demanda_fisica_trabalho"
@@ -32,6 +33,8 @@ export function calcularTagsPerfil(paciente: PacienteRow): TagPerfil[] {
 
   if (idade !== null && idade >= 60) {
     tags.push({ chave: "idoso", rotulo: "Idoso (60+)", motivo: `Idade ${idade} anos.` });
+  } else if (idade !== null && idade >= 18) {
+    tags.push({ chave: "adulto", rotulo: "Adulto (18 a 59)", motivo: `Idade ${idade} anos.` });
   }
 
   if (a?.historico_saude?.quedas_12m === true) {
@@ -98,7 +101,13 @@ export type GrupoTesteFuncional =
   | "falha_carga_fixa"
   | "goniometria"
   | "agachamento_livre"
-  | "core_estabilidade";
+  | "core_estabilidade"
+  | "tc6"
+  | "forca_rikli"
+  | "pushup"
+  | "flexibilidade_idoso"
+  | "flexibilidade_adulto"
+  | "mobilidade_articular";
 
 const GATILHOS: Record<GrupoTesteFuncional, TagPerfilChave[]> = {
   chair_stand_5sts: ["idoso", "risco_queda", "sedentario"],
@@ -111,6 +120,13 @@ const GATILHOS: Record<GrupoTesteFuncional, TagPerfilChave[]> = {
   goniometria: ["dor_atual", "limitacao_osteoarticular_parq"],
   agachamento_livre: ["alta_demanda_fisica_trabalho", "limitacao_osteoarticular_parq", "dor_atual"],
   core_estabilidade: ["dor_atual", "alta_demanda_fisica_trabalho"],
+  // Testes que dependem da faixa etária (Rikli & Jones para 60+; push-up e sentar-e-alcançar para adultos).
+  tc6: ["idoso", "sedentario", "restricao_cardiovascular_parq"],
+  forca_rikli: ["idoso"],
+  pushup: ["adulto"],
+  flexibilidade_idoso: ["idoso"],
+  flexibilidade_adulto: ["adulto"],
+  mobilidade_articular: ["dor_atual", "limitacao_osteoarticular_parq", "alta_demanda_fisica_trabalho", "idoso", "sedentario"],
 };
 
 export const ROTULOS_GRUPO: Record<GrupoTesteFuncional, string> = {
@@ -124,6 +140,12 @@ export const ROTULOS_GRUPO: Record<GrupoTesteFuncional, string> = {
   goniometria: "Amplitude articular (goniometria)",
   agachamento_livre: "Agachamento livre",
   core_estabilidade: "Estabilidade do core",
+  tc6: "Teste de caminhada de 6 minutos",
+  forca_rikli: "Arm Curl (força de membros superiores)",
+  pushup: "Push-up",
+  flexibilidade_idoso: "Flexibilidade (sentar e alcançar na cadeira, Back Scratch)",
+  flexibilidade_adulto: "Flexibilidade (sentar e alcançar)",
+  mobilidade_articular: "Mobilidade de tornozelo e quadril",
 };
 
 // Para cada grupo de teste com ao menos um gatilho ativo no perfil, retorna

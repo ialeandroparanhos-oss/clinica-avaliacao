@@ -8,9 +8,9 @@
 
 import type { Anamnese } from "./types";
 import { calcularPSQI } from "./psqi";
-import { precisaInstrumentoCompleto } from "./alerts";
+import { CORTE_PORTA_PHQ2, precisaInstrumentoCompleto } from "./alerts";
 
-export type ModuloId = "bem-estar" | "sono" | "dor" | "estilo-de-vida";
+export type ModuloId = "bem-estar" | "sono" | "dor" | "estilo-de-vida" | "capacidade-60";
 
 export type StatusModulo = "respondido" | "em_andamento" | "sinalizado" | "nao_aplicado";
 
@@ -54,7 +54,15 @@ export const MODULOS: DefinicaoModulo[] = [
     titulo: "Estilo de vida e atividade física",
     descricaoPaciente: "Alimentação, hábitos, lazer e quanto você se movimenta no dia a dia.",
     duracao: "cerca de 5 minutos",
-    instrumentos: "IPAQ, alimentação, hidratação, álcool, lazer, barreiras, apoio",
+    instrumentos: "IPAQ (autorrelato: costuma superestimar a atividade), alimentação, hidratação, álcool, lazer, barreiras, apoio",
+    sensivel: false,
+  },
+  {
+    id: "capacidade-60",
+    titulo: "Visão, audição e memória (a partir de 60 anos)",
+    descricaoPaciente: "Poucas perguntas sobre como você enxerga, escuta e lembra das coisas no dia a dia. Ajudam a deixar os exercícios mais seguros e o plano mais adequado a você.",
+    duracao: "cerca de 2 minutos",
+    instrumentos: "Visão, audição e memória por autorrelato (triagem, não diagnóstico); recomendado a partir de 60 anos. Testes objetivos (voz sussurrada, lembrar palavras) ficam com o avaliador.",
     sensivel: false,
   },
 ];
@@ -66,8 +74,10 @@ export function moduloPorId(id: string): DefinicaoModulo | undefined {
 const preenchido = (v: number | null | undefined) => v !== null && v !== undefined;
 
 // A partir das respostas do questionário base, o módulo é recomendado?
-export function moduloSinalizado(a: Anamnese, id: ModuloId): boolean {
+export function moduloSinalizado(a: Anamnese, id: ModuloId, idade?: number | null): boolean {
   switch (id) {
+    case "capacidade-60":
+      return idade !== null && idade !== undefined && idade >= 60;
     case "bem-estar":
       return a.saude_mental.sinalizacao === "um_pouco" || a.saude_mental.sinalizacao === "sim";
     case "sono": {
@@ -83,6 +93,8 @@ export function moduloSinalizado(a: Anamnese, id: ModuloId): boolean {
 
 function algumaResposta(a: Anamnese, id: ModuloId): boolean {
   switch (id) {
+    case "capacidade-60":
+      return Object.values(a.capacidade).some((v) => v !== null);
     case "bem-estar": {
       const sm = a.saude_mental;
       return [...sm.pss10, ...sm.gad7, ...sm.phq9].some(preenchido) || preenchido(sm.percepcao_saude) || preenchido(a.estilo_vida.estresse_percebido);
@@ -109,12 +121,14 @@ function algumaResposta(a: Anamnese, id: ModuloId): boolean {
 
 function completo(a: Anamnese, id: ModuloId): boolean {
   switch (id) {
+    case "capacidade-60":
+      return a.capacidade.visao_dificuldade !== null && a.capacidade.audicao_dificuldade !== null && a.capacidade.memoria_esquecimentos !== null;
     case "bem-estar": {
       const sm = a.saude_mental;
       const curto = preenchido(sm.gad7[0]) && preenchido(sm.gad7[1]) && preenchido(sm.phq9[0]) && preenchido(sm.phq9[1]) && preenchido(sm.phq9[8]);
       if (!curto) return false;
       if (precisaInstrumentoCompleto(sm.gad7) && !sm.gad7.slice(2).every(preenchido)) return false;
-      if (precisaInstrumentoCompleto(sm.phq9) && !sm.phq9.slice(2, 8).every(preenchido)) return false;
+      if (precisaInstrumentoCompleto(sm.phq9, CORTE_PORTA_PHQ2) && !sm.phq9.slice(2, 8).every(preenchido)) return false;
       return sm.pss10.every(preenchido);
     }
     case "sono":
@@ -126,10 +140,10 @@ function completo(a: Anamnese, id: ModuloId): boolean {
   }
 }
 
-export function statusModulo(a: Anamnese, id: ModuloId): StatusModulo {
+export function statusModulo(a: Anamnese, id: ModuloId, idade?: number | null): StatusModulo {
   if (completo(a, id)) return "respondido";
   if (algumaResposta(a, id)) return "em_andamento";
-  if (moduloSinalizado(a, id)) return "sinalizado";
+  if (moduloSinalizado(a, id, idade)) return "sinalizado";
   return "nao_aplicado";
 }
 

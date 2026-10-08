@@ -12,6 +12,7 @@ import type { PacienteRow } from "@/lib/anamnese/types";
 import { Field, TextArea, TextInput } from "@/components/forms";
 import { NumField, SalvarBar, Selo, SelectField, ValorCalculado, useAutoSalvar, useSalvarSecao, type TomSelo } from "./campos";
 import { PainelParecer, lerParecer, type ParecerSalvo } from "./PainelParecer";
+import { decidirLiberacao, ROTULO_NIVEL_LIBERACAO, situacaoParaLiberacao, type NivelLiberacao, type ResultadoLiberacao } from "@/lib/avaliacao/liberacaoTeste";
 import { gerarParecerAgente, type EstiloParecer } from "@/lib/avaliacao/pareceres";
 import { RotuloComInfo } from "./instrucoes";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
@@ -83,6 +84,40 @@ function testesIniciais(dados: any): Teste[] {
   // Registro antigo: um teste só, com os campos soltos na raiz.
   if (dados?.protocolo || dados?.vo2max_manual) return [criarTeste({ ...dados, id: undefined })];
   return [criarTeste()];
+}
+
+const TOM_LIBERACAO: Record<NivelLiberacao, TomSelo> = { liberado: "ok", cautela: "atencao", liberacao_recomendada: "alerta", liberacao_necessaria: "perigo" };
+
+// Liberação para testar/exercitar: nível de atividade, sinais/sintomas ou doença conhecida e intensidade
+// (ACSM 2015). Os fatores de risco da anamnese continuam como informação, mas não decidem.
+function PainelLiberacao({ paciente }: { paciente: PacienteRow }) {
+  const situacao = situacaoParaLiberacao(paciente);
+  const moderado = decidirLiberacao(situacao, "leve_moderada");
+  const maximo = decidirLiberacao(situacao, "vigorosa_maxima");
+  const linhas: [string, ResultadoLiberacao][] = [
+    ["Teste submáximo / exercício leve a moderado", moderado],
+    ["Teste máximo (Bruce, Cooper, rampa) / exercício vigoroso", maximo],
+  ];
+  return (
+    <div className="rounded-xl border border-border p-4 space-y-3">
+      <h4 className="font-display text-base text-ink">Liberação para o teste (Dra. Nina, critério ACSM 2015)</h4>
+      <p className="text-xs text-muted">
+        Decide por 3 pontos: nível atual de atividade, sinais/sintomas ou doença conhecida e a intensidade do teste. O questionário de fatores de risco (aba Anamnese) fica como informação e não decide.
+        Baseado no autorrelato e no PAR-Q+; a decisão final é sua.
+      </p>
+      <ul className="space-y-2">
+        {linhas.map(([titulo, r]) => (
+          <li key={titulo} className="flex flex-wrap items-start gap-2 text-sm">
+            <Selo tom={TOM_LIBERACAO[r.nivel]}>{ROTULO_NIVEL_LIBERACAO[r.nivel]}</Selo>
+            <span className="flex-1 min-w-[16rem]">
+              <strong className="text-ink">{titulo}:</strong> <span className="text-muted">{r.texto}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="text-xs text-muted">Considerado: {maximo.motivos.join(" · ")}.</p>
+    </div>
+  );
 }
 
 export function AbaCardio({ pacienteId, dados, paciente, onSalvo }: { pacienteId: string; dados: any; paciente: PacienteRow; onSalvo: () => void }) {
@@ -164,9 +199,8 @@ export function AbaCardio({ pacienteId, dados, paciente, onSalvo }: { pacienteId
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-5 space-y-5">
-      <p className="text-sm text-muted">
-        Antes de um teste máximo, confira a triagem de risco cardiovascular na aba Anamnese. Nenhum destes testes substitui um teste ergométrico clínico com ECG quando houver indicação.
-      </p>
+      <PainelLiberacao paciente={paciente} />
+      <p className="text-sm text-muted">Nenhum destes testes substitui um teste ergométrico clínico com ECG quando houver indicação.</p>
 
       {testes.length > 1 && (
         <div className="rounded-xl border border-border p-4">

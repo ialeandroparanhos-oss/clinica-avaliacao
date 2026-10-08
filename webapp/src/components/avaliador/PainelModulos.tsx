@@ -16,7 +16,7 @@ const TOM_STATUS: Record<StatusModulo, TomSelo> = {
   nao_aplicado: "neutro",
 };
 
-export function PainelModulos({ anamnese }: { anamnese: Anamnese }) {
+export function PainelModulos({ anamnese, idade }: { anamnese: Anamnese; idade?: number | null }) {
   const [copiado, setCopiado] = useState<ModuloId | null>(null);
 
   async function copiar(id: ModuloId) {
@@ -39,7 +39,7 @@ export function PainelModulos({ anamnese }: { anamnese: Anamnese }) {
       </p>
       <ul className="divide-y divide-border">
         {MODULOS.map((m) => {
-          const status = statusModulo(anamnese, m.id);
+          const status = statusModulo(anamnese, m.id, idade);
           return (
             <li key={m.id} className="py-3 flex flex-wrap items-start gap-3">
               <div className="flex-1 min-w-[14rem]">

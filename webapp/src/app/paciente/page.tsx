@@ -16,6 +16,7 @@ import {
   opcoesSinalizacaoBemEstar,
 } from "@/lib/anamnese/questionnaires";
 import { MODULOS, moduloSinalizado, statusModulo } from "@/lib/anamnese/modulos";
+import { idadeDaDataNascimento } from "@/lib/avaliacao/identificacao";
 import { CHAVE_IDENTIFICACAO } from "@/lib/anamnese/identificacaoSessao";
 
 type Stage = "identificacao" | "wizard" | "concluido";
@@ -185,8 +186,10 @@ export default function PacientePage() {
   if (stage === "concluido") {
     // Todos os módulos ainda não respondidos são oferecidos (opcionais); os
     // recomendados pelas respostas do base vêm primeiro, destacados.
-    const modulosPendentes = MODULOS.filter((m) => statusModulo(anamnese, m.id) !== "respondido")
-      .map((m) => ({ ...m, recomendado: moduloSinalizado(anamnese, m.id) }))
+    const idadePaciente = idadeDaDataNascimento(dataNascimento);
+    const modulosPendentes = MODULOS.filter((m) => statusModulo(anamnese, m.id, idadePaciente) !== "respondido")
+      .filter((m) => m.id !== "capacidade-60" || (idadePaciente !== null && idadePaciente >= 60))
+      .map((m) => ({ ...m, recomendado: moduloSinalizado(anamnese, m.id, idadePaciente) }))
       .sort((a, b) => Number(b.recomendado) - Number(a.recomendado));
     return (
       <main className="min-h-screen flex items-center justify-center px-4 py-12">
