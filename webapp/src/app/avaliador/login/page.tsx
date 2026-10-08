@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useMemo, useState } from "react";
+import { Marca } from "@/components/Marca";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Field, TextInput } from "@/components/forms";
@@ -42,7 +43,7 @@ function LoginForm() {
     <main className="min-h-screen flex items-center justify-center px-4 py-12">
       <form onSubmit={entrar} className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8 space-y-5">
         <div>
-          <img src="/logo-forma-e-fisio.jpg" alt="Forma e Fisio" className="h-24 w-24 rounded-2xl mx-auto mb-5" />
+          <Marca compacta />
           <p className="text-xs font-semibold tracking-widest text-accent uppercase mb-2">Área do avaliador</p>
           <h1 className="font-display text-2xl text-ink">Entrar</h1>
           <p className="text-muted text-sm mt-2">Acesso restrito à equipe da clínica.</p>

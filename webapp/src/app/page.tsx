@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { Marca } from "@/components/Marca";
 
 export default function Home() {
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-3xl">
         <div className="text-center mb-10">
-          <img src="/logo-forma-e-fisio.jpg" alt="Forma e Fisio" className="h-28 w-28 rounded-2xl mx-auto mb-6" />
+          <Marca />
           <p className="text-xs font-semibold tracking-widest text-accent uppercase mb-3">
             Avaliação Integrada de Saúde, Física e Funcional
           </p>

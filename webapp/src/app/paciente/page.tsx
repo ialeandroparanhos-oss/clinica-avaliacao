@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Marca } from "@/components/Marca";
 import { createClient } from "@/lib/supabase/client";
 import { anamneseVazia, mesclarComPadrao } from "@/lib/anamnese/defaults";
 import type { Anamnese } from "@/lib/anamnese/types";
@@ -146,7 +147,7 @@ export default function PacientePage() {
       <main className="min-h-screen flex items-center justify-center px-4 py-12">
         <form onSubmit={identificar} className="w-full max-w-md rounded-2xl border border-border bg-surface p-8 space-y-5">
           <div>
-            <img src="/logo-forma-e-fisio.jpg" alt="Forma e Fisio" className="h-24 w-24 rounded-2xl mx-auto mb-5" />
+            <Marca compacta />
             <p className="text-xs font-semibold tracking-widest text-accent uppercase mb-2">Anamnese</p>
             <h1 className="font-display text-2xl text-ink">Vamos começar com sua identificação</h1>
             <p className="text-muted text-sm mt-2">
