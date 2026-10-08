@@ -11,7 +11,7 @@ import { useMemo, useState } from "react";
 import type { PacienteRow } from "@/lib/anamnese/types";
 import { createClient } from "@/lib/supabase/client";
 import { Field, TextArea, TextInput } from "@/components/forms";
-import { SalvarBar, Selo, type TomSelo } from "./campos";
+import { SalvarBar, Selo, mesclarNoPlano, useAutoSalvar, type TomSelo } from "./campos";
 import { calcularPerfilIntegrado } from "@/lib/integracao/perfil";
 import {
   HORIZONTES,
@@ -174,6 +174,9 @@ export function AbaPlano({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo
     setTimeout(() => setOk(false), 2500);
     onSalvo();
   }
+
+  // Rascunho automático: o plano é gravado sozinho (preservando metas e pareceres).
+  const estadoAuto = useAutoSalvar({ itens, encaminhamentos }, (v) => mesclarNoPlano(supabase, paciente.id, (plano) => ({ ...plano, itens: v.itens, encaminhamentos: v.encaminhamentos, versao: 2 })));
 
   const todos = [...itens, ...encaminhamentos];
   const contagem = {
@@ -439,7 +442,7 @@ export function AbaPlano({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo
         </button>
       </details>
 
-      <SalvarBar salvando={salvando} ok={ok} onSalvar={salvar} />
+      <SalvarBar salvando={salvando} ok={ok} onSalvar={salvar} auto={estadoAuto} />
     </div>
   );
 }

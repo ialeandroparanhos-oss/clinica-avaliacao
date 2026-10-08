@@ -15,6 +15,8 @@
 // curvaturas da coluna e anteversão/retroversão pélvica NÃO são mensuráveis
 // por este método e dependem da observação do avaliador.
 
+import type { EstiloParecer } from "./pareceres";
+
 export type Vista = "anterior" | "posterior" | "lateral_d" | "lateral_e";
 
 export const ROTULO_VISTA: Record<Vista, string> = {
@@ -413,10 +415,35 @@ export type AnaliseVistaSalva = {
 // ---------------------------------------------------------------------------
 // Parecer descritivo (texto do Agente 4)
 // ---------------------------------------------------------------------------
-export function gerarParecer(vistas: Partial<Record<Vista, AnaliseVistaSalva>>): string {
+function gerarParecerSucinto(vistas: Partial<Record<Vista, AnaliseVistaSalva>>, analisadas: Vista[]): string {
+  const linhas: string[] = ["PARECER POSTURAL (resumo) - Agente 4", ""];
+  const atencao: string[] = [];
+  for (const v of analisadas) {
+    const a = vistas[v]!;
+    const achados = a.medidas.filter((m) => m.destaque === "discreta" || m.destaque === "evidente");
+    const normais = a.medidas.filter((m) => m.destaque === "ok");
+    if (achados.length > 0) {
+      linhas.push(`${ROTULO_VISTA[v]}: ${achados.map((m) => m.texto).join("; ")}.`);
+      achados.forEach((m) => atencao.push(`${ROTULO_VISTA[v].toLowerCase()}: ${m.rotulo.toLowerCase()}`));
+    } else if (normais.length > 0) {
+      linhas.push(`${ROTULO_VISTA[v]}: sem diferença perceptível.`);
+    } else {
+      linhas.push(`${ROTULO_VISTA[v]}: sem medidas calculadas (confira o enquadramento da foto).`);
+    }
+    const aviso = a.avisos.find((x) => !x.startsWith("Na vista posterior não são medidos") && !x.startsWith("De perfil não são medidos"));
+    if (aviso) linhas.push(`  Qualidade: ${aviso}`);
+  }
+  linhas.push("");
+  linhas.push(atencao.length > 0 ? `A confirmar clinicamente: ${Array.from(new Set(atencao)).join("; ")}.` : "Nenhuma diferença aparente acima da margem de interpretação.");
+  linhas.push("Foto 2D, achados descritivos: não são diagnóstico nem causa de dor.");
+  return linhas.join("\n");
+}
+
+export function gerarParecer(vistas: Partial<Record<Vista, AnaliseVistaSalva>>, estilo: EstiloParecer = "explicativo"): string {
   const ordem: Vista[] = ["anterior", "posterior", "lateral_d", "lateral_e"];
   const analisadas = ordem.filter((v) => vistas[v]);
   if (analisadas.length === 0) return "";
+  if (estilo === "sucinto") return gerarParecerSucinto(vistas, analisadas);
 
   const linhas: string[] = [];
   linhas.push("PARECER POSTURAL - Agente 4 (análise automática das fotos; apoio ao avaliador, não é diagnóstico)");

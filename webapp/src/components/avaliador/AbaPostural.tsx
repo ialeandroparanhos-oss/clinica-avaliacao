@@ -10,29 +10,26 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Field, TextArea } from "@/components/forms";
-import { SalvarBar, Selo, useSalvarSecao, type TomSelo } from "./campos";
+import { SalvarBar, Selo, useAutoSalvar, useSalvarSecao, type TomSelo } from "./campos";
 import { SobreposicaoPostural } from "./SobreposicaoPostural";
+import { PainelParecer, estiloPreferido, lerParecer, type ParecerSalvo } from "./PainelParecer";
 import { analisarVista, gerarParecer, ROTULO_VISTA, type AnaliseVistaSalva, type Vista } from "@/lib/avaliacao/analisePostural";
 import { detectarPontos, prepararImagem, type ImagemPreparada } from "@/lib/avaliacao/poseModelo";
 
 const BUCKET_FOTOS_POSTURAIS = "fotos-posturais";
 const VISTAS: Vista[] = ["anterior", "posterior", "lateral_d", "lateral_e"];
 
-type AnaliseGeral = {
-  vistas: Partial<Record<Vista, AnaliseVistaSalva>>;
-  parecer: string;
-  parecer_automatico: string;
-  parecer_revisado: boolean;
-};
+type Vistas = Partial<Record<Vista, AnaliseVistaSalva>>;
 
-function analiseInicial(dados: any): AnaliseGeral {
+// Fichas gravadas antes do parecer ganhar estilos guardavam o texto em analise.parecer.
+function parecerInicial(dados: any): ParecerSalvo | null {
+  const novo = lerParecer(dados?.parecer);
+  if (novo) return novo;
   const a = dados?.analise;
-  return {
-    vistas: a?.vistas ?? {},
-    parecer: a?.parecer ?? "",
-    parecer_automatico: a?.parecer_automatico ?? "",
-    parecer_revisado: !!a?.parecer_revisado,
-  };
+  if (a && typeof a.parecer === "string" && a.parecer !== "") {
+    return { texto: a.parecer, estilo: "explicativo", automatico: a.parecer_automatico ?? "", revisado: !!a.parecer_revisado };
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -314,19 +311,23 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
     foto_lateral_d_path: dados?.foto_lateral_d_path ?? "",
     foto_lateral_e_path: dados?.foto_lateral_e_path ?? "",
   });
-  const [analise, setAnalise] = useState<AnaliseGeral>(() => analiseInicial(dados));
+  const [analise, setAnalise] = useState<{ vistas: Vistas; parecer: ParecerSalvo | null }>(() => ({ vistas: dados?.analise?.vistas ?? {}, parecer: parecerInicial(dados) }));
   const [versaoFotos, setVersaoFotos] = useState<Record<Vista, number>>({ anterior: 0, posterior: 0, lateral_d: 0, lateral_e: 0 });
   const [sinal, setSinal] = useState(0);
   const [grade, setGrade] = useState(true);
-  const { salvar, salvando, ok } = useSalvarSecao(pacienteId, "postural");
+  const { salvar, salvando, ok, rascunho } = useSalvarSecao(pacienteId, "postural");
   const set = (k: string, v: string) => setD((prev) => ({ ...prev, [k]: v }));
   const caminhoDe = (v: Vista) => d[`foto_${v}_path`];
 
-  // O parecer automático acompanha as análises; se o avaliador já o editou, não é sobrescrito.
-  function comVistas(prev: AnaliseGeral, vistas: AnaliseGeral["vistas"]): AnaliseGeral {
-    const novoAuto = gerarParecer(vistas);
-    const seguiaAuto = !prev.parecer || prev.parecer === prev.parecer_automatico;
-    return { ...prev, vistas, parecer_automatico: novoAuto, parecer: seguiaAuto ? novoAuto : prev.parecer, parecer_revisado: seguiaAuto ? false : prev.parecer_revisado };
+  // O parecer acompanha as análises enquanto o avaliador não o edita; depois de
+  // editado, o texto dele nunca é sobrescrito (aparece o aviso de "dados mudaram").
+  function comVistas(prev: { vistas: Vistas; parecer: ParecerSalvo | null }, vistas: Vistas) {
+    const p = prev.parecer;
+    const seguiaAuto = !p || p.texto === "" || p.texto === p.automatico;
+    if (!seguiaAuto) return { ...prev, vistas };
+    const estilo = p?.estilo ?? estiloPreferido();
+    const novo = gerarParecer(vistas, estilo);
+    return { vistas, parecer: novo ? { texto: novo, estilo, automatico: novo, revisado: false } : null };
   }
 
   function aoMudarFoto(vista: Vista, caminho: string) {
@@ -344,14 +345,9 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
     setAnalise((prev) => comVistas(prev, { ...prev.vistas, [vista]: resultado }));
   }
 
-  function regerarParecer() {
-    if (analise.parecer && analise.parecer !== analise.parecer_automatico && !window.confirm("Substituir o parecer atual (com as suas edições) por um novo, gerado a partir das medidas?")) return;
-    const novoAuto = gerarParecer(analise.vistas);
-    setAnalise((prev) => ({ ...prev, parecer: novoAuto, parecer_automatico: novoAuto, parecer_revisado: false }));
-  }
-
+  const dadosAtuais = { ...d, analise: { versao: 2, vistas: analise.vistas }, parecer: analise.parecer };
+  const estadoAuto = useAutoSalvar(dadosAtuais, rascunho);
   const vistasComFoto = VISTAS.filter((v) => caminhoDe(v));
-  const analisadas = VISTAS.filter((v) => analise.vistas[v] && analise.vistas[v]!.foto_path === caminhoDe(v));
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-5 space-y-5">
@@ -400,31 +396,14 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
         )}
       </div>
 
-      <div className="pt-4 border-t border-border space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="font-display text-lg text-ink">Parecer do Agente 4</h3>
-          <button type="button" onClick={regerarParecer} disabled={analisadas.length === 0} className="text-sm font-medium text-accent hover:underline disabled:opacity-50">
-            {analise.parecer ? "Gerar o parecer de novo" : "Gerar parecer"}
-          </button>
-        </div>
-        {analisadas.length === 0 && !analise.parecer ? (
-          <p className="text-sm text-muted">Analise ao menos uma foto para o agente redigir o parecer.</p>
-        ) : (
-          <>
-            <TextArea
-              value={analise.parecer}
-              onChange={(e) => setAnalise((prev) => ({ ...prev, parecer: e.target.value, parecer_revisado: false }))}
-              rows={16}
-              className="font-mono text-xs leading-relaxed"
-            />
-            <label className="inline-flex items-center gap-2 text-sm text-ink cursor-pointer">
-              <input type="checkbox" checked={analise.parecer_revisado} onChange={(e) => setAnalise((prev) => ({ ...prev, parecer_revisado: e.target.checked }))} />
-              Parecer revisado e aprovado por mim (aparece como revisado no relatório)
-            </label>
-            <p className="text-xs text-muted">O parecer é um rascunho descritivo: edite à vontade. Não é diagnóstico e não altera, por si só, a classificação do painel integrado.</p>
-          </>
-        )}
-      </div>
+      <PainelParecer
+        titulo="Parecer do Agente 4"
+        valor={analise.parecer}
+        onChange={(p) => setAnalise((prev) => ({ ...prev, parecer: p }))}
+        gerar={(estilo) => gerarParecer(analise.vistas, estilo)}
+        mensagemVazia="Analise ao menos uma foto para o agente redigir o parecer."
+        linhas={analise.parecer?.estilo === "explicativo" ? 16 : 8}
+      />
 
       <div className="pt-4 border-t border-border space-y-4">
         <h3 className="font-display text-lg text-ink">Suas observações</h3>
@@ -447,7 +426,7 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
         </Field>
       </div>
 
-      <SalvarBar salvando={salvando} ok={ok} onSalvar={() => salvar({ ...d, analise: { ...analise, versao: 1 } }).then(onSalvo)} />
+      <SalvarBar salvando={salvando} ok={ok} onSalvar={() => salvar(dadosAtuais).then(onSalvo)} auto={estadoAuto} />
     </div>
   );
 }

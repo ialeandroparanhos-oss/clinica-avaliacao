@@ -114,6 +114,11 @@ A aba Postural analisa as 4 fotos e redige um parecer descritivo, que o avaliado
 - Referências práticas de destaque (**do sistema, sem validação publicada**): diferença ≥ 3° = "discreta"; ≥ 6° = "evidente"; joelho ≥ 4° / 8°; tronco de perfil ≥ 5°; cabeça à frente ≥ 10°. Pontos com visibilidade < 0,5 são ignorados.
 - O parecer é montado só com linguagem descritiva ("à inspeção da foto...", "aparente"), cita a evidência fraca entre postura e dor, lista as limitações e sugere confirmação clínica (palpação, nivelamento, goniometria, testes de movimento). Fica em campo editável, com marca de "revisado e aprovado pelo avaliador"; o relatório técnico indica se é rascunho automático ou revisado. O parecer **não** entra no cálculo do Perfil Integrado.
 
+**Estilo do parecer e salvamento automático (valem para todas as abas):**
+- O avaliador escolhe, em cada parecer, entre **"sucinto e objetivo"** (uma linha por tema) e **"mais explicativo"** (critério usado, como ler o resultado, limites e próximo passo). A escolha fica lembrada. Trocar o estilo ou gerar de novo nunca apaga um texto editado sem confirmação, e o parecer avisa quando os dados mudaram depois de gerado.
+- Há parecer em: Anamnese (Sofia), Física (Marco), Postural (Agente 4), Funcional (Rita), Cardiorrespiratória (Caio) e Perfil Integrado (Íris). Todos usam os mesmos resultados do painel integrado; não criam classificação nova.
+- Tudo o que é digitado, as fotos enviadas, as análises e os pareceres são **gravados automaticamente como rascunho** (cerca de 1,5 s após a última alteração e ao sair da aba). O rascunho atualiza a ficha atual do paciente; o botão **Salvar** é o que registra a avaliação no histórico usado nas reavaliações.
+
 **O que o método NÃO mede:** escápulas, curvaturas da coluna, inclinação pélvica e rotações. O erro cresce com câmera inclinada, pessoa pequena no quadro, roupa larga e pés cortados; o sistema avisa quando detecta enquadramento ruim (tornozelos fora do quadro, pessoa ocupando < 55% da altura).
 
 ---

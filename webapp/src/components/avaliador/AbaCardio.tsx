@@ -10,7 +10,9 @@
 import { useState } from "react";
 import type { PacienteRow } from "@/lib/anamnese/types";
 import { Field, TextArea, TextInput } from "@/components/forms";
-import { NumField, SalvarBar, Selo, SelectField, ValorCalculado, useSalvarSecao, type TomSelo } from "./campos";
+import { NumField, SalvarBar, Selo, SelectField, ValorCalculado, useAutoSalvar, useSalvarSecao, type TomSelo } from "./campos";
+import { PainelParecer, lerParecer, type ParecerSalvo } from "./PainelParecer";
+import { gerarParecerAgente, type EstiloParecer } from "@/lib/avaliacao/pareceres";
 import { RotuloComInfo } from "./instrucoes";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { paraNumero } from "@/lib/numeros";
@@ -92,7 +94,8 @@ export function AbaCardio({ pacienteId, dados, paciente, onSalvo }: { pacienteId
     intensidade_prescricao_pct: dados?.intensidade_prescricao_pct ?? "70",
     observacoes: dados?.observacoes ?? "",
   });
-  const { salvar, salvando, ok } = useSalvarSecao(pacienteId, "cardio");
+  const [parecer, setParecer] = useState<ParecerSalvo | null>(() => lerParecer(dados?.parecer));
+  const { salvar, salvando, ok, rascunho } = useSalvarSecao(pacienteId, "cardio");
   const setComumCampo = (k: string, v: string) => setComum((prev) => ({ ...prev, [k]: v }));
   const setTeste = (id: string, k: string, v: string) => setTestes((prev) => prev.map((t) => (t.id === id ? { ...t, [k]: v } : t)));
 
@@ -152,8 +155,12 @@ export function AbaCardio({ pacienteId, dados, paciente, onSalvo }: { pacienteId
       fc_maxima_atingida: fcMaxMedida !== null ? String(fcMaxMedida) : "",
       testes,
       teste_principal: principal?.id ?? "",
+      parecer,
     };
   }
+  const dadosAtuais = dadosParaSalvar();
+  const estadoAuto = useAutoSalvar(dadosAtuais, rascunho);
+  const gerarParecerCardio = (estilo: EstiloParecer) => gerarParecerAgente("cardio", { ...paciente, cardio: { ...dadosAtuais, parecer: undefined } }, estilo);
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-5 space-y-5">
@@ -296,7 +303,8 @@ export function AbaCardio({ pacienteId, dados, paciente, onSalvo }: { pacienteId
         <TextArea value={comum.observacoes} onChange={(e) => setComumCampo("observacoes", e.target.value)} />
       </Field>
 
-      <SalvarBar salvando={salvando} ok={ok} onSalvar={() => salvar(dadosParaSalvar()).then(onSalvo)} />
+      <PainelParecer titulo="Parecer do Caio" valor={parecer} onChange={setParecer} gerar={gerarParecerCardio} mensagemVazia="Registre ao menos um teste para o Caio redigir o parecer." />
+      <SalvarBar salvando={salvando} ok={ok} onSalvar={() => salvar(dadosAtuais).then(onSalvo)} auto={estadoAuto} />
     </div>
   );
 }

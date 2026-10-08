@@ -17,7 +17,8 @@ import type { Plano } from "@/lib/integracao/plano";
 import { AbaPlano } from "@/components/avaliador/AbaPlano";
 import { INDICADORES, extrairSerie, type LinhaHistorico } from "@/lib/integracao/historico";
 import { detectarDiscrepancias } from "@/lib/integracao/discrepancias";
-import { SalvarBar, useSalvarSecao } from "@/components/avaliador/campos";
+import { EVENTO_RASCUNHO, SalvarBar, mesclarNoPlano, useAutoSalvar } from "@/components/avaliador/campos";
+import { ParecerNoPlano } from "@/components/avaliador/PainelParecer";
 import { AbaFisica } from "@/components/avaliador/AbaFisica";
 import { AbaFuncional } from "@/components/avaliador/AbaFuncional";
 import { AbaCardio } from "@/components/avaliador/AbaCardio";
@@ -41,6 +42,17 @@ export default function DetalhePaciente() {
   useEffect(() => {
     carregar();
   }, [id]);
+
+  // Rascunhos gravados automaticamente pelas abas: mantém a ficha em memória em dia,
+  // para que ao voltar a uma aba ela abra com o que foi digitado (sem recarregar).
+  useEffect(() => {
+    function aoGravar(e: Event) {
+      const { pacienteId, secao, dados } = (e as CustomEvent).detail ?? {};
+      setPaciente((atual) => (atual && atual.id === pacienteId ? ({ ...atual, [secao]: dados } as PacienteRow) : atual));
+    }
+    window.addEventListener(EVENTO_RASCUNHO, aoGravar);
+    return () => window.removeEventListener(EVENTO_RASCUNHO, aoGravar);
+  }, []);
 
   async function carregar() {
     setCarregando(true);
@@ -188,6 +200,8 @@ function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
           ))}
         </div>
       </div>
+
+      <ParecerNoPlano paciente={paciente} agente="perfil" titulo="Parecer da Íris (perfil integrado)" />
 
       <div
         className={`rounded-2xl border p-5 ${
@@ -353,6 +367,8 @@ function AbaReavaliacao({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo:
     onSalvo();
   }
 
+  const estadoAuto = useAutoSalvar(metas, (v) => mesclarNoPlano(supabase, paciente.id, (plano) => ({ ...plano, metas: v })));
+
   if (carregando) return <p className="text-sm text-muted">Carregando histórico...</p>;
 
   const indicadoresComDados = INDICADORES.map((ind) => ({ ind, serie: extrairSerie(historico, ind) })).filter(
@@ -436,7 +452,7 @@ function AbaReavaliacao({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo:
         })
       )}
 
-      <SalvarBar salvando={salvandoMetas} ok={ok} onSalvar={salvarMetas} />
+      <SalvarBar salvando={salvandoMetas} ok={ok} onSalvar={salvarMetas} auto={estadoAuto} />
     </div>
   );
 }
@@ -480,6 +496,8 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
       <p className="text-xs text-muted uppercase tracking-wide">Status: {status}</p>
 
       <PainelModulos anamnese={anamnese} />
+
+      <ParecerNoPlano paciente={paciente} agente="anamnese" titulo="Parecer da Sofia (anamnese)" />
 
       <Capitulo titulo="Contexto">
         <Linha label="Idade (da data de nascimento)" value={idadeEfetiva(paciente) !== null ? `${idadeEfetiva(paciente)} anos` : null} />

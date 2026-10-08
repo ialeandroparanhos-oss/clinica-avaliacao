@@ -42,6 +42,19 @@ function L({ label, value }: { label: string; value: any }) {
   );
 }
 
+// Parecer do agente (no estilo escolhido pelo avaliador), com a marca de revisão.
+function ParecerRelatorio({ titulo, parecer }: { titulo: string; parecer: { texto?: string; revisado?: boolean } | null | undefined }) {
+  if (!parecer?.texto) return null;
+  return (
+    <div className="mt-4 rounded-lg border border-border p-3">
+      <p className="text-sm font-semibold text-ink mb-1">
+        {titulo} <span className="font-normal text-muted">({parecer.revisado ? "revisado pelo avaliador" : "rascunho automático, ainda não revisado"})</span>
+      </p>
+      <p className="text-sm text-ink whitespace-pre-line leading-relaxed">{parecer.texto}</p>
+    </div>
+  );
+}
+
 const BUCKET_FOTOS_POSTURAIS = "fotos-posturais";
 
 function FotoRelatorio({ label, path }: { label: string; path: string | null | undefined }) {
@@ -247,6 +260,7 @@ export default function RelatorioTecnico() {
               }
             />
           </dl>
+          <ParecerRelatorio titulo="Parecer da Sofia" parecer={paciente.plano?.pareceres?.anamnese} />
         </Secao>
 
         <Secao titulo="2. Avaliação física e antropométrica">
@@ -292,6 +306,7 @@ export default function RelatorioTecnico() {
             <L label="Peso ideal (calculado)" value={pesoIdealKg !== null ? `${pesoIdealKg.toFixed(1)} kg` : null} />
             <L label="Observações" value={paciente.fisica?.observacoes} />
           </dl>
+          <ParecerRelatorio titulo="Parecer do Marco" parecer={paciente.fisica?.parecer} />
         </Secao>
 
         <Secao titulo="3. Avaliação postural e biomecânica">
@@ -308,15 +323,13 @@ export default function RelatorioTecnico() {
             <L label="Vista lateral esquerda" value={paciente.postural?.obs_lateral_e} />
             <L label="Padrões de movimento" value={paciente.postural?.obs_movimento} />
           </dl>
-          {paciente.postural?.analise?.parecer && (
-            <div className="mt-4 rounded-lg border border-border p-3">
-              <p className="text-sm font-semibold text-ink mb-1">
-                Parecer do Agente 4 a partir das fotos{" "}
-                <span className="font-normal text-muted">({paciente.postural.analise.parecer_revisado ? "revisado pelo avaliador" : "rascunho automático, ainda não revisado"})</span>
-              </p>
-              <p className="text-sm text-ink whitespace-pre-line leading-relaxed">{paciente.postural.analise.parecer}</p>
-            </div>
-          )}
+          <ParecerRelatorio
+            titulo="Parecer do Agente 4 a partir das fotos"
+            parecer={
+              paciente.postural?.parecer ??
+              (paciente.postural?.analise?.parecer ? { texto: paciente.postural.analise.parecer, revisado: paciente.postural.analise.parecer_revisado } : null)
+            }
+          />
         </Secao>
 
         <Secao titulo="4. Avaliação funcional">
@@ -386,6 +399,7 @@ export default function RelatorioTecnico() {
             <L label="Estabilidade do core - observações" value={paciente.funcional?.core_estabilidade_obs} />
             <L label="Observações" value={paciente.funcional?.observacoes} />
           </dl>
+          <ParecerRelatorio titulo="Parecer da Rita" parecer={paciente.funcional?.parecer} />
         </Secao>
 
         <Secao titulo="5. Avaliação cardiorrespiratória (VO2)">
@@ -407,6 +421,7 @@ export default function RelatorioTecnico() {
             <L label="Percepção de esforço (Borg)" value={pseNum !== null ? `${pseNum}${pseDescricao ? ` - ${pseDescricao.rotulo}` : ""}` : null} />
             <L label="Observações" value={cardio.observacoes} />
           </dl>
+          <ParecerRelatorio titulo="Parecer do Caio" parecer={cardio.parecer} />
         </Secao>
 
         <Secao titulo="6. Painel Integrado de Saúde (10 domínios)">
@@ -448,6 +463,7 @@ export default function RelatorioTecnico() {
           <p className="text-sm mb-1"><strong>Limitações:</strong> {perfil.limitacoes.map((d) => d.titulo).join(", ") || "nenhuma identificada"}</p>
           <p className="text-sm mb-1"><strong>Riscos:</strong> {perfil.riscos.map((d) => d.titulo).join(", ") || "nenhum identificado"}</p>
           <p className="text-sm"><strong>Prioridades (ordem):</strong> {perfil.prioridades.map((d) => d.titulo).join(" → ") || "nenhuma identificada"}</p>
+          <ParecerRelatorio titulo="Parecer da Íris" parecer={paciente.plano?.pareceres?.perfil} />
         </Secao>
 
         <Secao titulo="9. Plano de intervenção">

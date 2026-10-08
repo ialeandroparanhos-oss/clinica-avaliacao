@@ -5,7 +5,9 @@
 import { useMemo, useState } from "react";
 import type { PacienteRow } from "@/lib/anamnese/types";
 import { Field, TextArea, TextInput } from "@/components/forms";
-import { NumField, SalvarBar, Selo, ValorCalculado, useSalvarSecao, type TomSelo } from "./campos";
+import { NumField, SalvarBar, Selo, ValorCalculado, useAutoSalvar, useSalvarSecao, type TomSelo } from "./campos";
+import { PainelParecer, lerParecer, type ParecerSalvo } from "./PainelParecer";
+import { gerarParecerAgente, type EstiloParecer } from "@/lib/avaliacao/pareceres";
 import { RotuloComInfo } from "./instrucoes";
 import { EscolhaMultipla, EscolhaUnica } from "./cliques";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
@@ -172,7 +174,8 @@ export function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacient
   const [goniometria, setGoniometria] = useState<LinhaGoniometria[]>(dados?.goniometria ?? []);
   const [achadosAgachamento, setAchadosAgachamento] = useState<string[]>(Array.isArray(dados?.agachamento_achados) ? dados.agachamento_achados : []);
   const [achadosCore, setAchadosCore] = useState<string[]>(Array.isArray(dados?.core_achados) ? dados.core_achados : []);
-  const { salvar, salvando, ok } = useSalvarSecao(pacienteId, "funcional");
+  const [parecer, setParecer] = useState<ParecerSalvo | null>(() => lerParecer(dados?.parecer));
+  const { salvar, salvando, ok, rascunho } = useSalvarSecao(pacienteId, "funcional");
   const set = (k: string, v: string) => setD((prev) => ({ ...prev, [k]: v }));
 
   const rmEstimado = estimarRM(d.rm_carga_kg, d.rm_repeticoes);
@@ -221,8 +224,12 @@ export function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacient
       goniometria: goniometria.map((l) => ({ ...l, articulacao: l.articulacao.trim() })),
       agachamento_achados: achadosAgachamento,
       core_achados: achadosCore,
+      parecer,
     };
   }
+  const dadosAtuais = dadosParaSalvar();
+  const estadoAuto = useAutoSalvar(dadosAtuais, rascunho);
+  const gerarParecerFuncional = (estilo: EstiloParecer) => gerarParecerAgente("funcional", { ...paciente, funcional: { ...dadosAtuais, parecer: undefined } }, estilo);
 
   function adicionarGoniometria() {
     setGoniometria((prev) => [...prev, { id: novoIdLocal(), articulacao: "", lado: "", graus: "" }]);
@@ -444,7 +451,8 @@ export function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacient
       <Field label="Anotações gerais do avaliador">
         <TextArea value={d.observacoes} onChange={(e) => set("observacoes", e.target.value)} />
       </Field>
-      <SalvarBar salvando={salvando} ok={ok} onSalvar={() => salvar(dadosParaSalvar()).then(onSalvo)} />
+      <PainelParecer titulo="Parecer da Rita" valor={parecer} onChange={setParecer} gerar={gerarParecerFuncional} mensagemVazia="Registre ao menos um teste para a Rita redigir o parecer." />
+      <SalvarBar salvando={salvando} ok={ok} onSalvar={() => salvar(dadosAtuais).then(onSalvo)} auto={estadoAuto} />
     </div>
   );
 }

@@ -5,7 +5,9 @@
 import { Fragment, useMemo, useState } from "react";
 import type { PacienteRow } from "@/lib/anamnese/types";
 import { Field, TextArea, TextInput } from "@/components/forms";
-import { CampoComSugestao, NumField, SalvarBar, SelectField, Selo, ValorCalculado, useSalvarSecao, type TomSelo } from "./campos";
+import { CampoComSugestao, NumField, SalvarBar, SelectField, Selo, ValorCalculado, useAutoSalvar, useSalvarSecao, type TomSelo } from "./campos";
+import { PainelParecer, lerParecer, type ParecerSalvo } from "./PainelParecer";
+import { gerarParecerAgente, type EstiloParecer } from "@/lib/avaliacao/pareceres";
 import { AvatarCorporal } from "./AvatarCorporal";
 import { normalizarDecimal, paraNumero } from "@/lib/numeros";
 import {
@@ -150,7 +152,8 @@ export function AbaFisica({
   const [niveisCoxa, setNiveisCoxa] = useState<string[]>(() =>
     Array.isArray(dados?.coxa_niveis) ? dados.coxa_niveis : dados?.coxa_nivel ? [dados.coxa_nivel] : []
   );
-  const { salvar, salvando, ok } = useSalvarSecao(pacienteId, "fisica");
+  const [parecer, setParecer] = useState<ParecerSalvo | null>(() => lerParecer(dados?.parecer));
+  const { salvar, salvando, ok, rascunho } = useSalvarSecao(pacienteId, "fisica");
   const set = (k: string, v: string) => setD((prev) => ({ ...prev, [k]: v }));
 
   const idadeNum = paraNumero(d.idade);
@@ -172,11 +175,11 @@ export function AbaFisica({
   );
 
   // Só o que foi alterado manualmente é guardado - o automático segue o cadastro.
-  function salvarFisica() {
+  function montarDadosFisica() {
     const { idade, sexo, ...resto } = d;
     const idadeManual = idade && idade !== String(idadeAuto) ? idade : "";
     const sexoManual = sexo && sexo !== sexoAuto ? sexo : "";
-    return salvar({
+    return {
       ...resto,
       circ_coxa_d: dDeriv.circ_coxa_d,
       circ_coxa_e: dDeriv.circ_coxa_e,
@@ -184,8 +187,13 @@ export function AbaFisica({
       coxa_nivel: coxaD.nivel ?? coxaE.nivel ?? niveisCoxa[0] ?? "",
       idade_manual: idadeManual,
       sexo_manual: sexoManual,
-    }).then(onSalvo);
+      parecer,
+    };
   }
+  const dadosAtuais = montarDadosFisica();
+  const salvarFisica = () => salvar(dadosAtuais).then(onSalvo);
+  const estadoAuto = useAutoSalvar(dadosAtuais, rascunho);
+  const gerarParecerFisica = (estilo: EstiloParecer) => gerarParecerAgente("fisica", { ...paciente, fisica: { ...dadosAtuais, parecer: undefined } }, estilo);
 
   // ---- IMC ----
   const peso = paraNumero(d.peso_kg);
@@ -697,7 +705,9 @@ export function AbaFisica({
         <TextArea value={d.observacoes} onChange={(e) => set("observacoes", e.target.value)} />
       </Field>
 
-      <SalvarBar salvando={salvando} ok={ok} onSalvar={salvarFisica} />
+      <PainelParecer titulo="Parecer do Marco" valor={parecer} onChange={setParecer} gerar={gerarParecerFisica} mensagemVazia="Registre peso, altura ou circunferências para o Marco redigir o parecer." />
+
+      <SalvarBar salvando={salvando} ok={ok} onSalvar={salvarFisica} auto={estadoAuto} />
     </div>
   );
 }
