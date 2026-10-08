@@ -18,7 +18,7 @@ import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import { calcularPerfilIntegrado, type Classificacao } from "@/lib/integracao/perfil";
 import { HORIZONTES, HORIZONTE_LEGADO, itemAprovado, type ItemPlano, type Plano } from "@/lib/integracao/plano";
 import { INDICADORES, extrairSerie, type LinhaHistorico } from "@/lib/integracao/historico";
-import { COMBINADOS, PORQUE_VALE_A_PENA, ROTULO_SITUACAO, TEXTO_DOMINIO, TEXTO_FASE, frentesPrioritarias, objetivoDoPaciente, primeiroNome } from "@/lib/integracao/devolutiva";
+import { COMBINADOS, FONTE_PORQUE, PORQUE_VALE_A_PENA, perfilParaPaciente, ROTULO_SITUACAO, TEXTO_DOMINIO, TEXTO_FASE, frentesPrioritarias, objetivoDoPaciente, primeiroNome } from "@/lib/integracao/devolutiva";
 import { mensagemPaciente } from "@/lib/avaliacao/whatsapp";
 import { NOME_PROFISSIONAL } from "@/lib/marca";
 import { SerieChart } from "@/components/SerieChart";
@@ -64,7 +64,7 @@ export default function RelatorioPaciente() {
   if (carregando) return <main className="max-w-2xl mx-auto px-6 py-10 text-muted text-sm">Carregando...</main>;
   if (!paciente) return <main className="max-w-2xl mx-auto px-6 py-10 text-danger text-sm">Paciente não encontrado.</main>;
 
-  const perfil = calcularPerfilIntegrado(paciente);
+  const perfil = perfilParaPaciente(calcularPerfilIntegrado(paciente), paciente);
   const plano = paciente.plano as Plano | undefined;
   const motivo = mesclarComPadrao(paciente.anamnese).motivo;
   const objetivo = objetivoDoPaciente(motivo);
@@ -239,7 +239,7 @@ export default function RelatorioPaciente() {
               </li>
             ))}
           </ul>
-          <p className="text-xs text-muted mt-2">Baseado nas diretrizes de atividade física da Organização Mundial da Saúde (2020). Cada pessoa responde de um jeito: acompanhamos o seu ritmo.</p>
+          <p className="text-xs text-muted mt-2">{FONTE_PORQUE}</p>
         </Secao>
 
         <Secao titulo="O que combinamos">

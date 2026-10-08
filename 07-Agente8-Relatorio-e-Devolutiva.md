@@ -106,6 +106,15 @@ O sistema tem um **modo apresentação** (botão "Apresentar ao paciente (slides
 
 Sequência dos slides: capa → o que o paciente nos contou (objetivo) → como está hoje (painel colorido das 10 áreas) → o que já está bom → **principais achados** (um slide por frente prioritária, até 3: por que importa e o que vamos fazer) → o que vem em seguida → **plano em 30, 60, 90 dias e 12 meses** (o foco de cada fase vem dos itens aprovados na aba Plano) → como vamos medir o progresso (números de hoje, meta e evolução) → outros profissionais (se houver encaminhamento aprovado) → por que vale a pena (OMS 2020) → combinados e próximo passo.
 
+**Em que a apresentação se baseia (fatores):**
+1. **Perfil Integrado:** a classificação de cada uma das 10 áreas vem das mesmas regras do painel técnico (ver `lib/integracao/perfil.ts` e os documentos 02 a 05); na tela vira rótulo simples, sem número. Exceção: "Mobilidade" só aparece classificada ao paciente se houver teste objetivo (flexibilidade ou goniometria); sem isso, aparece como "ainda vamos conhecer".
+2. **Objetivo do paciente:** a frase escrita na anamnese (objetivos, queixa ou motivo) abre a apresentação e é ligada às frentes por palavra-chave (apoio, não garantia).
+3. **Ordem dos achados:** primeiro o que você aprovou para os 30 primeiros dias no Plano; depois dor e bem-estar; depois o restante na ordem do perfil. No máximo 3 achados detalhados.
+4. **Plano 30/60/90/12 meses:** só itens que você marcou como aprovados na aba Plano (a Dra. Theo sugere, você decide). Sem aprovação, aparecem só as fases.
+5. **Progresso:** valores e metas vêm do histórico gravado ao clicar em Salvar (peso, IMC, Chair Stand, TUG, marcha), não dos rascunhos.
+6. **Argumentos "por que vale a pena":** diretrizes de atividade física da OMS 2020 (Bull et al.) e meta-análise de 2024 sobre exercício supervisionado em ≥ 60 anos (Gómez-Redondo et al.). Só entram frases que essas fontes sustentam.
+7. **Linguagem:** regras 1 a 5 desta seção (sem alarmismo, sem pressão comercial, sem jargão, sem distorcer).
+
 Uso: setas ou espaço para avançar, **F** tela cheia, **N** notas do apresentador. As notas trazem o detalhe técnico (justificativa de cada achado) e dicas de condução, e **não aparecem para o paciente nem na impressão**. "Salvar PDF" gera uma página por slide.
 
 ---

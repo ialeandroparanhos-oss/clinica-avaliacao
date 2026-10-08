@@ -7,7 +7,7 @@ import type { Alerta, PacienteRow } from "@/lib/anamnese/types";
 import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import { rotuloNivel } from "@/lib/anamnese/alerts";
 import { NOME_PROFISSIONAL } from "@/lib/marca";
-import { frentesPrioritarias, objetivoDoPaciente, primeiroNome, TEXTO_DOMINIO, TEXTO_FASE } from "@/lib/integracao/devolutiva";
+import { frentesPrioritarias, objetivoDoPaciente, perfilParaPaciente, primeiroNome, TEXTO_DOMINIO, TEXTO_FASE } from "@/lib/integracao/devolutiva";
 import { calcularPerfilIntegrado } from "@/lib/integracao/perfil";
 import { HORIZONTES, itemAprovado, type Plano } from "@/lib/integracao/plano";
 
@@ -54,7 +54,7 @@ function frentesAprovadasPorHorizonte(paciente: PacienteRow, perfil: ReturnType<
 // Mensagem ao paciente (curta, calorosa, com o próximo passo)
 // ---------------------------------------------------------------------------
 export function mensagemPaciente(paciente: PacienteRow): string {
-  const perfil = calcularPerfilIntegrado(paciente);
+  const perfil = perfilParaPaciente(calcularPerfilIntegrado(paciente), paciente);
   const motivo = mesclarComPadrao(paciente.anamnese).motivo;
   const objetivo = objetivoDoPaciente(motivo);
   const frentes = frentesPrioritarias(perfil, motivo, paciente.plano as Plano | undefined).slice(0, 3);

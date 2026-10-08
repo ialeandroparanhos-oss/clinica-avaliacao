@@ -202,6 +202,29 @@
 - **Theo (Plano):** horizontes 30/60/90/anual, sugestões com dose, evidência e indicador, decisão item a item (ver `06-Agente7-Plano-de-Intervencao.md`).
 - **Marco e Rita:** ver `02-Agente3-...` e `04-Agente5-...` (cortes da cintura/abdômen, diferença D−E, coxa em 3 níveis, registro por clique, formato do TC6).
 
+## Rodada de conferência da Dra. Nina com cada agente (08/10/2026)
+
+Pergunta feita a cada agente: o que você faz hoje no sistema, isso corresponde ao que o profissional pediu, e o que você melhoraria? Conferi o código e os documentos antes de responder; o que não verifiquei está dito.
+
+**Dois erros meus encontrados e já corrigidos nesta rodada (versão do paciente e slides)**
+1. A frase "em poucas semanas, a maioria das pessoas percebe melhora" estava atribuída às diretrizes da OMS e **não tinha fonte conferida**. Foi removida e trocada por um benefício que a OMS sustenta (menor risco de doenças do coração, diabetes tipo 2 e alguns cânceres; melhor saúde mental e sono).
+2. A frase "com acompanhamento o exercício fica mais seguro e mais fácil de manter" também não tinha fonte. A meta-análise de 2024 (Gómez-Redondo et al., Sports Med, PMID 38647999, 34 ensaios, ≥ 60 anos) mostra exercício seguro com e sem supervisão, **presença igual (81%)** e ganho extra da supervisão só robusto na força do joelho. A frase agora diz exatamente isso, e a nota do apresentador avisa que vale para ≥ 60 anos.
+3. Ao paciente, "Mobilidade" aparecia como ponto forte ou a melhorar a partir de palavras nas observações posturais (não é medida). Agora, sem teste objetivo (flexibilidade ou goniometria), a versão do paciente mostra "ainda vamos conhecer". O perfil técnico não mudou.
+
+**O que cada agente respondeu**
+
+| Agente | Está de acordo com o pedido? | Sugestão (ainda não feita; depende de você) |
+|---|---|---|
+| Dra. Nina | Sim: triagem, perfil, bloqueios. | Liberar teste máximo por sintomas/doença conhecida/intensidade (ACSM 2015), e não pela contagem de fatores de risco. |
+| Dra. Sofia | Sim: base curta, módulos opcionais, mapa de dor clicável, estilo de vida e atividade no fim. | PHQ-2: abrir a escala completa a partir de 2 pontos (hoje 3); avisar que o IPAQ costuma superestimar; perguntas de visão, audição e cognição a partir de 60 anos. |
+| Dr. Marco | Sim: corte de abdômen, diferença entre lados, coxa em 3 níveis, relação cintura/estatura. | Avisar quando a soma de dobras passar de 120 mm (não implementado) e tratar %G de dobras/bioimpedância como estimativa. |
+| Dra. Paula | Sim: fotos, análise automática, parecer em 2 estilos, tudo salvo sozinho. | **Mobilidade no perfil técnico ainda usa palavras-chave das observações** (contraria a regra de que achado postural isolado não é risco): trocar por testes objetivos. Validar a lateralidade direita/esquerda com uma foto real. |
+| Dra. Rita | Sim: testes por clique, cortes conferidos. | Calcular o TC6 previsto (equação brasileira de Britto, PMID 24271092) e escolher o corte de classificação (pendente com você). |
+| Dr. Caio | Sim: vários testes, percentis FRIEND, rampa com VO2 estimado. | Confirmar com você as faixas de percentil das classes de VO2máx. |
+| Dra. Íris | Sim, com ressalva: a triagem de sarcopenia ainda usa "massa magra < 90% da meta", **que não é validada**. | Trocar ou complementar por circunferência de panturrilha (< 31 cm) em ≥ 60 anos; sinalizar possível obesidade sarcopênica. |
+| Dr. Theo | Sim: plano 30/60/90/anual com evidência e decisão item a item. | Todo plano deve ter força em 2 ou mais dias por semana, mesmo quando a prioridade for outra (OMS 2020). |
+| Dra. Clara | Sim: versão do paciente, WhatsApp e slides, sem jargão. | Revisar com você o tom do convite final; manter só afirmações com fonte (regra 3 e 4 acima). |
+
 ## Registro de referências verificadas no PubMed (08/10/2026)
 
 Todas abaixo tiveram a existência e o título conferidos no PubMed (consulta por revista, ano, volume e primeira página). Conferir a existência **não** é o mesmo que ler o texto completo: o que cada uma sustenta no sistema está descrito em `src/lib/agentes.ts`.
@@ -227,6 +250,7 @@ Todas abaixo tiveram a existência e o título conferidos no PubMed (consulta po
 | Diretrizes da OMS | Bull FC et al. Br J Sports Med 2020;54:1451 | 33239350 |
 | TC6, equação brasileira (ainda não usada no sistema) | Britto RR et al. Braz J Phys Ther 2013;17:556 | 24271092 |
 | Comunicação de risco (qualitativo) | Richter R et al. PLoS One 2020;15:e0236751 | 32790675 |
+| Exercício supervisionado x não supervisionado (≥ 60 anos) | Gómez-Redondo P et al. Sports Med 2024;54:1877 | 38647999 |
 
 Duas correções feitas nesta conferência estão marcadas nos itens "Agente 4" e "Clara" acima.
 

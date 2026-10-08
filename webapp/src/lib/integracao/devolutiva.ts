@@ -7,7 +7,8 @@
 // sem medo e sem culpa. Nunca mostra pontuação, corte ou termo clínico: isso fica
 // no relatório técnico.
 
-import type { Anamnese } from "@/lib/anamnese/types";
+import type { Anamnese, PacienteRow } from "@/lib/anamnese/types";
+import { paraNumero } from "@/lib/numeros";
 import { conectarObjetivo } from "./objetivo";
 import type { Classificacao, DomainKey, DomainResult, PerfilIntegrado } from "./perfil";
 import { itemAprovado, type Horizonte, type ItemPlano, type Plano } from "./plano";
@@ -101,9 +102,31 @@ export const TEXTO_FASE: Record<Horizonte, { titulo: string; texto: string }> = 
 export const PORQUE_VALE_A_PENA: string[] = [
   "A Organização Mundial da Saúde recomenda aos adultos de 150 a 300 minutos de atividade moderada por semana e exercícios de força em 2 ou mais dias. O seu plano foi pensado para levar você até lá, com segurança e aos poucos.",
   "Qualquer quantidade de movimento já faz bem: mexer-se um pouco é sempre melhor do que nada. Você não precisa começar perfeito, só começar.",
-  "Em poucas semanas de treino regular, a maioria das pessoas já percebe melhora na força e na disposição.",
-  "Com acompanhamento profissional, o exercício é ajustado ao seu corpo, fica mais seguro e mais fácil de manter com regularidade.",
+  "A atividade física regular se associa a menor risco de doenças do coração, diabetes tipo 2 e alguns tipos de câncer, e a melhor saúde mental e melhor sono.",
+  "Em uma revisão de 34 estudos com pessoas de 60 anos ou mais, o exercício foi seguro, com ou sem supervisão, e ter um profissional por perto pôde somar um ganho extra, principalmente na força.",
 ];
+
+// Fonte exata de cada afirmação acima (só entra frase que uma fonte conferida sustenta).
+export const FONTE_PORQUE =
+  "Baseado nas diretrizes de atividade física da Organização Mundial da Saúde (2020) e em uma revisão sistemática com meta-análise de ensaios clínicos de 2024 (Sports Medicine). Cada pessoa responde de um jeito: acompanhamos o seu ritmo.";
+
+// Para o paciente, "Mobilidade" só vale se houver teste objetivo (flexibilidade ou
+// goniometria): a leitura por palavras das observações posturais não é medida e não
+// pode virar "ponto forte" nem "ponto a melhorar" dito ao paciente. Sem teste, vira
+// "ainda vamos conhecer". O perfil técnico (profissional) não é alterado aqui.
+export function perfilParaPaciente(perfil: PerfilIntegrado, paciente: Pick<PacienteRow, "funcional">): PerfilIntegrado {
+  const f = paciente.funcional ?? {};
+  const temTesteObjetivo =
+    [f.sit_and_reach_cm, f.chair_sit_reach_cm, f.back_scratch_d_cm, f.back_scratch_e_cm].some((v) => paraNumero(v) !== null) ||
+    (Array.isArray(f.goniometria) && f.goniometria.some((l: any) => paraNumero(l?.graus) !== null));
+  const mob = perfil.dominios.find((d) => d.chave === "mobilidade");
+  if (temTesteObjetivo || !mob || mob.classificacao === "investigar") return perfil;
+  const dominios = perfil.dominios.map((d) => (d.chave === "mobilidade" ? { ...d, classificacao: "investigar" as Classificacao, justificativa: "Sem teste objetivo de mobilidade (flexibilidade ou goniometria) registrado." } : d));
+  const potencialidades = dominios.filter((d) => d.classificacao === "adequado");
+  const limitacoes = dominios.filter((d) => d.classificacao === "atencao");
+  const riscos = dominios.filter((d) => d.classificacao === "prioridade");
+  return { ...perfil, dominios, potencialidades, limitacoes, riscos, prioridades: [...riscos, ...limitacoes] };
+}
 
 export const COMBINADOS: string[] = [
   "Comparecer com regularidade: constância vale mais do que intensidade.",

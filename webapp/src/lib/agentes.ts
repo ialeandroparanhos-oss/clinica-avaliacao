@@ -64,6 +64,7 @@ const R: Referencia[] = [
   { id: "pss", curta: "Cohen 1983", citacao: "Cohen S, et al. J Health Soc Behav 1983;24:385", pmid: "6668417", apoia: "escala de estresse percebido (PSS)" },
   { id: "acsm2015", curta: "ACSM 2015", citacao: "Riebe D, et al. Med Sci Sports Exerc 2015;47:2473", pmid: "26473759", apoia: "triagem de saúde antes do exercício: nível atual de atividade, sinais/sintomas ou doença conhecida e intensidade pretendida" },
   { id: "oms2020", curta: "OMS 2020", citacao: "Bull FC, et al. Br J Sports Med 2020;54:1451", pmid: "33239350", apoia: "diretrizes da OMS: 150 a 300 min/semana de atividade moderada e fortalecimento muscular em 2 ou mais dias" },
+  { id: "gomez2024", curta: "Gómez-Redondo 2024", citacao: "Gómez-Redondo P, et al. Sports Med 2024;54:1877", pmid: "38647999", apoia: "34 ensaios com pessoas de 60 anos ou mais: exercício supervisionado e não supervisionado foram seguros, com presença semelhante (81%); a supervisão trouxe ganho extra, só robusto na força de extensão do joelho, e os autores pedem mais pesquisa" },
   { id: "richter2020", curta: "Richter 2020", citacao: "Richter R, et al. PLoS One 2020;15:e0236751", pmid: "32790675", apoia: "comunicação de risco ao paciente é complexa; o equilíbrio entre informar e não gerar ansiedade (estudo qualitativo com 15 clínicos)" },
 ];
 
@@ -76,8 +77,8 @@ const REFS_POR_AGENTE: Record<Exclude<AgenteId, "iris">, string[]> = {
   paula: ["rani2023"],
   rita: ["ewgsop2", "rikli2013", "fernandes2021", "barry2014", "podsiadlo1991"],
   caio: ["friend2015", "mandsager2018", "ross2016", "tanaka2001"],
-  theo: ["oms2020", "acsm2015"],
-  clara: ["richter2020"],
+  theo: ["oms2020", "acsm2015", "gomez2024"],
+  clara: ["richter2020", "oms2020", "gomez2024"],
 };
 
 // A Íris integra todas as áreas: usa as referências dos agentes que alimentam o perfil.

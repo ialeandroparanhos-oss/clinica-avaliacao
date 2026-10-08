@@ -18,7 +18,7 @@ import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import { calcularPerfilIntegrado, type Classificacao } from "@/lib/integracao/perfil";
 import { itemAprovado, type Plano } from "@/lib/integracao/plano";
 import { INDICADORES, extrairSerie, type LinhaHistorico } from "@/lib/integracao/historico";
-import { COMBINADOS, PORQUE_VALE_A_PENA, ROTULO_SITUACAO, TEXTO_DOMINIO, fasesDoPlano, frentesPrioritarias, objetivoDoPaciente, primeiroNome } from "@/lib/integracao/devolutiva";
+import { COMBINADOS, FONTE_PORQUE, PORQUE_VALE_A_PENA, perfilParaPaciente, ROTULO_SITUACAO, TEXTO_DOMINIO, fasesDoPlano, frentesPrioritarias, objetivoDoPaciente, primeiroNome } from "@/lib/integracao/devolutiva";
 import { NOME_PROFISSIONAL } from "@/lib/marca";
 import { SerieChart } from "@/components/SerieChart";
 
@@ -69,7 +69,7 @@ export default function Apresentacao() {
 
   const slides = useMemo<SlideDef[]>(() => {
     if (!paciente) return [];
-    const perfil = calcularPerfilIntegrado(paciente);
+    const perfil = perfilParaPaciente(calcularPerfilIntegrado(paciente), paciente);
     const plano = paciente.plano as Plano | undefined;
     const motivo = mesclarComPadrao(paciente.anamnese).motivo;
     const objetivo = objetivoDoPaciente(motivo);
@@ -307,7 +307,7 @@ export default function Apresentacao() {
     lista.push({
       id: "vale",
       nav: "Por que vale a pena",
-      notas: ["Sem promessa de resultado e sem pressão: o objetivo é informar. Base: diretrizes de atividade física da OMS (2020).", "Cada pessoa responde de um jeito: acompanhamos o ritmo dela."],
+      notas: ["Sem promessa de resultado e sem pressão: o objetivo é informar. Fontes: diretrizes de atividade física da OMS (2020) e a meta-análise de 2024 sobre exercício supervisionado e não supervisionado em ≥ 60 anos (Gómez-Redondo et al., Sports Med, PMID 38647999).", "Cada pessoa responde de um jeito: acompanhamos o ritmo dela. A frase sobre supervisão vem de estudo em pessoas com 60 anos ou mais: se o paciente for mais jovem, não generalize."],
       conteudo: (
         <Quadro titulo="Por que vale a pena começar agora">
           <ul className="space-y-6">
@@ -318,7 +318,7 @@ export default function Apresentacao() {
               </li>
             ))}
           </ul>
-          <p className="text-[18px] text-muted mt-6">Baseado nas diretrizes de atividade física da Organização Mundial da Saúde (2020).</p>
+          <p className="text-[18px] text-muted mt-6">{FONTE_PORQUE}</p>
         </Quadro>
       ),
     });
