@@ -308,6 +308,15 @@ export default function RelatorioTecnico() {
             <L label="Vista lateral esquerda" value={paciente.postural?.obs_lateral_e} />
             <L label="Padrões de movimento" value={paciente.postural?.obs_movimento} />
           </dl>
+          {paciente.postural?.analise?.parecer && (
+            <div className="mt-4 rounded-lg border border-border p-3">
+              <p className="text-sm font-semibold text-ink mb-1">
+                Parecer do Agente 4 a partir das fotos{" "}
+                <span className="font-normal text-muted">({paciente.postural.analise.parecer_revisado ? "revisado pelo avaliador" : "rascunho automático, ainda não revisado"})</span>
+              </p>
+              <p className="text-sm text-ink whitespace-pre-line leading-relaxed">{paciente.postural.analise.parecer}</p>
+            </div>
+          )}
         </Secao>
 
         <Secao titulo="4. Avaliação funcional">

@@ -101,6 +101,21 @@ Complementa o registro estático observando o paciente em movimento. Selecionar 
 
 Quando a observação visual identificar um achado que mereça quantificação (ex.: amplitude de dorsiflexão de tornozelo aparentemente reduzida, notada durante o agachamento), o goniômetro ou inclinômetro pode ser usado para uma medida pontual complementar — sempre descrita com o método, o instrumento e o número de medidas realizadas, seguindo o mesmo rigor de padronização das demais etapas.
 
+### 5.3 Análise automática das fotos e parecer do agente (implementado no sistema)
+
+A aba Postural analisa as 4 fotos e redige um parecer descritivo, que o avaliador revisa.
+
+**Como funciona**
+- Um modelo de estimativa de pose (MediaPipe Pose Landmarker) localiza ~20 pontos do corpo na foto (orelhas, ombros, cotovelos, punhos, quadris, joelhos, tornozelos, calcanhares, pés). A análise roda **no navegador do avaliador**: a foto não é enviada a nenhum serviço de IA; só o modelo (~30 MB) é baixado na primeira vez e fica em cache.
+- A imagem é desenhada no estilo de aplicativos de análise postural: esqueleto, articulações, linha de prumo tracejada, grade, cantoneiras e etiquetas com o valor medido.
+- Medidas, por vista:
+  - **Anterior/posterior:** inclinação da linha dos ombros e dos quadris (°); inclinação da cabeça (°); inclinação do tronco (°); desvio dos joelhos em relação ao eixo quadril–tornozelo (valgo/varo aparente); deslocamento da cabeça e dos quadris em relação à linha de prumo (% da altura nariz–tornozelo).
+  - **Laterais:** posição da cabeça em relação ao ombro (ângulo); inclinação do tronco; flexão/recurvato do joelho; deslocamento de orelha, ombro, quadril e joelho em relação à linha de prumo do tornozelo.
+- Referências práticas de destaque (**do sistema, sem validação publicada**): diferença ≥ 3° = "discreta"; ≥ 6° = "evidente"; joelho ≥ 4° / 8°; tronco de perfil ≥ 5°; cabeça à frente ≥ 10°. Pontos com visibilidade < 0,5 são ignorados.
+- O parecer é montado só com linguagem descritiva ("à inspeção da foto...", "aparente"), cita a evidência fraca entre postura e dor, lista as limitações e sugere confirmação clínica (palpação, nivelamento, goniometria, testes de movimento). Fica em campo editável, com marca de "revisado e aprovado pelo avaliador"; o relatório técnico indica se é rascunho automático ou revisado. O parecer **não** entra no cálculo do Perfil Integrado.
+
+**O que o método NÃO mede:** escápulas, curvaturas da coluna, inclinação pélvica e rotações. O erro cresce com câmera inclinada, pessoa pequena no quadro, roupa larga e pés cortados; o sistema avisa quando detecta enquadramento ruim (tornozelos fora do quadro, pessoa ocupando < 55% da altura).
+
 ---
 
 ## 6. REGRA DE LINGUAGEM OBRIGATÓRIA (Seção 12 do prompt-mestre)
@@ -134,6 +149,7 @@ Nunca usar: "a causa da dor é...", "isso está causando...", "esse desvio é re
 - Achados posturais estáticos têm relação fraca e não linear com sintomas — evitar qualquer linguagem que sugira relação direta de causa e efeito.
 - A confiabilidade interexaminador da inspeção visual é moderada — por isso a padronização do protocolo fotográfico (distância, altura, iluminação) é mais importante do que parece à primeira vista.
 - Protocolos comerciais de rastreio de movimento (quando usados) têm seus próprios critérios proprietários, que não são substituídos por este documento.
+- A análise automática (Seção 5.3) é uma estimativa por foto 2D: os cortes de 3° e 6° são referências práticas do sistema, não limites validados; o lado direito/esquerdo segue o lado anatômico do paciente (foto sem espelhamento) e deve ser conferido pelo avaliador.
 
 ---
 
