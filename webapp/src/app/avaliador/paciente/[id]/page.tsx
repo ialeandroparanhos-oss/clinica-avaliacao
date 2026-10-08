@@ -88,6 +88,12 @@ export default function DetalhePaciente() {
           >
             Ver versão para o paciente →
           </Link>
+          <Link
+            href={`/avaliador/paciente/${paciente.id}/apresentacao`}
+            className="text-sm font-medium text-accent hover:underline whitespace-nowrap"
+          >
+            Apresentar ao paciente (slides) →
+          </Link>
         </div>
       </div>
 

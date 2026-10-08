@@ -96,6 +96,9 @@ export default function RelatorioPaciente() {
         <Link href={`/avaliador/paciente/${paciente.id}`} className="text-sm text-muted hover:text-ink">
           ← Voltar à ficha
         </Link>
+        <Link href={`/avaliador/paciente/${paciente.id}/apresentacao`} className="text-sm font-medium text-accent hover:underline">
+          Apresentar em slides →
+        </Link>
         <button
           onClick={() => window.print()}
           className="rounded-lg bg-accent text-white font-medium px-5 py-2 text-sm hover:bg-accent-dark transition"

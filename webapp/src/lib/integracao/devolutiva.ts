@@ -10,7 +10,7 @@
 import type { Anamnese } from "@/lib/anamnese/types";
 import { conectarObjetivo } from "./objetivo";
 import type { Classificacao, DomainKey, DomainResult, PerfilIntegrado } from "./perfil";
-import { itemAprovado, type Horizonte, type Plano } from "./plano";
+import { itemAprovado, type Horizonte, type ItemPlano, type Plano } from "./plano";
 
 export type TextoDominio = {
   nome: string; // como o paciente lê o nome da área
@@ -122,6 +122,30 @@ export function objetivoDoPaciente(motivo: Anamnese["motivo"] | undefined): stri
 }
 
 export type FrentePrioritaria = { dominio: DomainResult; nome: string; importa: string; plano: string; objetivo: string | null };
+
+// Nome da "frente" de um item aprovado, em linguagem do paciente.
+export function nomeFrenteDoItem(it: ItemPlano, perfil: PerfilIntegrado): string {
+  if (it.dominio) return TEXTO_DOMINIO[it.dominio]?.nome ?? perfil.dominios.find((d) => d.chave === it.dominio)?.titulo ?? it.origem;
+  if (it.categoria === "reavaliacao") return "Reavaliação do seu progresso";
+  if (it.categoria === "seguranca") return "Segurança antes de intensificar o exercício";
+  return it.origem.split(" — ")[1] ?? it.origem;
+}
+
+export type FaseDoPlano = { chave: Horizonte; curto: string; titulo: string; texto: string; nomes: string[] };
+
+// Fases (30/60/90 dias e anual) com as frentes APROVADAS pelo avaliador em cada uma.
+export function fasesDoPlano(plano: Pick<Plano, "itens"> | undefined, perfil: PerfilIntegrado): FaseDoPlano[] {
+  const itens = (plano?.itens ?? []).filter(itemAprovado);
+  const chaves: Horizonte[] = ["30", "60", "90", "365"];
+  if (itens.some((i) => i.horizonte === "180")) chaves.push("180");
+  return chaves.map((chave) => ({
+    chave,
+    curto: chave === "365" ? "12 meses" : `${chave} dias`,
+    titulo: TEXTO_FASE[chave].titulo,
+    texto: TEXTO_FASE[chave].texto,
+    nomes: Array.from(new Set(itens.filter((i) => i.horizonte === chave).map((i) => nomeFrenteDoItem(i, perfil)))),
+  }));
+}
 
 // Domínios com item aprovado no plano, na ordem dos horizontes (30 dias primeiro).
 export function dominiosAprovadosNoPlano(plano: Pick<Plano, "itens"> | undefined): DomainKey[] {

@@ -100,6 +100,14 @@ A versão do paciente foi reescrita para ser **clara e convidativa sem pressiona
 - **Sem jargão:** nada de pontuação, ponto de corte ou nome de teste. Isso fica no relatório técnico.
 - **WhatsApp:** os dois relatórios têm o botão de envio. O sistema monta a mensagem e abre o WhatsApp com ela pronta (o avaliador confere, edita e aperta enviar; nada sai sozinho). A mensagem do paciente é curta e calorosa; a do relatório técnico é um resumo para outro profissional, com aviso de confidencialidade. O link não anexa arquivo: o PDF completo (Imprimir / Salvar PDF) é anexado pelo próprio avaliador na conversa.
 
+### 5.2 Apresentação em slides para a devolutiva presencial
+
+O sistema tem um **modo apresentação** (botão "Apresentar ao paciente (slides)" na ficha e na versão do paciente) para sentar com o paciente e conduzir a devolutiva olhando para a tela. Usa os mesmos dados e a mesma linguagem da versão do paciente (sem pontuação, corte ou termo clínico).
+
+Sequência dos slides: capa → o que o paciente nos contou (objetivo) → como está hoje (painel colorido das 10 áreas) → o que já está bom → **principais achados** (um slide por frente prioritária, até 3: por que importa e o que vamos fazer) → o que vem em seguida → **plano em 30, 60, 90 dias e 12 meses** (o foco de cada fase vem dos itens aprovados na aba Plano) → como vamos medir o progresso (números de hoje, meta e evolução) → outros profissionais (se houver encaminhamento aprovado) → por que vale a pena (OMS 2020) → combinados e próximo passo.
+
+Uso: setas ou espaço para avançar, **F** tela cheia, **N** notas do apresentador. As notas trazem o detalhe técnico (justificativa de cada achado) e dicas de condução, e **não aparecem para o paciente nem na impressão**. "Salvar PDF" gera uma página por slide.
+
 ---
 
 ## 6. ELEMENTOS VISUAIS SUGERIDOS
