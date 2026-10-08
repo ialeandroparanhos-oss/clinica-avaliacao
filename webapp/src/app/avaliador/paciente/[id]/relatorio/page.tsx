@@ -20,6 +20,8 @@ import { classificarRCEst, percentualGorduraIdealSugerido, relacaoCinturaEstatur
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { CAMPOS_CIRCUNFERENCIA, calcularMassaMagraRelativa, expansibilidadeToracica } from "@/lib/avaliacao/medidasRegionais";
 import { paraNumero } from "@/lib/numeros";
+import { mensagemTecnica } from "@/lib/avaliacao/whatsapp";
+import { EnvioWhatsApp } from "@/components/avaliador/EnvioWhatsApp";
 import { triarSarcopeniaDinapenia } from "@/lib/integracao/sarcopenia";
 import { vo2maxDeRegistro, vo2maxDeTeste, testePrincipalDoRegistro, avaliarVO2max, ROTULO_CLASSE_VO2, descreverPSE, metDeVo2, fcMaxTanaka, fcMaxFox } from "@/lib/avaliacao/cardiorrespiratoria";
 import { calcularPerfilIntegrado, type Classificacao } from "@/lib/integracao/perfil";
@@ -200,6 +202,14 @@ export default function RelatorioTecnico() {
         >
           Imprimir / Salvar PDF
         </button>
+      </div>
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 pb-6 print:hidden">
+        <EnvioWhatsApp
+          rotuloBotao="Enviar resumo por WhatsApp"
+          rotuloTelefone="WhatsApp de quem vai receber (outro profissional, médico...)"
+          mensagemInicial={() => mensagemTecnica(paciente, idadeNum)}
+          aviso="Este relatório tem informação de saúde do paciente. Envie apenas a quem for autorizado a receber e confira o número antes de enviar."
+        />
       </div>
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 pb-16 print:px-0">

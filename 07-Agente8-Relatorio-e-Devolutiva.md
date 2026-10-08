@@ -89,6 +89,15 @@ Apresentar os próximos passos concretos: o que começa em 30 dias, quais indica
 4. **Achados de saúde mental (capítulo do Agente 2) e Riscos de segurança são comunicados com o mesmo cuidado de tom, mas nunca omitidos** — a transparência é parte do valor prometido ao paciente (Seção 26 do prompt-mestre).
 5. **Encaminhamentos são apresentados como cuidado, não como “empurrar para outro lugar”** — explicar o motivo e a expectativa de retorno à clínica quando aplicável.
 
+### 5.1 Como o sistema aplica estas regras (versão do paciente e envio por WhatsApp)
+
+A versão do paciente foi reescrita para ser **clara e convidativa sem pressionar**:
+- **Ordem:** saudação com o objetivo que o próprio paciente escreveu → como está hoje (retrato por área, sem nota nem pontuação) → por onde começar (até 3 frentes, cada uma com "por que importa" e "o que vamos fazer", ligadas ao objetivo dele) → plano em 30/60/90 dias e anual → encaminhamentos → evolução → por que vale a pena → combinados → próximo passo.
+- **A ordem das frentes** segue o que o avaliador aprovou no plano para o início; sem plano aprovado, dor e bem-estar vêm antes, depois o restante na ordem do perfil.
+- **Persuasão honesta:** os argumentos vêm das diretrizes de atividade física da OMS (2020) e são prudentes ("a maioria das pessoas percebe melhora na força e na disposição em poucas semanas"), sem promessa de resultado, sem medo e sem urgência comercial (regra 2 acima). A única chamada à ação é combinar a data do próximo encontro.
+- **Sem jargão:** nada de pontuação, ponto de corte ou nome de teste. Isso fica no relatório técnico.
+- **WhatsApp:** os dois relatórios têm o botão de envio. O sistema monta a mensagem e abre o WhatsApp com ela pronta (o avaliador confere, edita e aperta enviar; nada sai sozinho). A mensagem do paciente é curta e calorosa; a do relatório técnico é um resumo para outro profissional, com aviso de confidencialidade. O link não anexa arquivo: o PDF completo (Imprimir / Salvar PDF) é anexado pelo próprio avaliador na conversa.
+
 ---
 
 ## 6. ELEMENTOS VISUAIS SUGERIDOS

@@ -1,44 +1,44 @@
 "use client";
 
-// Agente 8 — Clara: versão simplificada do relatório, para entregar ao
-// paciente. Linguagem simples, sem termos clínicos nem pontuações cruas -
-// o relatório técnico (prontuário) continua em /relatorio, de uso do
-// profissional. Este documento é o apoio visual da devolutiva
-// (RECONHECER -> MOSTRAR -> EXPLICAR -> PRIORIZAR -> PROJETAR -> PLANEJAR),
-// nunca um substituto da conversa.
+// Agente 8 — Clara: versão do relatório para entregar ao paciente.
+//
+// Objetivo: o paciente entender, em linguagem simples, onde está, por que cada
+// ponto importa e o que vamos fazer - e querer começar. Segue a devolutiva
+// (RECONHECER -> MOSTRAR -> EXPLICAR -> PRIORIZAR -> PROJETAR -> PLANEJAR) e
+// termina com o próximo passo. Sem pontuação, corte ou termo clínico (isso fica
+// no relatório técnico, em /relatorio). Apoio visual da conversa, nunca um
+// substituto dela.
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { PacienteRow } from "@/lib/anamnese/types";
-import { calcularPerfilIntegrado, type DomainKey } from "@/lib/integracao/perfil";
+import { mesclarComPadrao } from "@/lib/anamnese/defaults";
+import { calcularPerfilIntegrado, type Classificacao } from "@/lib/integracao/perfil";
 import { HORIZONTES, HORIZONTE_LEGADO, itemAprovado, type ItemPlano, type Plano } from "@/lib/integracao/plano";
 import { INDICADORES, extrairSerie, type LinhaHistorico } from "@/lib/integracao/historico";
+import { COMBINADOS, PORQUE_VALE_A_PENA, ROTULO_SITUACAO, TEXTO_DOMINIO, TEXTO_FASE, frentesPrioritarias, objetivoDoPaciente, primeiroNome } from "@/lib/integracao/devolutiva";
+import { mensagemPaciente } from "@/lib/avaliacao/whatsapp";
+import { NOME_PROFISSIONAL } from "@/lib/marca";
 import { SerieChart } from "@/components/SerieChart";
-
-// Frases de apoio em linguagem simples - nunca os critérios/pontuações
-// clínicas usadas em perfil.ts, que ficam reservadas ao relatório técnico.
-const FRASE_AMIGAVEL: Record<DomainKey, string> = {
-  forca: "Vamos trabalhar para aumentar sua força muscular.",
-  mobilidade: "Vamos melhorar a amplitude dos seus movimentos.",
-  equilibrio: "Vamos treinar seu equilíbrio, para reduzir o risco de quedas.",
-  capacidade_cardiorrespiratoria: "Vamos melhorar seu condicionamento físico.",
-  composicao_corporal: "Vamos trabalhar sua composição corporal.",
-  dor: "Vamos cuidar da sua dor, com acompanhamento adequado.",
-  estilo_de_vida: "Vamos ajustar hábitos do dia a dia para te ajudar.",
-  sono: "Vamos cuidar da qualidade do seu sono.",
-  bem_estar: "Vamos cuidar do seu bem-estar emocional.",
-  funcionalidade: "Vamos melhorar sua capacidade de fazer as atividades do dia a dia.",
-};
+import { EnvioWhatsApp } from "@/components/avaliador/EnvioWhatsApp";
 
 const INDICADORES_PACIENTE = ["peso_kg", "imc", "chair_stand_reps", "tug_seg", "velocidade_marcha_ms"];
 
-function Secao({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+const ESTILO_SITUACAO: Record<Classificacao, string> = {
+  adequado: "bg-accent-soft text-accent-dark",
+  atencao: "bg-warn-soft text-warn",
+  prioridade: "bg-info-soft text-info",
+  investigar: "bg-surface text-muted border border-border",
+};
+
+function Secao({ titulo, subtitulo, children }: { titulo: string; subtitulo?: string; children: React.ReactNode }) {
   return (
-    <section className="mb-8 break-inside-avoid">
-      <h2 className="font-display text-xl text-ink mb-3">{titulo}</h2>
-      {children}
+    <section className="mb-9 break-inside-avoid">
+      <h2 className="font-display text-xl text-ink">{titulo}</h2>
+      {subtitulo && <p className="text-sm text-muted mt-1">{subtitulo}</p>}
+      <div className="mt-3">{children}</div>
     </section>
   );
 }
@@ -66,20 +66,25 @@ export default function RelatorioPaciente() {
 
   const perfil = calcularPerfilIntegrado(paciente);
   const plano = paciente.plano as Plano | undefined;
+  const motivo = mesclarComPadrao(paciente.anamnese).motivo;
+  const objetivo = objetivoDoPaciente(motivo);
+  const frentes = frentesPrioritarias(perfil, motivo, plano);
+  const principais = frentes.slice(0, 3);
+  const depois = frentes.slice(3);
+  const naoAvaliados = perfil.dominios.filter((d) => d.classificacao === "investigar");
+  const avaliados = perfil.dominios.filter((d) => d.classificacao !== "investigar");
+
   // Só o que o avaliador aprovou. Para o paciente, cada horizonte lista as FRENTES
-  // (domínios) em foco, sem jargão técnico nem evidência.
+  // em foco, sem jargão técnico nem evidência.
   const tituloFrente = (it: ItemPlano): string => {
-    if (it.dominio) return perfil.dominios.find((d) => d.chave === it.dominio)?.titulo ?? it.origem.split(" — ")[1] ?? it.origem;
+    if (it.dominio) return TEXTO_DOMINIO[it.dominio]?.nome ?? perfil.dominios.find((d) => d.chave === it.dominio)?.titulo ?? it.origem;
     if (it.categoria === "reavaliacao") return "Reavaliação do seu progresso";
     if (it.categoria === "seguranca") return "Segurança antes de intensificar o exercício";
     return it.origem.split(" — ")[1] ?? it.origem;
   };
-  const itensPorHorizonte = [...HORIZONTES, HORIZONTE_LEGADO]
-    .map((h) => ({
-      ...h,
-      titulosDominio: Array.from(new Set((plano?.itens ?? []).filter((it) => it.horizonte === h.chave && itemAprovado(it)).map(tituloFrente))),
-    }))
-    .filter((h) => h.titulosDominio.length > 0);
+  const frentesPorHorizonte = (chave: string) =>
+    Array.from(new Set((plano?.itens ?? []).filter((it) => it.horizonte === chave && itemAprovado(it)).map(tituloFrente)));
+  const fases = [...HORIZONTES, ...((plano?.itens ?? []).some((i) => i.horizonte === "180" && itemAprovado(i)) ? [HORIZONTE_LEGADO] : [])];
 
   const indicadoresComDados = INDICADORES.filter((ind) => INDICADORES_PACIENTE.includes(ind.chave))
     .map((ind) => ({ ind, serie: extrairSerie(historico, ind) }))
@@ -98,59 +103,92 @@ export default function RelatorioPaciente() {
           Imprimir / Salvar PDF
         </button>
       </div>
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 pb-6 print:hidden">
+        <EnvioWhatsApp rotuloTelefone="WhatsApp do paciente" telefoneInicial={paciente.telefone ?? ""} mensagemInicial={() => mensagemPaciente(paciente)} />
+      </div>
 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 pb-16 print:px-0">
         <header className="mb-8 border-b-2 border-ink pb-4">
           <p className="text-xs uppercase tracking-widest text-accent font-semibold mb-1">Seu plano de cuidado</p>
           <h1 className="font-display text-2xl text-ink">{paciente.nome}</h1>
-          <p className="text-sm text-muted mt-1">Preparado em {new Date().toLocaleDateString("pt-BR")}</p>
+          <p className="text-sm text-muted mt-1">Preparado em {new Date().toLocaleDateString("pt-BR")} por {NOME_PROFISSIONAL}</p>
         </header>
 
-        <Secao titulo="O que notamos de positivo">
-          {perfil.potencialidades.length === 0 ? (
+        <Secao titulo={`Olá, ${primeiroNome(paciente.nome)}!`}>
+          <p className="text-[15px] text-ink leading-relaxed">
+            Obrigado por confiar o seu cuidado a nós. Neste documento você vê, de forma simples, <strong>como você está hoje</strong>, <strong>por que cada ponto importa</strong> e <strong>o que vamos fazer juntos</strong> para
+            chegar onde você quer.
+          </p>
+          {objetivo && (
+            <blockquote className="mt-3 rounded-xl border-l-4 border-accent bg-accent-soft px-4 py-3 text-[15px] text-ink">
+              <span className="block text-xs uppercase tracking-wide text-accent-dark font-semibold mb-1">O que você nos contou</span>“{objetivo}”
+              <span className="block text-sm text-muted mt-2">Este plano foi montado a partir disso.</span>
+            </blockquote>
+          )}
+        </Secao>
+
+        <Secao titulo="Como você está hoje" subtitulo="Um retrato de cada área avaliada. Não é nota nem julgamento: é o nosso ponto de partida.">
+          {avaliados.length === 0 ? (
             <p className="text-sm text-muted">Ainda estamos reunindo informação suficiente para esta seção.</p>
           ) : (
-            <ul className="space-y-1.5">
-              {perfil.potencialidades.map((d) => (
-                <li key={d.chave} className="flex items-start gap-2 text-[15px] text-ink">
-                  <span className="text-accent-dark mt-0.5">✓</span>
-                  {d.titulo}
+            <ul className="grid sm:grid-cols-2 gap-2.5">
+              {avaliados.map((d) => (
+                <li key={d.chave} className="rounded-xl border border-border bg-surface p-3.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium text-ink text-[15px]">{TEXTO_DOMINIO[d.chave].nome}</span>
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${ESTILO_SITUACAO[d.classificacao]}`}>{ROTULO_SITUACAO[d.classificacao]}</span>
+                  </div>
+                  {d.classificacao === "adequado" && <p className="text-sm text-muted mt-1.5">{TEXTO_DOMINIO[d.chave].bom}</p>}
                 </li>
               ))}
             </ul>
           )}
-        </Secao>
-
-        <Secao titulo="O que vamos priorizar juntos">
-          {perfil.prioridades.length === 0 ? (
-            <p className="text-sm text-muted">Nenhum ponto de atenção específico identificado até o momento.</p>
-          ) : (
-            <ul className="space-y-3">
-              {perfil.prioridades.map((d) => (
-                <li key={d.chave} className="rounded-xl border border-border bg-surface p-4">
-                  <p className="font-medium text-ink">{d.titulo}</p>
-                  <p className="text-sm text-muted mt-0.5">{FRASE_AMIGAVEL[d.chave]}</p>
-                </li>
-              ))}
-            </ul>
+          {naoAvaliados.length > 0 && (
+            <p className="text-sm text-muted mt-3">Ainda vamos conhecer melhor: {naoAvaliados.map((d) => TEXTO_DOMINIO[d.chave].nome.toLowerCase()).join(", ")}.</p>
           )}
         </Secao>
 
-        {itensPorHorizonte.length > 0 && (
-          <Secao titulo="Seu plano ao longo do tempo">
-            <div className="space-y-4">
-              {itensPorHorizonte.map((h) => (
-                <div key={h.chave} className="rounded-xl border border-border bg-surface p-4">
-                  <p className="font-medium text-ink mb-1.5">{h.titulo}</p>
-                  <p className="text-sm text-muted">{h.titulosDominio.join(" · ")}</p>
-                </div>
+        {principais.length > 0 && (
+          <Secao titulo="Por onde vamos começar" subtitulo="Para não sobrecarregar, começamos pelo que mais pesa na sua saúde e no que você quer conquistar.">
+            <ol className="space-y-3">
+              {principais.map((f, i) => (
+                <li key={f.dominio.chave} className="rounded-xl border border-border bg-surface p-4">
+                  <p className="font-medium text-ink">
+                    <span className="text-accent-dark mr-1.5">{i + 1}.</span>
+                    {f.nome}
+                  </p>
+                  <p className="text-sm text-ink mt-1.5 leading-relaxed">
+                    <strong>Por que importa:</strong> {f.importa}
+                  </p>
+                  <p className="text-sm text-ink mt-1.5 leading-relaxed">
+                    <strong>O que vamos fazer:</strong> {f.plano}
+                  </p>
+                  {f.objetivo && <p className="text-sm text-accent-dark mt-1.5 italic">Isso tem a ver com o que você nos contou: “{f.objetivo.length > 140 ? f.objetivo.slice(0, 137) + "..." : f.objetivo}”</p>}
+                </li>
               ))}
-            </div>
+            </ol>
+            {depois.length > 0 && <p className="text-sm text-muted mt-3">Em seguida, cuidaremos também de: {depois.map((f) => f.nome.toLowerCase()).join(", ")}.</p>}
           </Secao>
         )}
 
+        <Secao titulo="Seu plano ao longo do tempo" subtitulo="Um passo de cada vez, com avaliação para você enxergar o que melhorou.">
+          <div className="space-y-3">
+            {fases.map((h) => {
+              const fase = TEXTO_FASE[h.chave];
+              const nomes = frentesPorHorizonte(h.chave);
+              return (
+                <div key={h.chave} className="rounded-xl border border-border bg-surface p-4">
+                  <p className="font-medium text-ink">{fase.titulo}</p>
+                  <p className="text-sm text-muted mt-1 leading-relaxed">{fase.texto}</p>
+                  {nomes.length > 0 && <p className="text-sm text-ink mt-2"><strong>Foco:</strong> {nomes.join(" · ")}</p>}
+                </div>
+              );
+            })}
+          </div>
+        </Secao>
+
         {plano?.encaminhamentos && plano.encaminhamentos.filter(itemAprovado).length > 0 && (
-          <Secao titulo="Também recomendamos consultar">
+          <Secao titulo="Também recomendamos consultar" subtitulo="Esses profissionais somam ao seu cuidado e deixam o resultado mais seguro.">
             <ul className="space-y-1.5">
               {plano.encaminhamentos.filter(itemAprovado).map((e) => (
                 <li key={e.id} className="text-[15px] text-ink">
@@ -189,9 +227,40 @@ export default function RelatorioPaciente() {
           </Secao>
         )}
 
+        <Secao titulo="Por que vale a pena começar agora">
+          <ul className="space-y-2">
+            {PORQUE_VALE_A_PENA.map((t) => (
+              <li key={t} className="flex items-start gap-2 text-[15px] text-ink leading-relaxed">
+                <span className="text-accent-dark mt-0.5">✓</span>
+                {t}
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-muted mt-2">Baseado nas diretrizes de atividade física da Organização Mundial da Saúde (2020). Cada pessoa responde de um jeito: acompanhamos o seu ritmo.</p>
+        </Secao>
+
+        <Secao titulo="O que combinamos">
+          <p className="text-sm text-muted mb-2">O plano funciona melhor quando andamos juntos. De você, pedimos pouco:</p>
+          <ul className="space-y-1.5">
+            {COMBINADOS.map((t) => (
+              <li key={t} className="flex items-start gap-2 text-[15px] text-ink">
+                <span className="text-accent-dark mt-0.5">•</span>
+                {t}
+              </li>
+            ))}
+          </ul>
+        </Secao>
+
+        <section className="rounded-2xl bg-accent-soft p-5 break-inside-avoid">
+          <h2 className="font-display text-xl text-accent-dark">Vamos começar?</h2>
+          <p className="text-[15px] text-ink mt-1.5 leading-relaxed">
+            O primeiro passo é combinar a data do nosso próximo encontro. Fale conosco para agendar no dia e horário que forem melhores para você. Estamos aqui para caminhar ao seu lado, no seu ritmo.
+          </p>
+          <p className="text-sm text-ink mt-3 font-medium">{NOME_PROFISSIONAL}</p>
+        </section>
+
         <p className="text-xs text-muted border-t border-border pt-4 mt-8">
-          Este documento resume sua avaliação em linguagem simples, para apoiar nossa conversa. Qualquer dúvida,
-          fale com {paciente ? "seu avaliador" : "a clínica"}.
+          Este documento resume a sua avaliação em linguagem simples, para apoiar a nossa conversa. Ele não é um diagnóstico nem substitui a orientação de um médico. Qualquer dúvida, fale conosco.
         </p>
       </main>
     </>

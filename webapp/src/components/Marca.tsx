@@ -1,3 +1,5 @@
+import { NOME_PROFISSIONAL } from "@/lib/marca";
+
 // Marca exibida nas telas de entrada: logo + nome do profissional.
 //
 // A logo da Forma e Fisio (/logo-forma-e-fisio.jpg) está temporariamente oculta, até
@@ -11,7 +13,7 @@ export function Marca({ compacta = false }: { compacta?: boolean }) {
   return (
     <div className={`flex flex-col items-center ${compacta ? "mb-5" : "mb-6"}`}>
       <img src="/logo-sceh.png" alt="Logo" className={`${compacta ? "h-16" : "h-20"} w-auto`} />
-      <p className="font-display text-ink text-lg mt-2">Dr. Leandro Lopes</p>
+      <p className="font-display text-ink text-lg mt-2">{NOME_PROFISSIONAL}</p>
     </div>
   );
 }
