@@ -79,7 +79,7 @@
 
 **Faz hoje:** protocolo de fotos em 4 vistas, observações por vista, linguagem sem causalidade. No painel integrado, o domínio **Mobilidade** hoje procura palavras-chave ("assimetria", "valgo", "desvio", "dor"…) nas observações posturais e, se achar, classifica como "atenção".
 
-**Evidência:** a associação entre postura e dor é fraca/inconclusiva. Em meta-análise de 2023, a diferença média do ângulo craniovertebral entre quem tem e quem não tem dor cervical foi de apenas 2,93°, com evidência inconclusiva de relação com incapacidade ([Neck pain & sagittal posture, 2023](https://pmc.ncbi.nlm.nih.gov/articles/PMC9941407/)); revisões de escopo apontam que o papel da postura na dor de coluna "não é claro" ([scoping review](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12603532/); [EFORT Open Reviews, 2023](https://eor.bioscientifica.com/view/journals/eor/8/9/EOR-23-0025.xml)).
+**Evidência:** a associação entre postura e dor é fraca/inconclusiva. Em meta-análise de 2023, a diferença média do ângulo craniovertebral entre quem tem e quem não tem dor cervical foi de 2,93° (IC 95% −4,95 a −0,91), com correlações de pequenas a moderadas do ângulo craniovertebral com a intensidade da dor e com a incapacidade, em estudos observacionais que não provam causa (**correção de 08/10/2026:** o texto original deste item dizia "evidência inconclusiva de relação com incapacidade", o que era mais forte do que o resultado do artigo; o resumo do estudo fala em evidência inconclusiva só no texto de abertura) ([Neck pain & sagittal posture, 2023](https://pmc.ncbi.nlm.nih.gov/articles/PMC9941407/)); revisões de escopo apontam que o papel da postura na dor de coluna "não é claro" ([scoping review](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12603532/); [EFORT Open Reviews, 2023](https://eor.bioscientifica.com/view/journals/eor/8/9/EOR-23-0025.xml)).
 
 **Sugestões:**
 1. **Alta:** palavra-chave postural **não** deve elevar Mobilidade a "atenção" — isso contraria a própria regra do projeto (achado postural isolado não é causa nem risco). Basear Mobilidade em dados objetivos: sentar-e-alcançar, alcance nas costas, goniometria, agachamento observado com critérios.
@@ -141,7 +141,9 @@
 
 **Faz hoje:** relatório técnico e versão simplificada para o paciente (reconhecer → mostrar → explicar → priorizar → projetar → planejar), linguagem não alarmista.
 
-**Evidência (moderada, fontes secundárias):** comunicação ruim associa-se a 19% mais risco de não adesão, e treinar profissionais em comunicação aumentou 1,62 vez a chance de adesão. Na comunicação de risco, clínicos preferem risco absoluto, porque o relativo isolado distorce a percepção do tamanho do risco ([risco em comunicação clínica](https://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0236751)).
+**Evidência (fraca a moderada):** a comunicação de risco ao paciente é complexa e envolve equilibrar informar e não gerar ansiedade; clínicos conhecem formatos recomendados como frequências naturais e pictogramas ([Richter et al., PLoS One 2020](https://doi.org/10.1371/journal.pone.0236751), estudo **qualitativo** com 15 clínicos).
+
+> **Correção de 08/10/2026 (integridade):** a versão anterior deste item atribuía a este artigo os números "19% mais risco de não adesão" e "1,62 vez a chance de adesão" e a afirmação de que "clínicos preferem risco absoluto". Ao reconferir o resumo no PubMed, **esses números não constam deste estudo** (que é qualitativo) e vinham de fontes secundárias que não foram reconferidas. Ficam marcados **[confirmar]** e **não são usados** em nenhuma regra do sistema. A recomendação de usar risco absoluto e linguagem simples continua como boa prática de comunicação, mas sem este suporte numérico.
 
 **Sugestões:**
 1. **Média:** quando a devolutiva citar risco, usar termos absolutos/plainos ("abaixo do esperado para a sua idade") e nunca só relativos.
@@ -199,6 +201,34 @@
 - **Caio (Cardio):** vários testes por paciente (cada um com protocolo, resultados, FC, PA e PSE próprios), tabela de comparação e escolha do teste **principal** (alimenta o painel, o histórico e o relatório). **Rampa de velocidade:** passou a estimar o VO2máx pela equação metabólica do ACSM (velocidade final + inclinação; corrida ≥ 8 km/h, caminhada abaixo), com a ressalva de superestimativa (~3 ml/kg/min em estudo); antes só exibia a vVO2máx. Cooper mostra a velocidade média em 12 min. Registros antigos migram sozinhos.
 - **Theo (Plano):** horizontes 30/60/90/anual, sugestões com dose, evidência e indicador, decisão item a item (ver `06-Agente7-Plano-de-Intervencao.md`).
 - **Marco e Rita:** ver `02-Agente3-...` e `04-Agente5-...` (cortes da cintura/abdômen, diferença D−E, coxa em 3 níveis, registro por clique, formato do TC6).
+
+## Registro de referências verificadas no PubMed (08/10/2026)
+
+Todas abaixo tiveram a existência e o título conferidos no PubMed (consulta por revista, ano, volume e primeira página). Conferir a existência **não** é o mesmo que ler o texto completo: o que cada uma sustenta no sistema está descrito em `src/lib/agentes.ts`.
+
+| Tema | Referência | PMID |
+|---|---|---|
+| Sarcopenia (EWGSOP2) | Cruz-Jentoft AJ et al. Age Ageing 2019;48:16 | 30312372 |
+| Cortes de dinamometria no Brasil | Fernandes SGG et al. PeerJ 2021;9:e12038 | 34527442 |
+| Padrões de aptidão funcional | Rikli RE, Jones CJ. Gerontologist 2013;53:255 | 22613940 |
+| TUG e quedas (meta-análise) | Barry E et al. BMC Geriatr 2014;14:14 | 24484314 |
+| TUG (original) | Podsiadlo D, Richardson S. J Am Geriatr Soc 1991;39:142 | 1991946 |
+| Percentis de VO2máx (FRIEND) | Kaminsky LA et al. Mayo Clin Proc 2015;90:1515 | 26455884 |
+| Aptidão e mortalidade | Mandsager K et al. JAMA Netw Open 2018;1:e183605 | 30646252 |
+| Aptidão como sinal vital (AHA) | Ross R et al. Circulation 2016;134:e653 | 27881567 |
+| FC máxima prevista | Tanaka H et al. J Am Coll Cardiol 2001;37:153 | 11153730 |
+| Obesidade clínica (Lancet Commission) | Rubino F et al. Lancet Diabetes Endocrinol 2025;13:221 | 39824205 |
+| Postura e dor cervical | Rani B et al. Indian J Orthop 2023;57:371 | 36825268 |
+| Sono (PSQI) | Buysse DJ et al. Psychiatry Res 1989;28:193 | 2748771 |
+| Depressão (PHQ-9) | Kroenke K et al. J Gen Intern Med 2001;16:606 | 11556941 |
+| Ansiedade (GAD-7) | Spitzer RL et al. Arch Intern Med 2006;166:1092 | 16717171 |
+| Estresse percebido (PSS) | Cohen S et al. J Health Soc Behav 1983;24:385 | 6668417 |
+| Triagem pré-exercício (ACSM) | Riebe D et al. Med Sci Sports Exerc 2015;47:2473 | 26473759 |
+| Diretrizes da OMS | Bull FC et al. Br J Sports Med 2020;54:1451 | 33239350 |
+| TC6, equação brasileira (ainda não usada no sistema) | Britto RR et al. Braz J Phys Ther 2013;17:556 | 24271092 |
+| Comunicação de risco (qualitativo) | Richter R et al. PLoS One 2020;15:e0236751 | 32790675 |
+
+Duas correções feitas nesta conferência estão marcadas nos itens "Agente 4" e "Clara" acima.
 
 ## Pendências que dependem de você
 

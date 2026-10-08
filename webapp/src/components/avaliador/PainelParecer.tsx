@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { TextArea } from "@/components/forms";
 import { createClient } from "@/lib/supabase/client";
 import { gerarParecerAgente, ROTULO_ESTILO, type AgenteParecer, type EstiloParecer } from "@/lib/avaliacao/pareceres";
+import { AGENTES_SISTEMA, nomeComTitulo, revisaoVencida, textoRevisao, type AgenteId } from "@/lib/agentes";
 import type { PacienteRow } from "@/lib/anamnese/types";
 import { mesclarNoPlano, TextoAuto, useAutoSalvar } from "./campos";
 
@@ -54,14 +55,14 @@ export function lerParecer(bruto: any): ParecerSalvo | null {
 }
 
 export function PainelParecer({
-  titulo,
+  agente,
   valor,
   onChange,
   gerar,
   mensagemVazia = "Ainda não há dados para o agente redigir o parecer.",
   linhas = 14,
 }: {
-  titulo: string;
+  agente: AgenteId;
   valor: ParecerSalvo | null;
   onChange: (v: ParecerSalvo) => void;
   gerar: (estilo: EstiloParecer) => string;
@@ -102,7 +103,12 @@ export function PainelParecer({
   return (
     <div className="rounded-2xl border border-border bg-surface p-5 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="font-display text-lg text-ink">{titulo}</h3>
+        <div>
+          <h3 className="font-display text-lg text-ink">
+            Parecer {nomeComTitulo(agente)} <span className="align-middle text-xs font-sans font-medium rounded-full bg-info-soft text-info px-2 py-0.5 ml-1">assistente de IA</span>
+          </h3>
+          <p className="text-xs text-muted">{AGENTES_SISTEMA[agente].especialidade}</p>
+        </div>
         <div className="inline-flex rounded-lg border border-border overflow-hidden text-sm" role="group" aria-label="Estilo do parecer">
           {(["sucinto", "explicativo"] as EstiloParecer[]).map((e) => (
             <button
@@ -150,7 +156,13 @@ export function PainelParecer({
               Gerar de novo
             </button>
           </div>
-          <p className="text-xs text-muted">Rascunho do agente: edite à vontade. Não é diagnóstico. Fica guardado e aparece no relatório técnico.</p>
+          <p className="text-xs text-muted">
+            Rascunho de um assistente de IA: você revisa, edita e responde pelo conteúdo. Não é diagnóstico. Fica guardado e aparece no relatório técnico, identificado como assistente de IA.
+          </p>
+          <p className={`text-xs ${revisaoVencida() ? "text-warn" : "text-muted"}`}>
+            {textoRevisao()}
+            {revisaoVencida() && " A revisão está com mais de 6 meses: peça uma nova revisão da literatura à Dra. Nina antes de confiar nos cortes."}
+          </p>
         </>
       )}
     </div>
@@ -162,12 +174,10 @@ export function PainelParecer({
 export function ParecerNoPlano({
   paciente,
   agente,
-  titulo,
   gerar,
 }: {
   paciente: PacienteRow;
   agente: Extract<AgenteParecer, "anamnese" | "perfil">;
-  titulo: string;
   gerar?: (estilo: EstiloParecer) => string;
 }) {
   const supabase = useMemo(() => createClient(), []);
@@ -181,7 +191,7 @@ export function ParecerNoPlano({
 
   return (
     <div className="space-y-1">
-      <PainelParecer titulo={titulo} valor={valor} onChange={setValor} gerar={funcaoGerar} />
+      <PainelParecer agente={agente === "anamnese" ? "sofia" : "iris"} valor={valor} onChange={setValor} gerar={funcaoGerar} />
       <div className="px-1">
         <TextoAuto estado={estado} />
       </div>

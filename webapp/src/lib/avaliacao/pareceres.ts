@@ -16,6 +16,7 @@ import { calcularRiscoCardiovascular } from "@/lib/anamnese/riscoCardiovascular"
 import { perguntasParQ } from "@/lib/anamnese/questionnaires";
 import { calcularPerfilIntegrado, type Classificacao, type DomainKey, type DomainResult } from "@/lib/integracao/perfil";
 import { paraNumero } from "@/lib/numeros";
+import { linhasBaseCientifica, nomeComTitulo, type AgenteId } from "@/lib/agentes";
 
 export type EstiloParecer = "sucinto" | "explicativo";
 export type AgenteParecer = "anamnese" | "fisica" | "funcional" | "cardio" | "perfil";
@@ -85,9 +86,8 @@ const PROXIMO_PASSO: Record<Classificacao, string> = {
   investigar: "coletar o dado que falta antes de concluir.",
 };
 
-const AGENTES: Record<AgenteParecer, { nome: string; titulo: string; dominios: DomainKey[]; limites: string[] }> = {
+const AGENTES: Record<AgenteParecer, { titulo: string; dominios: DomainKey[]; limites: string[] }> = {
   anamnese: {
-    nome: "Sofia",
     titulo: "Anamnese",
     dominios: ["dor", "sono", "estilo_de_vida", "bem_estar"],
     limites: [
@@ -96,7 +96,6 @@ const AGENTES: Record<AgenteParecer, { nome: string; titulo: string; dominios: D
     ],
   },
   fisica: {
-    nome: "Marco",
     titulo: "Avaliação física e antropométrica",
     dominios: ["composicao_corporal"],
     limites: [
@@ -105,7 +104,6 @@ const AGENTES: Record<AgenteParecer, { nome: string; titulo: string; dominios: D
     ],
   },
   funcional: {
-    nome: "Rita",
     titulo: "Avaliação funcional",
     dominios: ["forca", "equilibrio", "funcionalidade", "mobilidade"],
     limites: [
@@ -114,7 +112,6 @@ const AGENTES: Record<AgenteParecer, { nome: string; titulo: string; dominios: D
     ],
   },
   cardio: {
-    nome: "Caio",
     titulo: "Avaliação cardiorrespiratória",
     dominios: ["capacidade_cardiorrespiratoria"],
     limites: [
@@ -123,7 +120,6 @@ const AGENTES: Record<AgenteParecer, { nome: string; titulo: string; dominios: D
     ],
   },
   perfil: {
-    nome: "Íris",
     titulo: "Perfil integrado",
     dominios: [],
     limites: [
@@ -133,8 +129,10 @@ const AGENTES: Record<AgenteParecer, { nome: string; titulo: string; dominios: D
   },
 };
 
+const ID_AGENTE: Record<AgenteParecer, AgenteId> = { anamnese: "sofia", fisica: "marco", funcional: "rita", cardio: "caio", perfil: "iris" };
+
 export function nomeAgente(agente: AgenteParecer): string {
-  return AGENTES[agente].nome;
+  return nomeComTitulo(ID_AGENTE[agente]);
 }
 
 function primeiraFrase(texto: string): string {
@@ -309,8 +307,8 @@ export function gerarParecerAgente(agente: AgenteParecer, paciente: PacienteRow,
   }
   const linhas: string[] = [];
   const cab = estilo === "sucinto" ? " (resumo)" : "";
-  linhas.push(`PARECER ${info.nome.toUpperCase()} - ${info.titulo.toUpperCase()}${cab}`);
-  if (estilo === "explicativo") linhas.push("Rascunho do agente para o avaliador revisar: apoio à decisão, não é diagnóstico.");
+  linhas.push(`PARECER ${nomeComTitulo(ID_AGENTE[agente]).toUpperCase()} (assistente de IA) - ${info.titulo.toUpperCase()}${cab}`);
+  if (estilo === "explicativo") linhas.push("Rascunho para o profissional revisar: apoio à decisão, não é diagnóstico nem substitui o julgamento clínico.");
   linhas.push("");
 
   if (agente === "perfil") {
@@ -349,10 +347,12 @@ export function gerarParecerAgente(agente: AgenteParecer, paciente: PacienteRow,
 
   if (estilo === "sucinto") {
     linhas.push("", "Dado ausente aparece como 'a investigar', nunca como normal. Não é diagnóstico.");
+    linhas.push(...linhasBaseCientifica(ID_AGENTE[agente], "sucinto"));
   } else {
     linhas.push("LIMITES DESTE PARECER");
     info.limites.forEach((l) => linhas.push(`- ${l}`));
-    linhas.push("- Dado ausente aparece como 'a investigar', nunca como normal.");
+    linhas.push("- Dado ausente aparece como 'a investigar', nunca como normal.", "");
+    linhas.push(...linhasBaseCientifica(ID_AGENTE[agente], "explicativo"));
   }
   return linhas.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }

@@ -1,5 +1,7 @@
 # AGENTE 8 — RELATÓRIO E DEVOLUTIVA
 
+> **Responsável: Dra. Clara** — comunicação em saúde, relatório e devolutiva (assistente de IA; ver o padrão de especialista e integridade em `00-Arquitetura-Geral-dos-Agentes.md`, Seção 11).
+
 > Depende do Perfil Integrado ([05-Agente6-Integracao-e-Interpretacao.md](05-Agente6-Integracao-e-Interpretacao.md)) e do Plano de Intervenção ([06-Agente7-Plano-de-Intervencao.md](06-Agente7-Plano-de-Intervencao.md)). Grava no RIP na macroseção `relatorio_e_devolutiva`. É o último agente do ciclo de avaliação — depois dele, o processo entra em execução (Etapa 10).
 
 ---

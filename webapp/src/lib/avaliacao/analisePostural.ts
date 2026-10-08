@@ -16,6 +16,7 @@
 // por este método e dependem da observação do avaliador.
 
 import type { EstiloParecer } from "./pareceres";
+import { linhasBaseCientifica, nomeComTitulo } from "@/lib/agentes";
 
 export type Vista = "anterior" | "posterior" | "lateral_d" | "lateral_e";
 
@@ -416,7 +417,7 @@ export type AnaliseVistaSalva = {
 // Parecer descritivo (texto do Agente 4)
 // ---------------------------------------------------------------------------
 function gerarParecerSucinto(vistas: Partial<Record<Vista, AnaliseVistaSalva>>, analisadas: Vista[]): string {
-  const linhas: string[] = ["PARECER POSTURAL (resumo) - Agente 4", ""];
+  const linhas: string[] = [`PARECER ${nomeComTitulo("paula").toUpperCase()} (assistente de IA) - POSTURA (resumo)`, ""];
   const atencao: string[] = [];
   for (const v of analisadas) {
     const a = vistas[v]!;
@@ -436,6 +437,7 @@ function gerarParecerSucinto(vistas: Partial<Record<Vista, AnaliseVistaSalva>>, 
   linhas.push("");
   linhas.push(atencao.length > 0 ? `A confirmar clinicamente: ${Array.from(new Set(atencao)).join("; ")}.` : "Nenhuma diferença aparente acima da margem de interpretação.");
   linhas.push("Foto 2D, achados descritivos: não são diagnóstico nem causa de dor.");
+  linhas.push(...linhasBaseCientifica("paula", "sucinto"));
   return linhas.join("\n");
 }
 
@@ -446,7 +448,7 @@ export function gerarParecer(vistas: Partial<Record<Vista, AnaliseVistaSalva>>, 
   if (estilo === "sucinto") return gerarParecerSucinto(vistas, analisadas);
 
   const linhas: string[] = [];
-  linhas.push("PARECER POSTURAL - Agente 4 (análise automática das fotos; apoio ao avaliador, não é diagnóstico)");
+  linhas.push(`PARECER POSTURAL - ${nomeComTitulo("paula")} (assistente de IA; análise automática das fotos; apoio ao avaliador, não é diagnóstico)`);
   linhas.push(`Fotos analisadas: ${analisadas.map((v) => ROTULO_VISTA[v].toLowerCase()).join(", ")}.`);
   linhas.push("");
 
@@ -480,7 +482,10 @@ export function gerarParecer(vistas: Partial<Record<Vista, AnaliseVistaSalva>>, 
   linhas.push("");
   linhas.push("COMO USAR ESTE PARECER");
   linhas.push("- São achados descritivos de uma foto 2D (dependem do enquadramento, da inclinação da câmera e da distância); não estabelecem causa nem diagnóstico.");
-  linhas.push("- Revisões sistemáticas recentes mostram relação fraca/inconclusiva entre a postura estática e a dor: use os achados para comparar com a reavaliação (mesma distância, altura e posição da câmera) e para orientar o exame, não para atribuir a dor a uma postura.");
+  linhas.push("- A literatura mostra associação pequena entre a postura estática e a dor, em estudos que não provam causa (por exemplo, numa meta-análise de 2023, a diferença média do ângulo craniovertebral entre quem tem e quem não tem dor cervical foi de cerca de 3°): use os achados para comparar com a reavaliação (mesma distância, altura e posição da câmera) e para orientar o exame, não para atribuir a dor a uma postura.");
   linhas.push("- Confirme o que for relevante por palpação e nivelamento (ombros, cristas ilíacas), goniometria/inclinômetro e testes de movimento. Escápulas, curvaturas da coluna e posição da pelve não são medidas por este método.");
+  linhas.push("- Os cortes de 3° (discreta) e 6° (evidente) são referências práticas do sistema, sem validação publicada.");
+  linhas.push("");
+  linhas.push(...linhasBaseCientifica("paula", "explicativo"));
   return linhas.join("\n");
 }

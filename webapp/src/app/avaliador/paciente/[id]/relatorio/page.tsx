@@ -21,6 +21,8 @@ import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { CAMPOS_CIRCUNFERENCIA, calcularMassaMagraRelativa, expansibilidadeToracica } from "@/lib/avaliacao/medidasRegionais";
 import { paraNumero } from "@/lib/numeros";
 import { mensagemTecnica } from "@/lib/avaliacao/whatsapp";
+import { nomeComTitulo, textoRevisao, type AgenteId } from "@/lib/agentes";
+import { NOME_PROFISSIONAL } from "@/lib/marca";
 import { EnvioWhatsApp } from "@/components/avaliador/EnvioWhatsApp";
 import { triarSarcopeniaDinapenia } from "@/lib/integracao/sarcopenia";
 import { vo2maxDeRegistro, vo2maxDeTeste, testePrincipalDoRegistro, avaliarVO2max, ROTULO_CLASSE_VO2, descreverPSE, metDeVo2, fcMaxTanaka, fcMaxFox } from "@/lib/avaliacao/cardiorrespiratoria";
@@ -45,12 +47,12 @@ function L({ label, value }: { label: string; value: any }) {
 }
 
 // Parecer do agente (no estilo escolhido pelo avaliador), com a marca de revisão.
-function ParecerRelatorio({ titulo, parecer }: { titulo: string; parecer: { texto?: string; revisado?: boolean } | null | undefined }) {
+function ParecerRelatorio({ agente, parecer }: { agente: AgenteId; parecer: { texto?: string; revisado?: boolean } | null | undefined }) {
   if (!parecer?.texto) return null;
   return (
     <div className="mt-4 rounded-lg border border-border p-3">
       <p className="text-sm font-semibold text-ink mb-1">
-        {titulo} <span className="font-normal text-muted">({parecer.revisado ? "revisado pelo avaliador" : "rascunho automático, ainda não revisado"})</span>
+        Parecer {nomeComTitulo(agente)} <span className="font-normal text-muted">(assistente de IA; {parecer.revisado ? "revisado pelo avaliador" : "rascunho automático, ainda não revisado"})</span>
       </p>
       <p className="text-sm text-ink whitespace-pre-line leading-relaxed">{parecer.texto}</p>
     </div>
@@ -270,7 +272,7 @@ export default function RelatorioTecnico() {
               }
             />
           </dl>
-          <ParecerRelatorio titulo="Parecer da Sofia" parecer={paciente.plano?.pareceres?.anamnese} />
+          <ParecerRelatorio agente="sofia" parecer={paciente.plano?.pareceres?.anamnese} />
         </Secao>
 
         <Secao titulo="2. Avaliação física e antropométrica">
@@ -316,7 +318,7 @@ export default function RelatorioTecnico() {
             <L label="Peso ideal (calculado)" value={pesoIdealKg !== null ? `${pesoIdealKg.toFixed(1)} kg` : null} />
             <L label="Observações" value={paciente.fisica?.observacoes} />
           </dl>
-          <ParecerRelatorio titulo="Parecer do Marco" parecer={paciente.fisica?.parecer} />
+          <ParecerRelatorio agente="marco" parecer={paciente.fisica?.parecer} />
         </Secao>
 
         <Secao titulo="3. Avaliação postural e biomecânica">
@@ -334,7 +336,7 @@ export default function RelatorioTecnico() {
             <L label="Padrões de movimento" value={paciente.postural?.obs_movimento} />
           </dl>
           <ParecerRelatorio
-            titulo="Parecer do Agente 4 a partir das fotos"
+            agente="paula"
             parecer={
               paciente.postural?.parecer ??
               (paciente.postural?.analise?.parecer ? { texto: paciente.postural.analise.parecer, revisado: paciente.postural.analise.parecer_revisado } : null)
@@ -409,7 +411,7 @@ export default function RelatorioTecnico() {
             <L label="Estabilidade do core - observações" value={paciente.funcional?.core_estabilidade_obs} />
             <L label="Observações" value={paciente.funcional?.observacoes} />
           </dl>
-          <ParecerRelatorio titulo="Parecer da Rita" parecer={paciente.funcional?.parecer} />
+          <ParecerRelatorio agente="rita" parecer={paciente.funcional?.parecer} />
         </Secao>
 
         <Secao titulo="5. Avaliação cardiorrespiratória (VO2)">
@@ -431,7 +433,7 @@ export default function RelatorioTecnico() {
             <L label="Percepção de esforço (Borg)" value={pseNum !== null ? `${pseNum}${pseDescricao ? ` - ${pseDescricao.rotulo}` : ""}` : null} />
             <L label="Observações" value={cardio.observacoes} />
           </dl>
-          <ParecerRelatorio titulo="Parecer do Caio" parecer={cardio.parecer} />
+          <ParecerRelatorio agente="caio" parecer={cardio.parecer} />
         </Secao>
 
         <Secao titulo="6. Painel Integrado de Saúde (10 domínios)">
@@ -473,7 +475,7 @@ export default function RelatorioTecnico() {
           <p className="text-sm mb-1"><strong>Limitações:</strong> {perfil.limitacoes.map((d) => d.titulo).join(", ") || "nenhuma identificada"}</p>
           <p className="text-sm mb-1"><strong>Riscos:</strong> {perfil.riscos.map((d) => d.titulo).join(", ") || "nenhum identificado"}</p>
           <p className="text-sm"><strong>Prioridades (ordem):</strong> {perfil.prioridades.map((d) => d.titulo).join(" → ") || "nenhuma identificada"}</p>
-          <ParecerRelatorio titulo="Parecer da Íris" parecer={paciente.plano?.pareceres?.perfil} />
+          <ParecerRelatorio agente="iris" parecer={paciente.plano?.pareceres?.perfil} />
         </Secao>
 
         <Secao titulo="9. Plano de intervenção">
@@ -518,6 +520,9 @@ export default function RelatorioTecnico() {
           Documento gerado automaticamente a partir dos dados registrados na avaliação. Não constitui diagnóstico
           médico, psicológico ou psiquiátrico. Toda conduta é de responsabilidade do profissional que assina o
           atendimento.
+          <br />
+          <strong>Autoria:</strong> os pareceres deste relatório foram redigidos por assistentes de IA (Dra. Sofia, Dr. Marco, Dra. Paula, Dra. Rita, Dr. Caio e Dra. Íris), que não são médicos nem profissionais registrados.
+          Cada parecer indica se foi revisado. A responsabilidade pela avaliação e pelas condutas é de {NOME_PROFISSIONAL}. {textoRevisao()}
         </footer>
       </main>
     </>

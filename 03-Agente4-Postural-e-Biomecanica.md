@@ -1,5 +1,7 @@
 # AGENTE 4 — AVALIAÇÃO POSTURAL E BIOMECÂNICA
 
+> **Responsável: Dra. Paula** (nome provisório; troca em `src/lib/agentes.ts`) — postura e biomecânica (assistente de IA; ver o padrão de especialista e integridade em `00-Arquitetura-Geral-dos-Agentes.md`, Seção 11).
+
 > Depende de [00-Arquitetura-Geral-dos-Agentes.md](00-Arquitetura-Geral-dos-Agentes.md), [01-Agente2-Anamnese-e-Questionarios.md](01-Agente2-Anamnese-e-Questionarios.md) e [02-Agente3-Fisica-e-Antropometrica.md](02-Agente3-Fisica-e-Antropometrica.md). Grava no RIP na macroseção `postura_e_biomecanica`.
 
 ---

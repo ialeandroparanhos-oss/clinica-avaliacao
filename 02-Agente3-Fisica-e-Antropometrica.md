@@ -1,5 +1,7 @@
 # AGENTE 3 — AVALIAÇÃO FÍSICA E ANTROPOMÉTRICA
 
+> **Responsável: Dr. Marco** — avaliação física, antropometria e composição corporal (assistente de IA; ver o padrão de especialista e integridade em `00-Arquitetura-Geral-dos-Agentes.md`, Seção 11).
+
 > Depende de [00-Arquitetura-Geral-dos-Agentes.md](00-Arquitetura-Geral-dos-Agentes.md) e de [01-Agente2-Anamnese-e-Questionarios.md](01-Agente2-Anamnese-e-Questionarios.md). Grava no RIP na macroseção `antropometria_e_sinais_vitais`.
 
 ---

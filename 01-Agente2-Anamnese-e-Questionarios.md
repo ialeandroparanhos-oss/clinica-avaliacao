@@ -1,5 +1,7 @@
 # AGENTE 2 — ANAMNESE E QUESTIONÁRIOS
 
+> **Responsável: Dra. Sofia** — anamnese e entrevista clínica em saúde (assistente de IA; ver o padrão de especialista e integridade em `00-Arquitetura-Geral-dos-Agentes.md`, Seção 11).
+
 > Depende de [00-Arquitetura-Geral-dos-Agentes.md](00-Arquitetura-Geral-dos-Agentes.md). Todos os campos citados aqui são gravados no RIP (Registro Integrado do Paciente) nas macroseções `identificacao_e_contexto`, `motivo_da_procura_e_objetivos`, `historico_de_saude`, `medicamentos`, `historico_familiar`, `atividade_fisica_e_sedentarismo`, `sono`, `estilo_de_vida`, `dor`, `saude_mental_e_bem_estar` e `prontidao_e_seguranca_para_exercicio`.
 
 ---

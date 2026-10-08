@@ -201,7 +201,7 @@ function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
         </div>
       </div>
 
-      <ParecerNoPlano paciente={paciente} agente="perfil" titulo="Parecer da Íris (perfil integrado)" />
+      <ParecerNoPlano paciente={paciente} agente="perfil" />
 
       <div
         className={`rounded-2xl border p-5 ${
@@ -497,7 +497,7 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
 
       <PainelModulos anamnese={anamnese} />
 
-      <ParecerNoPlano paciente={paciente} agente="anamnese" titulo="Parecer da Sofia (anamnese)" />
+      <ParecerNoPlano paciente={paciente} agente="anamnese" />
 
       <Capitulo titulo="Contexto">
         <Linha label="Idade (da data de nascimento)" value={idadeEfetiva(paciente) !== null ? `${idadeEfetiva(paciente)} anos` : null} />

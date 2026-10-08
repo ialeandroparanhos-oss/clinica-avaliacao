@@ -113,6 +113,6 @@ export function mensagemTecnica(paciente: PacienteRow, idade: number | null): st
     fases.forEach((f) => linhas.push(`- ${HORIZONTES.find((h) => h.chave === f.horizonte)?.curto}: ${f.nomes.join(", ").toLowerCase()}`));
   }
   if (enc.length > 0) linhas.push("", `*Encaminhamentos:* ${enc.map((e) => e.especialidade).join(", ")}`);
-  linhas.push("", "_Triagem e apoio à decisão, não é diagnóstico. Informação de saúde confidencial: não encaminhar a terceiros. O relatório completo segue em PDF._");
+  linhas.push("", `_Triagem e apoio à decisão, não é diagnóstico. Pareceres redigidos por assistentes de IA, com responsabilidade de ${NOME_PROFISSIONAL}. Informação de saúde confidencial: não encaminhar a terceiros. O relatório completo segue em PDF._`);
   return linhas.join("\n");
 }

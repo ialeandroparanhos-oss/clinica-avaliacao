@@ -1,5 +1,7 @@
 # AGENTE 6 — INTEGRAÇÃO E INTERPRETAÇÃO
 
+> **Responsável: Dra. Íris** — integração e interpretação clínica (assistente de IA; ver o padrão de especialista e integridade em `00-Arquitetura-Geral-dos-Agentes.md`, Seção 11).
+
 > Depende de todos os documentos anteriores (00 a 04). É o único agente com permissão de leitura cruzada sobre o RIP inteiro (ver [00-Arquitetura-Geral-dos-Agentes.md](00-Arquitetura-Geral-dos-Agentes.md), Seção 10). Grava no RIP na macroseção `integracao_perfil` — uma seção **derivada**, não coletada diretamente do paciente.
 
 ---

@@ -303,7 +303,7 @@ export function AbaCardio({ pacienteId, dados, paciente, onSalvo }: { pacienteId
         <TextArea value={comum.observacoes} onChange={(e) => setComumCampo("observacoes", e.target.value)} />
       </Field>
 
-      <PainelParecer titulo="Parecer do Caio" valor={parecer} onChange={setParecer} gerar={gerarParecerCardio} mensagemVazia="Registre ao menos um teste para o Caio redigir o parecer." />
+      <PainelParecer agente="caio" valor={parecer} onChange={setParecer} gerar={gerarParecerCardio} mensagemVazia="Registre ao menos um teste para o Caio redigir o parecer." />
       <SalvarBar salvando={salvando} ok={ok} onSalvar={() => salvar(dadosAtuais).then(onSalvo)} auto={estadoAuto} />
     </div>
   );

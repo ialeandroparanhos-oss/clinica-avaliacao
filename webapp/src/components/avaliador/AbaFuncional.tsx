@@ -123,7 +123,7 @@ function PainelRecomendacaoTestes({ paciente }: { paciente: PacienteRow }) {
       </p>
       {grupos.length > 0 && (
         <div>
-          <p className="text-muted mb-1">Com base nisso, Rita sugere priorizar:</p>
+          <p className="text-muted mb-1">Com base nisso, a Dra. Rita sugere priorizar:</p>
           <ul className="list-disc list-inside space-y-0.5 text-ink">
             {grupos.map(([grupo, motivos]) => (
               <li key={grupo}>
@@ -451,7 +451,7 @@ export function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacient
       <Field label="Anotações gerais do avaliador">
         <TextArea value={d.observacoes} onChange={(e) => set("observacoes", e.target.value)} />
       </Field>
-      <PainelParecer titulo="Parecer da Rita" valor={parecer} onChange={setParecer} gerar={gerarParecerFuncional} mensagemVazia="Registre ao menos um teste para a Rita redigir o parecer." />
+      <PainelParecer agente="rita" valor={parecer} onChange={setParecer} gerar={gerarParecerFuncional} mensagemVazia="Registre ao menos um teste para a Rita redigir o parecer." />
       <SalvarBar salvando={salvando} ok={ok} onSalvar={() => salvar(dadosAtuais).then(onSalvo)} auto={estadoAuto} />
     </div>
   );

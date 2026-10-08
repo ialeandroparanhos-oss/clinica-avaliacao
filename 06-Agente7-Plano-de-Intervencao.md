@@ -1,5 +1,7 @@
 # AGENTE 7 — PLANO DE INTERVENÇÃO
 
+> **Responsável: Dr. Theo** — prescrição e planejamento do exercício (assistente de IA; ver o padrão de especialista e integridade em `00-Arquitetura-Geral-dos-Agentes.md`, Seção 11).
+
 > Depende do Perfil Integrado produzido pelo [05-Agente6-Integracao-e-Interpretacao.md](05-Agente6-Integracao-e-Interpretacao.md). Grava no RIP na macroseção `plano_de_intervencao`.
 
 ---

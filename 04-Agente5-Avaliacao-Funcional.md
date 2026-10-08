@@ -1,5 +1,7 @@
 # AGENTE 5 — AVALIAÇÃO FUNCIONAL
 
+> **Responsável: Dra. Rita** — avaliação funcional: força, equilíbrio e marcha (assistente de IA; ver o padrão de especialista e integridade em `00-Arquitetura-Geral-dos-Agentes.md`, Seção 11).
+
 > Depende de todos os documentos anteriores. Só é liberado pelo Agente 1 após `prontidao_e_seguranca_para_exercicio` (Agente 2) estar `completa` (ver [00-Arquitetura-Geral-dos-Agentes.md](00-Arquitetura-Geral-dos-Agentes.md), Seção 4.2). Grava no RIP na macroseção `avaliacao_funcional`.
 
 ---

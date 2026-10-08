@@ -705,7 +705,7 @@ export function AbaFisica({
         <TextArea value={d.observacoes} onChange={(e) => set("observacoes", e.target.value)} />
       </Field>
 
-      <PainelParecer titulo="Parecer do Marco" valor={parecer} onChange={setParecer} gerar={gerarParecerFisica} mensagemVazia="Registre peso, altura ou circunferências para o Marco redigir o parecer." />
+      <PainelParecer agente="marco" valor={parecer} onChange={setParecer} gerar={gerarParecerFisica} mensagemVazia="Registre peso, altura ou circunferências para o Marco redigir o parecer." />
 
       <SalvarBar salvando={salvando} ok={ok} onSalvar={salvarFisica} auto={estadoAuto} />
     </div>

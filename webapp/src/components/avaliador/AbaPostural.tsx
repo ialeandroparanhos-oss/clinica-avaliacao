@@ -397,7 +397,7 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
       </div>
 
       <PainelParecer
-        titulo="Parecer do Agente 4"
+        agente="paula"
         valor={analise.parecer}
         onChange={(p) => setAnalise((prev) => ({ ...prev, parecer: p }))}
         gerar={(estilo) => gerarParecer(analise.vistas, estilo)}
