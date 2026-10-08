@@ -162,6 +162,38 @@ Domínios cobertos: força (inclui conduta na triagem de sarcopenia/dinapenia), 
 
 **Limites.** As doses seguem a literatura de adultos saudáveis e devem ser adaptadas a doenças, dor e risco cardiovascular. A evidência de dor vem de diretriz de dor lombar e de ensaios em tendinopatias (extrapolar com cautela). O motor ordena e sugere, mas não substitui o raciocínio clínico.
 
+## REVISÃO 08/10/2026 — SERVIÇOS DA CLÍNICA NO PLANO
+
+O Dr. Theo agora sugere, a partir dos achados da avaliação e da anamnese, **quais serviços da clínica podem entrar no plano e quando** (30, 60, 90 dias ou anual): fisioterapia, musculação, Pilates, RPG, medicina tradicional chinesa (acupuntura), massoterapia e psicologia. Código: `lib/integracao/servicos.ts`; tela: aba Plano, bloco "Serviços da clínica que podem entrar no plano".
+
+**Como funciona**
+- Cada serviço traz: **por que** (os achados que o motivaram), **quando** (etapas por horizonte, com a sequência entre serviços), se é **indicado** ou **opcional**, e o que a **literatura** diz (nível de evidência, divergências e referências conferidas).
+- O avaliador concorda, discorda (com o motivo), edita a classificação e as etapas, ou remove. Só o aprovado vai para o relatório e para o paciente.
+- O gerar de novo não duplica serviços e não altera os que você já decidiu.
+
+**Regras (gatilhos) e sequência**
+- **Fisioterapia:** dor com intensidade a partir de 4/10 ou sem cronicidade, relato de inflamação, lesão ou cirurgia, problema articular no PAR-Q+, mobilidade com assimetria, risco de queda. Etapas: 30 dias iniciar; 60 reavaliar a continuidade; 90 alta ou manutenção.
+- **Musculação:** força reduzida, triagem de sarcopenia, composição corporal com atenção, sedentarismo ou 60 anos ou mais. Se houver **fase delicada** (dor de 7/10 ou mais, inflamação ou sinal de alerta), o fortalecimento fica dentro da fisioterapia e a **musculação começa aos 90 dias**; sem isso, começa aos 30.
+- **Pilates:** dor lombar ou cervical, mobilidade com assimetria, core alterado, equilíbrio com atenção, ou dor musculoesquelética em reabilitação. Entra aos 60 dias quando há fisioterapia no início.
+- **RPG:** só com dor crônica na coluna (opcional).
+- **Acupuntura/MTC:** só com dor musculoesquelética crônica (opcional, evidência divergente).
+- **Massoterapia:** dor tipo peso/aperto, estresse de 5/10 ou mais ou trabalho com demanda física (opcional, apoio de conforto).
+- **Psicologia:** triagem de bem-estar com atenção ou prioridade, fatores psicossociais da dor, estresse alto, sono muito ruim; ideação de autolesão = indicado e prioridade de encaminhamento.
+- **Sinal de alerta** (bandeira vermelha ou liberação médica necessária): os serviços com exercício só começam **após a liberação médica**.
+
+**Exemplo-guia do profissional (reproduzido pelo sistema):** dor no joelho com inflamação → fisioterapia nas primeiras semanas; no 2º mês acrescentar Pilates e reavaliar a continuidade da fisioterapia; musculação a partir de 3 meses; acupuntura opcional.
+
+**Evidência conferida no PubMed (resumo e limites)**
+- Exercício terapêutico na artrose de joelho: reduz dor (alta qualidade) e melhora função (moderada) — Fransen 2015, Cochrane. Para dor lombar: NICE NG59 (educação e exercício).
+- Pilates na dor lombar: melhor que nenhuma intervenção (qualidade baixa a moderada), **sem superioridade sobre outros exercícios** — Yamato 2015, Cochrane. Para outras queixas o sistema não tem dado conferido; por isso é sempre opcional.
+- RPG na dor lombar crônica: 7 ensaios (334 pacientes), melhor que outros programas de exercício; poucos estudos — Gonzalez-Medina 2021.
+- Acupuntura: revisão de revisões (2017-2022) com efeito positivo em dor crônica, dor lombar e artrose de joelho (autores ligados a sociedade de medicina chinesa; qualidade variável); **a NICE (NG59, 2016) não recomenda acupuntura na dor lombar**. Por isso é opcional e nunca substitui o exercício.
+- Massagem na dor lombar: alívio só a curto prazo, evidência baixa a muito baixa — Furlan 2015, Cochrane.
+- Terapia cognitivo-comportamental na dor crônica: benefício pequeno ou muito pequeno — Williams 2020, Cochrane.
+- Exercício supervisionado x não supervisionado em ≥ 60 anos: seguro nos dois, presença igual; a supervisão somou ganho extra principalmente na força do joelho — Gómez-Redondo 2024.
+
+**Integridade comercial:** é apoio à decisão, não tabela de vendas. O sistema só sugere serviço com achado que o justifique; marca como opcional o que tem evidência fraca ou divergente; não mostra preço; e o paciente só vê os serviços que o profissional aprovou, em linguagem simples e como convite ("se você quiser" nos opcionais), de acordo com a regra de não usar achado para pressionar venda (documento 07, Seção 5).
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 8 — Relatório e Devolutiva** (Etapas 7 e 8 do prompt-mestre): como transformar o Perfil Integrado e o Plano de Intervenção em um relatório compreensível ao paciente e tecnicamente adequado ao profissional, seguindo o roteiro de conversa RECONHECER → MOSTRAR → EXPLICAR → PRIORIZAR → PROJETAR → PLANEJAR, sem linguagem alarmista.

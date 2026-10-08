@@ -18,7 +18,7 @@ import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import { calcularPerfilIntegrado, type Classificacao } from "@/lib/integracao/perfil";
 import { HORIZONTES, HORIZONTE_LEGADO, itemAprovado, type ItemPlano, type Plano } from "@/lib/integracao/plano";
 import { INDICADORES, extrairSerie, type LinhaHistorico } from "@/lib/integracao/historico";
-import { COMBINADOS, FONTE_PORQUE, PORQUE_VALE_A_PENA, ROTULO_SITUACAO, TEXTO_DOMINIO, TEXTO_FASE, frentesPrioritarias, objetivoDoPaciente, primeiroNome } from "@/lib/integracao/devolutiva";
+import { COMBINADOS, FONTE_PORQUE, PORQUE_VALE_A_PENA, servicosParaPaciente, ROTULO_SITUACAO, TEXTO_DOMINIO, TEXTO_FASE, frentesPrioritarias, objetivoDoPaciente, primeiroNome } from "@/lib/integracao/devolutiva";
 import { mensagemPaciente } from "@/lib/avaliacao/whatsapp";
 import { NOME_PROFISSIONAL } from "@/lib/marca";
 import { SerieChart } from "@/components/SerieChart";
@@ -86,6 +86,7 @@ export default function RelatorioPaciente() {
     Array.from(new Set((plano?.itens ?? []).filter((it) => it.horizonte === chave && itemAprovado(it)).map(tituloFrente)));
   const fases = [...HORIZONTES, ...((plano?.itens ?? []).some((i) => i.horizonte === "180" && itemAprovado(i)) ? [HORIZONTE_LEGADO] : [])];
 
+  const servicosPaciente = servicosParaPaciente(plano);
   const indicadoresComDados = INDICADORES.filter((ind) => INDICADORES_PACIENTE.includes(ind.chave))
     .map((ind) => ({ ind, serie: extrairSerie(historico, ind) }))
     .filter((x) => x.serie.length > 0);
@@ -189,6 +190,24 @@ export default function RelatorioPaciente() {
             })}
           </div>
         </Secao>
+
+        {servicosPaciente.length > 0 && (
+          <Secao titulo="Serviços que podem ajudar no seu cuidado" subtitulo="Cada um entra quando fizer sentido para você. A continuidade é conversada junto, sem compromisso.">
+            <ul className="space-y-2.5">
+              {servicosPaciente.map((s) => (
+                <li key={s.servico} className="rounded-xl border border-border bg-surface p-4">
+                  <p className="font-medium text-ink">
+                    {s.nome}
+                    {s.opcional && <span className="ml-2 text-xs font-medium text-muted">se você quiser</span>}
+                  </p>
+                  <p className="text-sm text-muted mt-0.5">
+                    Para {s.para}. Pode começar {s.quando}.
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </Secao>
+        )}
 
         {plano?.encaminhamentos && plano.encaminhamentos.filter(itemAprovado).length > 0 && (
           <Secao titulo="Também recomendamos consultar" subtitulo="Esses profissionais somam ao seu cuidado e deixam o resultado mais seguro.">

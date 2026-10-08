@@ -260,6 +260,14 @@ export function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacient
     mob_quadril_ri_e_graus: dados?.mob_quadril_ri_e_graus ?? "",
     mob_quadril_re_d_graus: dados?.mob_quadril_re_d_graus ?? "",
     mob_quadril_re_e_graus: dados?.mob_quadril_re_e_graus ?? "",
+    mob_thomas_d_graus: dados?.mob_thomas_d_graus ?? "",
+    mob_thomas_e_graus: dados?.mob_thomas_e_graus ?? "",
+    mob_rot_toracica_d_graus: dados?.mob_rot_toracica_d_graus ?? "",
+    mob_rot_toracica_e_graus: dados?.mob_rot_toracica_e_graus ?? "",
+    mob_rot_cervical_d_graus: dados?.mob_rot_cervical_d_graus ?? "",
+    mob_rot_cervical_e_graus: dados?.mob_rot_cervical_e_graus ?? "",
+    mob_yb_ant_d_cm: dados?.mob_yb_ant_d_cm ?? "",
+    mob_yb_ant_e_cm: dados?.mob_yb_ant_e_cm ?? "",
     agachamento_livre_obs: dados?.agachamento_livre_obs ?? "",
     core_prancha_seg: dados?.core_prancha_seg ?? "",
     core_estabilidade_obs: dados?.core_estabilidade_obs ?? "",
@@ -599,6 +607,32 @@ export function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacient
               <NumField label="Rotação externa D" suffix="°" value={d.mob_quadril_re_d_graus} onChange={(v) => set("mob_quadril_re_d_graus", v)} />
               <NumField label="Rotação externa E" suffix="°" value={d.mob_quadril_re_e_graus} onChange={(v) => set("mob_quadril_re_e_graus", v)} />
             </div>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-ink mb-2">Quadril - Thomas modificado (flexores do quadril)</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <NumField label="Flexão residual do quadril D" suffix="°" value={d.mob_thomas_d_graus} onChange={(v) => set("mob_thomas_d_graus", v)} />
+              <NumField label="Flexão residual do quadril E" suffix="°" value={d.mob_thomas_e_graus} onChange={(v) => set("mob_thomas_e_graus", v)} />
+            </div>
+            <p className="text-xs text-muted mt-1.5">Deitado na borda da maca, abraça um joelho ao peito; meça o ângulo da coxa da perna de baixo em relação à horizontal (0° = coxa apoiada na maca).</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-ink mb-2">Rotação da coluna: torácica e cervical</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <NumField label="Rotação torácica D" suffix="°" value={d.mob_rot_toracica_d_graus} onChange={(v) => set("mob_rot_toracica_d_graus", v)} />
+              <NumField label="Rotação torácica E" suffix="°" value={d.mob_rot_toracica_e_graus} onChange={(v) => set("mob_rot_toracica_e_graus", v)} />
+              <NumField label="Rotação cervical D" suffix="°" value={d.mob_rot_cervical_d_graus} onChange={(v) => set("mob_rot_cervical_d_graus", v)} />
+              <NumField label="Rotação cervical E" suffix="°" value={d.mob_rot_cervical_e_graus} onChange={(v) => set("mob_rot_cervical_e_graus", v)} />
+            </div>
+            <p className="text-xs text-muted mt-1.5">Torácica: sentado, bastão nos ombros, pelve fixa. Cervical: sentado, olhando à frente e girando a cabeça ao máximo. Meça com goniômetro, inclinômetro ou aplicativo, sempre do mesmo jeito.</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-ink mb-2">Equilíbrio dinâmico - Y-Balance (alcance anterior)</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <NumField label="Alcance anterior D" suffix="cm" value={d.mob_yb_ant_d_cm} onChange={(v) => set("mob_yb_ant_d_cm", v)} />
+              <NumField label="Alcance anterior E" suffix="cm" value={d.mob_yb_ant_e_cm} onChange={(v) => set("mob_yb_ant_e_cm", v)} />
+            </div>
+            <p className="text-xs text-muted mt-1.5">Apoio em uma perna, empurrando o bloco à frente com a outra sem perder o equilíbrio. A diferença entre os lados aparece abaixo, sem corte de classificação (não adotado pelo sistema).</p>
           </div>
           {paresMob.some((p) => p.d !== null && p.e !== null) && (
             <ul className="text-sm space-y-1">

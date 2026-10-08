@@ -31,6 +31,7 @@ import {
   type Plano,
   type StatusItem,
 } from "@/lib/integracao/plano";
+import { NOME_SERVICO, ROTULO_PRIORIDADE_SERVICO, type EtapaServico, type PrioridadeServico, type ServicoPlano } from "@/lib/integracao/servicos";
 
 const ORDEM_CATEGORIA: Categoria[] = ["seguranca", "encaminhamento", "intervencao", "orientacao", "reavaliacao"];
 
@@ -89,11 +90,163 @@ function BotoesDecisao({ status, onConcordo, onDiscordo, onEditar }: { status: S
   );
 }
 
+// Primeira frase de um texto (para a visão resumida da linha do tempo).
+function primeiraFrase(t: string): string {
+  const i = t.search(/[.:;]\s/);
+  return i > 10 ? t.slice(0, i) : t.replace(/\.$/, "");
+}
+
+// Serviços da clínica sugeridos: linha do tempo (quando entra cada um) + cartões com o porquê, a
+// evidência e a decisão do avaliador. Não é tabela de vendas: cada serviço tem de ter achado que o
+// justifique, o que tem evidência fraca ou divergente aparece como opcional, e a decisão é sempre sua.
+function PainelServicos({
+  servicos,
+  editandoId,
+  setEditandoId,
+  atualizar,
+  remover,
+  horizontes,
+}: {
+  servicos: ServicoPlano[];
+  editandoId: string | null;
+  setEditandoId: (id: string | null) => void;
+  atualizar: (id: string, patch: Partial<ServicoPlano>) => void;
+  remover: (id: string) => void;
+  horizontes: { chave: Horizonte; titulo: string; curto: string }[];
+}) {
+  const ativos = servicos.filter((s) => statusDe(s) !== "discordo");
+  const atualizarEtapa = (s: ServicoPlano, i: number, patch: Partial<EtapaServico>) => atualizar(s.id, { etapas: s.etapas.map((e, k) => (k === i ? { ...e, ...patch } : e)) });
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-5 space-y-4">
+      <div>
+        <h4 className="font-display text-base text-ink">Serviços da clínica que podem entrar no plano</h4>
+        <p className="text-xs text-muted leading-relaxed mt-1">
+          Sugeridos a partir dos achados da avaliação e da anamnese, com o momento em que cada um poderia entrar (30, 60, 90 dias ou anual). Cada serviço mostra o motivo e o que a literatura diz; o que tem evidência fraca ou divergente
+          aparece como <strong>opcional</strong>. O sistema só sugere o que tem um achado que o justifique; <strong>a decisão é sua e do paciente</strong>, e nada é oferecido sem a sua aprovação.
+        </p>
+      </div>
+
+      {servicos.length === 0 ? (
+        <p className="text-sm text-muted">Nenhum serviço sugerido ainda. Use &quot;Sugerir a partir dos resultados&quot; (precisa de dados de dor, testes ou questionários).</p>
+      ) : (
+        <>
+          {ativos.length > 0 && (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {horizontes.map((h) => {
+                const doHorizonte = ativos.flatMap((s) => s.etapas.filter((e) => e.horizonte === h.chave).map((e) => ({ s, e })));
+                return (
+                  <div key={h.chave} className="rounded-xl border border-border bg-bg p-3">
+                    <p className="text-sm font-medium text-ink mb-1.5">{h.curto}</p>
+                    {doHorizonte.length === 0 ? (
+                      <p className="text-xs text-muted">Sem serviço novo.</p>
+                    ) : (
+                      <ul className="space-y-1.5">
+                        {doHorizonte.map(({ s, e }, i) => (
+                          <li key={`${s.id}-${i}`} className="text-xs leading-snug">
+                            <span className={`font-semibold ${s.prioridade === "indicado" ? "text-accent-dark" : "text-muted"}`}>{NOME_SERVICO[s.servico].split(" (")[0]}</span>
+                            {s.prioridade === "opcional" && <span className="text-muted"> (opcional)</span>}
+                            <span className="text-ink">: {primeiraFrase(e.texto)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <ul className="space-y-3">
+            {servicos.map((s) => {
+              const status = statusDe(s);
+              const editando = editandoId === s.id;
+              return (
+                <li key={s.id} className={`rounded-xl border p-4 space-y-2 ${status === "discordo" ? "border-border bg-bg opacity-70" : status === "sugerido" ? "border-warn/40 bg-warn-soft/30" : "border-border"}`}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className={`text-sm font-medium text-ink ${status === "discordo" ? "line-through" : ""}`}>{NOME_SERVICO[s.servico]}</p>
+                    <Selo tom={s.prioridade === "indicado" ? "ok" : "neutro"}>{ROTULO_PRIORIDADE_SERVICO[s.prioridade]}</Selo>
+                    <Selo tom={TOM_STATUS[status]}>{ROTULO_STATUS[status]}</Selo>
+                  </div>
+                  <p className="text-xs text-muted">
+                    <strong>Por que:</strong> {s.motivos.join("; ")}.
+                  </p>
+                  {editando ? (
+                    <div className="space-y-2">
+                      <label className="text-xs text-ink">
+                        Classificação{" "}
+                        <select value={s.prioridade} onChange={(e) => atualizar(s.id, { prioridade: e.target.value as PrioridadeServico, status: status === "concordo" ? "editado" : status })} className="rounded-lg border border-border bg-surface px-2 py-1 text-xs">
+                          <option value="indicado">Indicado</option>
+                          <option value="opcional">Opcional</option>
+                        </select>
+                      </label>
+                      {s.etapas.map((e, i) => (
+                        <div key={i} className="flex flex-wrap gap-2 items-start">
+                          <select value={e.horizonte} onChange={(ev) => atualizarEtapa(s, i, { horizonte: ev.target.value as Horizonte })} className="text-xs rounded-lg border border-border bg-surface px-2 py-1" aria-label="Quando">
+                            {horizontes.map((h) => (
+                              <option key={h.chave} value={h.chave}>
+                                {h.curto}
+                              </option>
+                            ))}
+                          </select>
+                          <TextArea value={e.texto} onChange={(ev) => atualizarEtapa(s, i, { texto: ev.target.value })} className="flex-1 min-w-[16rem]" />
+                          <button type="button" onClick={() => atualizar(s.id, { etapas: s.etapas.filter((_, k) => k !== i) })} className="text-xs text-muted hover:text-danger">
+                            remover etapa
+                          </button>
+                        </div>
+                      ))}
+                      <div className="flex gap-3 text-sm">
+                        <button type="button" onClick={() => atualizar(s.id, { etapas: [...s.etapas, { horizonte: "60", texto: "" }] })} className="font-medium text-accent hover:underline">
+                          + Etapa
+                        </button>
+                        <button type="button" onClick={() => setEditandoId(null)} className="font-medium text-accent hover:underline">
+                          Concluir edição
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <ul className="text-sm space-y-1">
+                      {s.etapas.map((e, i) => (
+                        <li key={i} className={status === "discordo" ? "line-through" : ""}>
+                          <strong className="text-ink">{horizontes.find((h) => h.chave === e.horizonte)?.curto ?? e.horizonte}:</strong> <span className="text-ink">{e.texto}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {s.ressalva && (
+                    <p className="text-xs text-warn">
+                      <strong>Atenção:</strong> {s.ressalva}
+                    </p>
+                  )}
+                  {s.evidencia && <BlocoEvidencia evidencia={s.evidencia} />}
+                  {status === "discordo" && (
+                    <Field label="Por que você discorda? (opcional - fica registrado)">
+                      <TextInput value={s.comentario ?? ""} onChange={(e) => atualizar(s.id, { comentario: e.target.value })} />
+                    </Field>
+                  )}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <BotoesDecisao status={status} onConcordo={() => atualizar(s.id, { status: "concordo" })} onDiscordo={() => atualizar(s.id, { status: "discordo" })} onEditar={() => setEditandoId(s.id)} />
+                    <button type="button" onClick={() => remover(s.id)} className="text-xs text-muted hover:text-danger">
+                      remover
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function AbaPlano({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo: () => void }) {
   const supabase = useMemo(() => createClient(), []);
   const planoSalvo = (paciente.plano ?? {}) as Partial<Plano>;
   const [itens, setItens] = useState<ItemPlano[]>(planoSalvo.itens ?? []);
   const [encaminhamentos, setEncaminhamentos] = useState<Encaminhamento[]>(planoSalvo.encaminhamentos ?? []);
+  const [servicos, setServicos] = useState<ServicoPlano[]>(planoSalvo.servicos ?? []);
+  const [editandoServico, setEditandoServico] = useState<string | null>(null);
+  const atualizarServico = (id: string, patch: Partial<ServicoPlano>) => setServicos((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [rascunho, setRascunho] = useState<{ descricao: string; indicador: string; comentario: string }>({ descricao: "", indicador: "", comentario: "" });
   const [novoItem, setNovoItem] = useState("");
@@ -111,16 +264,18 @@ export function AbaPlano({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo
   function gerarSugestoes() {
     const perfil = calcularPerfilIntegrado(paciente);
     const sugestao = sugerirPlano(perfil, paciente);
-    const mesclado = mesclarSugestoes({ itens, encaminhamentos }, sugestao);
-    const novos = mesclado.itens.length - itens.length + (mesclado.encaminhamentos.length - encaminhamentos.length);
+    const mesclado = mesclarSugestoes({ itens, encaminhamentos, servicos }, sugestao);
+    const novos = mesclado.itens.length - itens.length + (mesclado.encaminhamentos.length - encaminhamentos.length) + (mesclado.servicos.length - servicos.length);
     setItens(mesclado.itens);
     setEncaminhamentos(mesclado.encaminhamentos);
+    setServicos(mesclado.servicos);
     setMensagem(novos > 0 ? `${novos} sugestão(ões) nova(s) adicionada(s) para você revisar. O que você já decidiu ou editou não foi alterado.` : "Nenhuma sugestão nova: o plano já contém as sugestões para estes resultados.");
   }
 
   function concordarComPendentes() {
     setItens((prev) => prev.map((i) => (statusDe(i) === "sugerido" ? { ...i, status: "concordo" } : i)));
     setEncaminhamentos((prev) => prev.map((e) => (statusDe(e) === "sugerido" ? { ...e, status: "concordo" } : e)));
+    setServicos((prev) => prev.map((s) => (statusDe(s) === "sugerido" ? { ...s, status: "concordo" } : s)));
   }
 
   function abrirEdicao(i: ItemPlano) {
@@ -164,6 +319,7 @@ export function AbaPlano({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo
       ...(planoSalvo as Plano),
       itens,
       encaminhamentos,
+      servicos,
       avaliador: userData.user?.email ?? null,
       atualizado_em: new Date().toISOString(),
       versao: 2,
@@ -176,9 +332,9 @@ export function AbaPlano({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo
   }
 
   // Rascunho automático: o plano é gravado sozinho (preservando metas e pareceres).
-  const estadoAuto = useAutoSalvar({ itens, encaminhamentos }, (v) => mesclarNoPlano(supabase, paciente.id, (plano) => ({ ...plano, itens: v.itens, encaminhamentos: v.encaminhamentos, versao: 2 })));
+  const estadoAuto = useAutoSalvar({ itens, encaminhamentos, servicos }, (v) => mesclarNoPlano(supabase, paciente.id, (plano) => ({ ...plano, itens: v.itens, encaminhamentos: v.encaminhamentos, servicos: v.servicos, versao: 2 })));
 
-  const todos = [...itens, ...encaminhamentos];
+  const todos = [...itens, ...encaminhamentos, ...servicos];
   const contagem = {
     revisar: todos.filter((x) => statusDe(x) === "sugerido").length,
     aprovados: todos.filter((x) => itemAprovado(x)).length,
@@ -193,6 +349,14 @@ export function AbaPlano({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo
       if (doHorizonte.length === 0) continue;
       linhas.push("", h.titulo.toUpperCase());
       doHorizonte.forEach((i) => linhas.push(`- [${ROTULO_CATEGORIA[i.categoria ?? "intervencao"]}] ${i.descricao}${i.indicador ? ` | Indicador: ${i.indicador}` : ""}`));
+    }
+    const servAprov = servicos.filter(itemAprovado);
+    if (servAprov.length > 0) {
+      linhas.push("", "SERVIÇOS DA CLÍNICA");
+      servAprov.forEach((s) => {
+        linhas.push(`- ${NOME_SERVICO[s.servico]} (${ROTULO_PRIORIDADE_SERVICO[s.prioridade].toLowerCase()})`);
+        s.etapas.forEach((e) => linhas.push(`    ${HORIZONTES.find((h) => h.chave === e.horizonte)?.curto ?? e.horizonte}: ${e.texto}`));
+      });
     }
     const encAprov = encaminhamentos.filter(itemAprovado);
     if (encAprov.length > 0) {
@@ -230,6 +394,15 @@ export function AbaPlano({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo
         </div>
         {mensagem && <p className="text-sm text-accent-dark">{mensagem}</p>}
       </div>
+
+      <PainelServicos
+        servicos={servicos}
+        editandoId={editandoServico}
+        setEditandoId={setEditandoServico}
+        atualizar={atualizarServico}
+        remover={(id) => setServicos((prev) => prev.filter((s) => s.id !== id))}
+        horizontes={horizontesVisiveis}
+      />
 
       {horizontesVisiveis.map((h) => {
         const doHorizonte = itens

@@ -69,6 +69,12 @@ const R: Referencia[] = [
   { id: "sobestiansky2021", curta: "Sobestiansky 2021", citacao: "Sobestiansky S, et al. Clin Nutr ESPEN 2021;45:442", pmid: "34620352", apoia: "panturrilha < 31 cm como proxy de massa muscular e associação com mortalidade; 56 idosos internados (média de 84 anos): amostra pequena e hospitalar, não é corte validado para a comunidade" },
   { id: "donini2022", curta: "ESPEN/EASO 2022", citacao: "Donini LM, et al. Clin Nutr 2022;41:990", pmid: "35227529", apoia: "obesidade sarcopênica = excesso de adiposidade + baixa função ou massa muscular; avaliar função primeiro e depois a composição corporal" },
   { id: "dhondt2020", curta: "D'hondt 2020", citacao: "D'hondt NE, et al. J Orthop Sports Phys Ther 2020;50:632", pmid: "33131391", apoia: "revisão sistemática de 31 instrumentos: não há evidência suficiente para recomendar nenhum instrumento clínico de avaliação da escápula; validade de critério insuficiente para postura assimétrica, amplitude e teste de deslizamento lateral; instrumentos de discinesia estão sujeitos a má interpretação" },
+  { id: "fransen2015", curta: "Fransen 2015", citacao: "Fransen M, et al. Cochrane Database Syst Rev 2015;CD004376", pmid: "25569281", apoia: "exercício terapêutico em terra reduz dor (evidência de alta qualidade) e melhora função (moderada) na artrose de joelho; programas individuais tendem a render mais" },
+  { id: "yamato2015", curta: "Yamato 2015", citacao: "Yamato TP, et al. Cochrane Database Syst Rev 2015;CD010265", pmid: "26133923", apoia: "Pilates na dor lombar: menos dor e incapacidade que nenhuma intervenção mínima (evidência baixa a moderada); sem superioridade comprovada sobre outros exercícios" },
+  { id: "furlan2015", curta: "Furlan 2015", citacao: "Furlan AD, et al. Cochrane Database Syst Rev 2015;CD001929", pmid: "26329399", apoia: "massagem na dor lombar: alívio de dor e função só a curto prazo, evidência baixa a muito baixa; eventos adversos leves" },
+  { id: "williams2020", curta: "Williams 2020", citacao: "Williams ACC, et al. Cochrane Database Syst Rev 2020;CD007407", pmid: "32794606", apoia: "terapia cognitivo-comportamental na dor crônica: benefício pequeno ou muito pequeno sobre dor, incapacidade e sofrimento (75 estudos)" },
+  { id: "gonzalez2021", curta: "Gonzalez-Medina 2021", citacao: "Gonzalez-Medina G, et al. J Clin Med 2021;10:5327", pmid: "34830609", apoia: "RPG na dor lombar crônica: 7 ensaios (334 pacientes) com menos dor e melhor função que outros programas de exercício; poucos estudos e amostras pequenas" },
+  { id: "hempen2025", curta: "Hempen 2025", citacao: "Hempen M, Hummelsberger J. Complement Ther Med 2025;89:103149", pmid: "40021024", apoia: "revisão de revisões (2017-2022): acupuntura com efeito positivo em dor crônica, dor lombar e artrose de joelho; autores ligados a sociedade de medicina chinesa e qualidade variável dos ensaios; diretriz NICE NG59 não recomenda acupuntura na dor lombar" },
   { id: "gomez2024", curta: "Gómez-Redondo 2024", citacao: "Gómez-Redondo P, et al. Sports Med 2024;54:1877", pmid: "38647999", apoia: "34 ensaios com pessoas de 60 anos ou mais: exercício supervisionado e não supervisionado foram seguros, com presença semelhante (81%); a supervisão trouxe ganho extra, só robusto na força de extensão do joelho, e os autores pedem mais pesquisa" },
   { id: "richter2020", curta: "Richter 2020", citacao: "Richter R, et al. PLoS One 2020;15:e0236751", pmid: "32790675", apoia: "comunicação de risco ao paciente é complexa; o equilíbrio entre informar e não gerar ansiedade (estudo qualitativo com 15 clínicos)" },
 ];
@@ -82,7 +88,7 @@ const REFS_POR_AGENTE: Record<Exclude<AgenteId, "iris">, string[]> = {
   paula: ["rani2023", "dhondt2020"],
   rita: ["ewgsop2", "rikli2013", "fernandes2021", "barry2014", "podsiadlo1991", "macedo2008", "britto2013"],
   caio: ["friend2015", "mandsager2018", "ross2016", "tanaka2001"],
-  theo: ["oms2020", "acsm2015", "gomez2024"],
+  theo: ["oms2020", "acsm2015", "gomez2024", "fransen2015", "yamato2015", "furlan2015", "williams2020", "gonzalez2021", "hempen2025"],
   clara: ["richter2020", "oms2020", "gomez2024"],
 };
 

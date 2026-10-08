@@ -239,6 +239,11 @@ Pergunta feita a cada agente: o que você faz hoje no sistema, isso corresponde 
 
 **Referências novas conferidas no PubMed (08/10/2026):** Macedo & Magee 2008 (PMID 18984240); Sobestiansky 2021 (34620352); Donini 2022 ESPEN/EASO (35227529); D'hondt 2020 (33131391).
 
+**Segunda parte de 08/10/2026 (pedido do profissional):**
+- **Dr. Theo, serviços da clínica no plano** (fisioterapia, musculação, Pilates, RPG, medicina tradicional chinesa, massoterapia e psicologia), com o momento de entrada e opcional/indicado; ver `06-Agente7-Plano-de-Intervencao.md`. Referências conferidas: Fransen 2015 (25569281), Yamato 2015 (26133923), Furlan 2015 (26329399), Williams 2020 (32794606), Gonzalez-Medina 2021 (34830609), Hempen & Hummelsberger 2025 (40021024), Gómez-Redondo 2024 (38647999).
+- **Mais testes de mobilidade:** teste de Thomas modificado, rotação torácica, rotação cervical (assimetria D/E em graus, corte de 8°) e Y-Balance (alcance anterior, só a diferença em cm, sem corte).
+- **Pollock 3 e 7 dobras:** conferido que os protocolos diferem por sexo. Jackson & Pollock 1978 (homens, PMID 718832) e Jackson, Pollock & Ward 1980 (mulheres, PMID 7402053) são trabalhos separados. 3 dobras: homens peitoral, abdominal e coxa; mulheres tríceps, suprailíaca e coxa; equações diferentes. 7 dobras: os mesmos 7 sítios nos dois sexos, com equações diferentes. O app já separa por sexo (sítios do 3 dobras e coeficientes); os coeficientes seguem as versões de livro-texto (ACSM), que os resumos do PubMed não reproduzem: **[confirmar no livro]**.
+
 ## Registro de referências verificadas no PubMed (08/10/2026)
 
 Todas abaixo tiveram a existência e o título conferidos no PubMed (consulta por revista, ano, volume e primeira página). Conferir a existência **não** é o mesmo que ler o texto completo: o que cada uma sustenta no sistema está descrito em `src/lib/agentes.ts`.

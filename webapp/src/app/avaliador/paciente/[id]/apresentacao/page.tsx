@@ -18,7 +18,7 @@ import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import { calcularPerfilIntegrado, type Classificacao } from "@/lib/integracao/perfil";
 import { itemAprovado, type Plano } from "@/lib/integracao/plano";
 import { INDICADORES, extrairSerie, type LinhaHistorico } from "@/lib/integracao/historico";
-import { COMBINADOS, FONTE_PORQUE, PORQUE_VALE_A_PENA, ROTULO_SITUACAO, TEXTO_DOMINIO, fasesDoPlano, frentesPrioritarias, objetivoDoPaciente, primeiroNome } from "@/lib/integracao/devolutiva";
+import { COMBINADOS, FONTE_PORQUE, PORQUE_VALE_A_PENA, servicosParaPaciente, ROTULO_SITUACAO, TEXTO_DOMINIO, fasesDoPlano, frentesPrioritarias, objetivoDoPaciente, primeiroNome } from "@/lib/integracao/devolutiva";
 import { NOME_PROFISSIONAL } from "@/lib/marca";
 import { SerieChart } from "@/components/SerieChart";
 
@@ -248,6 +248,33 @@ export default function Apresentacao() {
         </Quadro>
       ),
     });
+
+    const servicos = servicosParaPaciente(plano);
+    if (servicos.length > 0) {
+      lista.push({
+        id: "servicos",
+        nav: "Serviços que podem ajudar",
+        notas: [
+          "Só aparecem os serviços que você aprovou na aba Plano. Apresente como apoio ao objetivo do paciente, sem pressão e sem preço nesta tela.",
+          "O que está como 'se você quiser' é opcional de verdade: respeite a escolha. A continuidade de cada serviço é reavaliada junto com o paciente (30, 60 e 90 dias).",
+          ...servicos.map((s) => `${s.nome}: para ${s.para}; ${s.quando}${s.opcional ? " (opcional)" : ""}.`),
+        ],
+        conteudo: (
+          <Quadro titulo="Serviços que podem ajudar no seu cuidado" subtitulo="Cada um entra quando fizer sentido para você. A continuidade é conversada junto, sem compromisso.">
+            <ul className={`grid gap-5 ${servicos.length > 4 ? "grid-cols-3" : "grid-cols-2"}`}>
+              {servicos.map((s) => (
+                <li key={s.servico} className="rounded-3xl border-2 border-border bg-surface p-6">
+                  <p className="font-display text-[34px] text-ink leading-tight">{s.nome}</p>
+                  {s.opcional && <p className="text-[18px] text-muted mt-1">se você quiser</p>}
+                  <p className="text-[22px] text-ink mt-3 leading-snug">Para {s.para}.</p>
+                  <p className="text-[20px] text-accent-dark mt-2">Pode começar {s.quando}.</p>
+                </li>
+              ))}
+            </ul>
+          </Quadro>
+        ),
+      });
+    }
 
     lista.push({
       id: "medir",

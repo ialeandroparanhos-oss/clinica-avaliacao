@@ -7,7 +7,7 @@ import type { Alerta, PacienteRow } from "@/lib/anamnese/types";
 import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import { rotuloNivel } from "@/lib/anamnese/alerts";
 import { NOME_PROFISSIONAL } from "@/lib/marca";
-import { frentesPrioritarias, objetivoDoPaciente, primeiroNome, TEXTO_DOMINIO, TEXTO_FASE } from "@/lib/integracao/devolutiva";
+import { frentesPrioritarias, objetivoDoPaciente, primeiroNome, servicosParaPaciente, TEXTO_DOMINIO, TEXTO_FASE } from "@/lib/integracao/devolutiva";
 import { calcularPerfilIntegrado } from "@/lib/integracao/perfil";
 import { HORIZONTES, itemAprovado, type Plano } from "@/lib/integracao/plano";
 
@@ -72,6 +72,10 @@ export function mensagemPaciente(paciente: PacienteRow): string {
   }
   const fase30 = fases.find((f) => f.horizonte === "30");
   linhas.push("", `📅 ${TEXTO_FASE["30"].titulo}: ${fase30 ? `foco em ${listar(fase30.nomes.map((n) => n.toLowerCase()))}.` : TEXTO_FASE["30"].texto}`);
+  const servicos = servicosParaPaciente(paciente.plano as Plano | undefined);
+  if (servicos.length > 0) {
+    linhas.push("", `🤝 Serviços que podem ajudar: ${listar(servicos.map((s) => `${s.nome.toLowerCase()}${s.opcional ? " (se você quiser)" : ""}`))}.`);
+  }
   const t90 = TEXTO_FASE["90"].texto;
   linhas.push(`📅 ${TEXTO_FASE["90"].titulo}: ${t90.charAt(0).toLowerCase()}${t90.slice(1)}`);
   linhas.push("", "Qualquer movimento já faz bem, e com acompanhamento o caminho é mais seguro e mais fácil de manter.", "Vamos combinar a data para começar? 😊");

@@ -21,6 +21,7 @@ import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { CAMPOS_CIRCUNFERENCIA, calcularMassaMagraRelativa, expansibilidadeToracica } from "@/lib/avaliacao/medidasRegionais";
 import { paraNumero } from "@/lib/numeros";
 import { mensagemTecnica } from "@/lib/avaliacao/whatsapp";
+import { NOME_SERVICO, ROTULO_PRIORIDADE_SERVICO } from "@/lib/integracao/servicos";
 import { avaliarMobilidadeObjetiva, paresDeMobilidade } from "@/lib/avaliacao/mobilidade";
 import { percentualDoPrevisto, tc6Previsto } from "@/lib/avaliacao/tc6";
 import { nomeComTitulo, textoRevisao, type AgenteId } from "@/lib/agentes";
@@ -416,7 +417,7 @@ export default function RelatorioTecnico() {
               label="Mobilidade articular (D/E)"
               value={
                 paresDeMobilidade(paciente.funcional)
-                  .filter((p) => p.id.startsWith("tornozelo") || p.id.startsWith("quadril"))
+                  .filter((p) => !p.id.startsWith("gonio_"))
                   .filter((p) => p.d !== null || p.e !== null)
                   .map((p) => `${p.rotulo}: D ${p.d ?? "–"}${p.unidade} / E ${p.e ?? "–"}${p.unidade}`)
                   .join("; ") || null
@@ -522,6 +523,19 @@ export default function RelatorioTecnico() {
                 </div>
               );
             })
+          )}
+          {plano?.servicos && plano.servicos.filter(itemAprovado).length > 0 && (
+            <div className="mt-3">
+              <p className="text-sm font-semibold text-ink">Serviços da clínica no plano</p>
+              <ul className="list-disc list-inside text-sm text-muted space-y-1">
+                {plano.servicos.filter(itemAprovado).map((s) => (
+                  <li key={s.id}>
+                    <strong className="text-ink">{NOME_SERVICO[s.servico]}</strong> ({ROTULO_PRIORIDADE_SERVICO[s.prioridade].toLowerCase()}): {s.motivos.join("; ")}.{" "}
+                    {s.etapas.map((e) => `${e.horizonte === "365" ? "Anual" : `${e.horizonte} dias`}: ${e.texto}`).join(" ")}
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
           {plano?.encaminhamentos && plano.encaminhamentos.filter(itemAprovado).length > 0 && (
             <div className="mt-3">

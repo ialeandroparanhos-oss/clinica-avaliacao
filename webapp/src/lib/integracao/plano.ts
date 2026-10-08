@@ -12,6 +12,7 @@
 import type { PacienteRow } from "@/lib/anamnese/types";
 import type { DomainKey, PerfilIntegrado } from "./perfil";
 import { sugerirItensComCiencia } from "./planoCiencia";
+import { sugerirServicos, type ServicoPlano } from "./servicos";
 
 // "180" existe só para planos salvos antes desta versão.
 export type Horizonte = "30" | "60" | "90" | "180" | "365";
@@ -88,6 +89,8 @@ export type Encaminhamento = {
 export type Plano = {
   itens: ItemPlano[];
   encaminhamentos: Encaminhamento[];
+  // Serviços da clínica sugeridos (fisioterapia, musculação, Pilates...), com o momento de entrada.
+  servicos?: ServicoPlano[];
   metas?: Record<string, string>;
   avaliador?: string | null;
   atualizado_em?: string;
@@ -110,23 +113,30 @@ export function gerarId(): string {
   return Math.random().toString(36).slice(2, 10);
 }
 
-export type SugestaoPlano = Pick<Plano, "itens" | "encaminhamentos">;
+export type SugestaoPlano = Pick<Plano, "itens" | "encaminhamentos"> & { servicos?: ServicoPlano[] };
 
 // Gera as sugestões a partir do Perfil Integrado e dos dados do paciente.
 // Cada item novo nasce "a revisar".
 export function sugerirPlano(perfil: PerfilIntegrado, paciente: PacienteRow): SugestaoPlano {
-  return sugerirItensComCiencia(perfil, paciente);
+  return { ...sugerirItensComCiencia(perfil, paciente), servicos: sugerirServicos(perfil, paciente) };
 }
 
 // Junta sugestões novas ao plano atual sem duplicar o que já existe (pela
 // regra) e sem tocar no que o avaliador já decidiu ou editou.
-export function mesclarSugestoes(atual: Pick<Plano, "itens" | "encaminhamentos">, sugestao: SugestaoPlano): Pick<Plano, "itens" | "encaminhamentos"> {
+export function mesclarSugestoes(
+  atual: Pick<Plano, "itens" | "encaminhamentos"> & { servicos?: ServicoPlano[] },
+  sugestao: SugestaoPlano
+): Pick<Plano, "itens" | "encaminhamentos"> & { servicos: ServicoPlano[] } {
   const regrasItens = new Set(atual.itens.map((i) => i.regra).filter(Boolean));
   const descricoes = new Set(atual.itens.map((i) => i.descricao));
   const regrasEnc = new Set(atual.encaminhamentos.map((e) => e.regra).filter(Boolean));
   const textosEnc = new Set(atual.encaminhamentos.map((e) => e.especialidade + e.motivo));
+  // Serviço já presente (mesmo que o avaliador tenha decidido ou editado) não é duplicado nem alterado.
+  const servicosAtuais = atual.servicos ?? [];
+  const regrasServ = new Set(servicosAtuais.map((s) => s.regra));
   return {
     itens: [...atual.itens, ...sugestao.itens.filter((i) => !(i.regra && regrasItens.has(i.regra)) && !descricoes.has(i.descricao))],
     encaminhamentos: [...atual.encaminhamentos, ...sugestao.encaminhamentos.filter((e) => !(e.regra && regrasEnc.has(e.regra)) && !textosEnc.has(e.especialidade + e.motivo))],
+    servicos: [...servicosAtuais, ...(sugestao.servicos ?? []).filter((s) => !regrasServ.has(s.regra))],
   };
 }

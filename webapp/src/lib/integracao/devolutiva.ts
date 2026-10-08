@@ -11,6 +11,7 @@ import type { Anamnese } from "@/lib/anamnese/types";
 import { conectarObjetivo } from "./objetivo";
 import type { Classificacao, DomainKey, DomainResult, PerfilIntegrado } from "./perfil";
 import { itemAprovado, type Horizonte, type ItemPlano, type Plano } from "./plano";
+import { NOME_SERVICO, TEXTO_SERVICO_PACIENTE, type ServicoId } from "./servicos";
 
 export type TextoDominio = {
   nome: string; // como o paciente lê o nome da área
@@ -186,4 +187,34 @@ export function frentesPrioritarias(perfil: PerfilIntegrado, motivo: Anamnese["m
       objetivo,
     };
   });
+}
+
+// Serviços da clínica aprovados no plano, em linguagem do paciente: o que é, para que serve e a partir de
+// quando. Sem preço, sem evidência técnica e sem pressão: o paciente decide se quer. O que é "opcional"
+// aparece como "se você quiser".
+export type ServicoParaPaciente = { servico: ServicoId; nome: string; para: string; quando: string; opcional: boolean };
+
+const QUANDO_PACIENTE: Record<Horizonte, string> = {
+  "30": "a partir das primeiras semanas",
+  "60": "a partir do segundo mês",
+  "90": "a partir do terceiro mês",
+  "180": "ao longo dos próximos meses",
+  "365": "ao longo do ano",
+};
+
+export function servicosParaPaciente(plano: Pick<Plano, "servicos"> | undefined): ServicoParaPaciente[] {
+  const ordem: Horizonte[] = ["30", "60", "90", "180", "365"];
+  return (plano?.servicos ?? [])
+    .filter(itemAprovado)
+    .map((s) => {
+      const primeira = [...s.etapas].filter((e) => e.texto.trim() !== "").sort((a, b) => ordem.indexOf(a.horizonte) - ordem.indexOf(b.horizonte))[0];
+      return {
+        servico: s.servico,
+        nome: NOME_SERVICO[s.servico].split(" (")[0],
+        para: TEXTO_SERVICO_PACIENTE[s.servico],
+        quando: primeira ? QUANDO_PACIENTE[primeira.horizonte] : "quando combinarmos",
+        opcional: s.prioridade === "opcional",
+      };
+    })
+    .sort((a, b) => Number(a.opcional) - Number(b.opcional));
 }

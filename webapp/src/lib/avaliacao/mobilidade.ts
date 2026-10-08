@@ -4,7 +4,8 @@
 // postural isolado não é risco). Agora usa só o que foi medido ou observado de forma
 // estruturada:
 //  - assimetria entre os lados (D x E) em graus: tornozelo (dorsiflexão), quadril (rotação
-//    interna e externa) e qualquer par de medidas de goniometria;
+//    interna e externa e teste de Thomas modificado), rotação torácica, rotação cervical e
+//    qualquer par de medidas de goniometria;
 //  - restrição observada no agachamento ("profundidade limitada", "calcanhares saem do chão").
 //
 // Limites honestos:
@@ -14,8 +15,9 @@
 //    entre lados em mulheres, não um limite validado para todos;
 //  - NÃO há corte absoluto (ex.: "dorsiflexão < X°"), porque as tabelas clássicas divergem
 //    entre si. Compare com o manual de goniometria que você adota;
-//  - os testes em cm (sentar e alcançar, Back Scratch, avanço em parede) ficam registrados,
-//    mas sem corte adotado: sozinhos não classificam.
+//  - os testes em cm (sentar e alcançar, Back Scratch, avanço em parede, Y-Balance) ficam
+//    registrados, mas sem corte adotado: sozinhos não classificam (a diferença entre os lados
+//    aparece na tela, sem rótulo de normal ou alterado).
 
 import type { Classificacao } from "@/lib/integracao/perfil";
 import { paraNumero } from "@/lib/numeros";
@@ -38,6 +40,10 @@ export function paresDeMobilidade(f: Record<string, any> | undefined): ParDeMedi
     { id: "tornozelo_df", rotulo: "Tornozelo - dorsiflexão (ângulo)", unidade: "°", d: n("mob_tornozelo_df_d_graus"), e: n("mob_tornozelo_df_e_graus") },
     { id: "quadril_ri", rotulo: "Quadril - rotação interna", unidade: "°", d: n("mob_quadril_ri_d_graus"), e: n("mob_quadril_ri_e_graus") },
     { id: "quadril_re", rotulo: "Quadril - rotação externa", unidade: "°", d: n("mob_quadril_re_d_graus"), e: n("mob_quadril_re_e_graus") },
+    { id: "quadril_thomas", rotulo: "Quadril - Thomas modificado (flexores do quadril)", unidade: "°", d: n("mob_thomas_d_graus"), e: n("mob_thomas_e_graus") },
+    { id: "rot_toracica", rotulo: "Coluna torácica - rotação", unidade: "°", d: n("mob_rot_toracica_d_graus"), e: n("mob_rot_toracica_e_graus") },
+    { id: "rot_cervical", rotulo: "Coluna cervical - rotação", unidade: "°", d: n("mob_rot_cervical_d_graus"), e: n("mob_rot_cervical_e_graus") },
+    { id: "ybalance_ant", rotulo: "Y-Balance - alcance anterior", unidade: "cm", d: n("mob_yb_ant_d_cm"), e: n("mob_yb_ant_e_cm") },
   ];
   // Linhas livres de goniometria: pares D/E do mesmo movimento.
   const linhas: any[] = Array.isArray(f?.goniometria) ? f!.goniometria : [];
