@@ -237,9 +237,9 @@ export function CampoComSugestao({
         <p className="text-xs text-danger mt-1">
           Sugestão pela idade/sexo: {sugestao.toFixed(1)}
           {sufixo}
-          {!value && (
+          {value !== sugestao.toFixed(1) && (
             <button type="button" onClick={() => onChange(sugestao.toFixed(1))} className="ml-2 text-accent hover:underline">
-              usar
+              {value ? "trocar pela sugestão" : "usar"}
             </button>
           )}
         </p>

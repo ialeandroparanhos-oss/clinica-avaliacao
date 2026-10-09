@@ -261,8 +261,10 @@ export function faixaGorduraSugerida(idade: number | null, sexo: SexoComp): [num
 // O IMC não separa gordura de massa magra e está em debate como critério isolado (Comissão da
 // Lancet Diabetes & Endocrinology, 2025: usar o IMC só como triagem e confirmar a adiposidade por
 // medida direta ou por outro critério antropométrico). Por isso a leitura combina, em ordem de peso:
-//   1. %G contra a faixa saudável por idade e sexo (Gallagher 2000: faixas provisórias obtidas ligando
-//      os limites de IMC à gordura medida por 4 compartimentos/DXA);
+//   1. %G pela tabela Pollock & Wilmore (1993) por idade e sexo, a leitura principal por decisão do
+//      profissional (09/10/2026), e a massa magra em % do peso pela tabela dele; a faixa saudável de
+//      Gallagher 2000 (provisória, obtida ligando os limites de IMC à gordura medida por 4
+//      compartimentos/DXA) fica como leitura secundária e como reserva fora de 18 a 65 anos;
 //   2. massa magra: índice de massa livre de gordura (kg/m²) abaixo de 17 (homens) ou 15 (mulheres),
 //      corte usado como critério de massa reduzida nos critérios GLIM (Cederholm 2019; valores
 //      conforme Sobestiansky 2021). Esses cortes foram pensados para DXA/bioimpedância: a massa magra
@@ -278,8 +280,15 @@ export type AnaliseComposicao = {
   imc: number | null;
   pg: number | null;
   fontePg: string | null;
-  faixa: [number, number] | null;
+  faixa: [number, number] | null; // faixa saudável de Gallagher (leitura secundária)
+  // Status PRINCIPAL do %G: "acima" quando a tabela Pollock & Wilmore dá "Abaixo da média" ou pior, ou a
+  // tabela de massa magra dá "baixa"; fora de 18 a 65 anos, cai para Gallagher.
   pgStatus: "abaixo" | "na_faixa" | "acima" | null;
+  pgStatusGallagher: "abaixo" | "na_faixa" | "acima" | null;
+  nivelPW: ClassificacaoPW | null;
+  massaMagraTabela: ClassificacaoMassaMagra | null;
+  pgIdeal: number | null;
+  nivelAlvo: NivelPollockWilmore;
   massaGordaKg: number | null;
   massaMagraKg: number | null;
   ffmi: number | null;
@@ -319,8 +328,21 @@ export function analisarComposicao(fisica: Record<string, any> | undefined, idad
     }
   }
 
+  // Faixa saudável de Gallagher: leitura SECUNDÁRIA (provisória, derivada do IMC).
   const faixa = faixaGorduraSugerida(idade, sexo);
-  const pgStatus = pg !== null && faixa ? (pg > faixa[1] ? "acima" : pg < faixa[0] ? "abaixo" : "na_faixa") : null;
+  const pgStatusGallagher: AnaliseComposicao["pgStatusGallagher"] = pg !== null && faixa ? (pg > faixa[1] ? "acima" : pg < faixa[0] ? "abaixo" : "na_faixa") : null;
+  // Leituras PRINCIPAIS (decisão do profissional em 09/10/2026): tabela Pollock & Wilmore (%G por idade e
+  // sexo, 18 a 65 anos) e tabela de massa magra em % do peso.
+  const nivelPW = classificarGorduraPollockWilmore(pg, idade, sexo);
+  const massaMagraTabela = classificarMassaMagraPct(pg, sexo);
+  const pwAcima = nivelPW !== null && ["Abaixo da média", "Ruim", "Muito ruim"].includes(nivelPW.nivel);
+  const mmBaixa = massaMagraTabela?.nivel === "baixa";
+  let pgStatus: AnaliseComposicao["pgStatus"] = null;
+  if (pg !== null) {
+    if (nivelPW) pgStatus = pwAcima || mmBaixa ? "acima" : nivelPW.abaixoDoExcelente ? "abaixo" : "na_faixa";
+    else if (pgStatusGallagher === "acima" || mmBaixa) pgStatus = "acima";
+    else pgStatus = pgStatusGallagher ?? (massaMagraTabela ? "na_faixa" : null);
+  }
   const massaGordaKg = peso !== null && pg !== null ? (peso * pg) / 100 : null;
   const massaMagraRegistrada = paraNumero(f.bio_massa_magra_kg);
   const massaMagraKg = peso !== null && massaGordaKg !== null ? peso - massaGordaKg : massaMagraRegistrada;
@@ -328,7 +350,8 @@ export function analisarComposicao(fisica: Record<string, any> | undefined, idad
   const ffmiBaixo = ffmi !== null && sexo !== "desconhecido" ? ffmi < CORTE_FFMI[sexo] : null;
 
   const idealInformado = paraNumero(f.massa_magra_ideal_kg);
-  const pgIdeal = paraNumero(f.percentual_gordura_ideal) ?? percentualGorduraIdealSugerido(idade, sexo);
+  const nivelAlvo = nivelAlvoValido(f.percentual_gordura_ideal_nivel);
+  const pgIdeal = paraNumero(f.percentual_gordura_ideal) ?? percentualGorduraIdealSugerido(idade, sexo, nivelAlvo);
   const massaMagraIdealKg = idealInformado ?? (peso !== null && pgIdeal !== null ? peso * (1 - pgIdeal / 100) : null);
   const massaMagraPctDaMeta = massaMagraKg !== null && massaMagraIdealKg !== null && massaMagraIdealKg > 0 ? (massaMagraKg / massaMagraIdealKg) * 100 : null;
 
@@ -347,15 +370,20 @@ export function analisarComposicao(fisica: Record<string, any> | undefined, idad
   else if (imc !== null && imc >= 25 && (pgStatus === "na_faixa" || pgStatus === "abaixo")) padrao = "imc_alto_sem_excesso_de_gordura";
   else if (pgStatus === "na_faixa" || pgStatus === "abaixo" || (imc !== null && imc >= 18.5 && imc < 25 && pg === null)) padrao = pg === null ? "indeterminado" : "adequado";
 
-  return { imc, pg, fontePg, faixa, pgStatus, massaGordaKg, massaMagraKg, ffmi, ffmiBaixo, massaMagraIdealKg, massaMagraPctDaMeta, cintura, rcq, rcest, adiposidade, classeCintura, padrao };
+  return {
+    imc, pg, fontePg, faixa, pgStatus, pgStatusGallagher, nivelPW, massaMagraTabela, pgIdeal, nivelAlvo,
+    massaGordaKg, massaMagraKg, ffmi, ffmiBaixo, massaMagraIdealKg, massaMagraPctDaMeta,
+    cintura, rcq, rcest, adiposidade, classeCintura, padrao,
+  };
 }
 
 // ---------------------------------------------------------------------------
-// Segunda leitura do %G: classificação de livro-texto (Pollock & Wilmore, 1993), enviada pelo
-// profissional em 09/10/2026. FONTE NÃO CONFERIDA NO PUBMED (livro): [confirmar no livro]. É uma
-// classificação de condicionamento físico, mais rígida que a faixa saudável de Gallagher (ex.: mulher de
-// 26 a 35 anos fica "Ruim" a partir de 31%, enquanto a faixa de Gallagher vai até 32%): por isso é
-// mostrada AO LADO da de Gallagher, nunca no lugar dela, e não decide sozinha o domínio no perfil.
+// Classificação do %G por idade e sexo: Pollock & Wilmore (1993), enviada pelo profissional em
+// 09/10/2026. FONTE NÃO CONFERIDA NO PUBMED (livro): [confirmar no livro]. DECISÃO DO PROFISSIONAL
+// (09/10/2026): esta tabela passa a ser a LEITURA PRINCIPAL do %G (parecer do Dr. Marco, domínio de
+// composição corporal, %G ideal); a faixa saudável de Gallagher fica como leitura secundária e como
+// reserva fora de 18 a 65 anos. É uma classificação de condicionamento físico, mais rígida que
+// Gallagher (ex.: mulher de 26 a 35 anos fica "Ruim" a partir de 31%, e a faixa de Gallagher vai até 32%).
 // Vale de 18 a 65 anos. Transcrição da planilha do profissional; pontos de atenção:
 //  - a planilha tem lacunas entre níveis (ex.: homens de 36 a 45 anos, 26%): decisão do profissional,
 //    valor em lacuna vai para o nível pior (mais gordura);
@@ -425,6 +453,63 @@ export function classificarGorduraPollockWilmore(pg: number | null, idade: numbe
 }
 
 // ---------------------------------------------------------------------------
+// Faixa de um nível da tabela, para a idade e o sexo (usada como %G ideal de referência).
+// ---------------------------------------------------------------------------
+export function faixaDoNivelPW(nivel: NivelPollockWilmore, idade: number | null, sexo: SexoComp): { faixa: [number, number]; faixaEtaria: string } | null {
+  if (idade === null || sexo === "desconhecido") return null;
+  const idx = FAIXAS_ETARIAS_PW.findIndex((f) => idade >= f.min && idade < f.max + 1);
+  if (idx < 0) return null;
+  const i = NIVEIS_POLLOCK_WILMORE.indexOf(nivel);
+  if (i < 0) return null;
+  return { faixa: TABELA_PW[sexo][idx][i], faixaEtaria: FAIXAS_ETARIAS_PW[idx].rotulo };
+}
+
+// Nível da tabela usado como %G ideal quando o avaliador não escolhe outro. "Excelente" fecha com a faixa
+// "Ideal" da tabela de massa magra (homens 87 a 92%, mulheres 83 a 88% do peso: %G de 8 a 13 e de 12 a 17).
+// O avaliador pode trocar o nível na aba Física, e o %G ideal continua editável.
+export const NIVEL_ALVO_PADRAO: NivelPollockWilmore = "Excelente";
+export const NIVEIS_ALVO_PERMITIDOS: NivelPollockWilmore[] = ["Excelente", "Bom", "Acima da média", "Média"];
+
+export function nivelAlvoValido(v: unknown): NivelPollockWilmore {
+  return (NIVEIS_ALVO_PERMITIDOS as string[]).includes(String(v)) ? (v as NivelPollockWilmore) : NIVEL_ALVO_PADRAO;
+}
+
+// ---------------------------------------------------------------------------
+// Massa magra em % do peso (= 100 - %G): tabela enviada pelo profissional em 09/10/2026, por sexo, sem
+// faixa etária. FONTE NÃO CONFERIDA NO PUBMED: [confirmar]. Homens: baixo < 81%, saudável 81 a 86%, ideal
+// 87 a 92%. Mulheres: baixo < 77% (a planilha traz "77%"; lido como "abaixo de 77%"), saudável 77 a 82%,
+// ideal 83 a 88%. Como a tabela usa inteiros, "81-86%" cobre até 86,99%.
+// ATENÇÃO: massa magra % = 100 - %G, então esta tabela e a do %G classificam a MESMA medida com cortes
+// diferentes (esta é mais rígida para as mulheres). A informação independente de massa magra vem do índice
+// de massa livre de gordura em kg/m² (GLIM), mantido ao lado.
+// ---------------------------------------------------------------------------
+export const TABELA_MASSA_MAGRA_PCT: Record<"masculino" | "feminino", { saudavel: [number, number]; ideal: [number, number] }> = {
+  masculino: { saudavel: [81, 86], ideal: [87, 92] },
+  feminino: { saudavel: [77, 82], ideal: [83, 88] },
+};
+
+export type ClassificacaoMassaMagra = {
+  pct: number;
+  nivel: "baixa" | "saudavel" | "ideal" | "acima_da_faixa";
+  rotulo: string;
+  faixaSaudavel: [number, number];
+  faixaIdeal: [number, number];
+};
+
+export function classificarMassaMagraPct(pg: number | null, sexo: SexoComp): ClassificacaoMassaMagra | null {
+  if (pg === null || !Number.isFinite(pg) || sexo === "desconhecido") return null;
+  const pct = 100 - pg;
+  const t = TABELA_MASSA_MAGRA_PCT[sexo];
+  let nivel: ClassificacaoMassaMagra["nivel"];
+  if (pct < t.saudavel[0]) nivel = "baixa";
+  else if (pct < t.ideal[0]) nivel = "saudavel";
+  else if (pct < t.ideal[1] + 1) nivel = "ideal";
+  else nivel = "acima_da_faixa";
+  const rotulo = { baixa: "BAIXA", saudavel: "saudável", ideal: "ideal", acima_da_faixa: "acima da faixa ideal (gordura muito baixa: conferir)" }[nivel];
+  return { pct, nivel, rotulo, faixaSaudavel: t.saudavel, faixaIdeal: t.ideal };
+}
+
+// ---------------------------------------------------------------------------
 // Proteção: dobras x bioimpedância. Quando os dois métodos estão registrados e divergem muito, o %G de
 // um deles provavelmente tem erro de técnica ou de preparo; o sistema mostra os dois e pede conferência
 // em vez de escolher sozinho. O limite de 5 pontos percentuais é regra prática do sistema, sem corte
@@ -457,8 +542,20 @@ export function compararMetodosGordura(fisica: Record<string, any> | undefined, 
   return { dobras, bio, diferenca, divergente, texto };
 }
 
-export function percentualGorduraIdealSugerido(idade: number | null, sexo: SexoComp): number | null {
+// %G ideal de referência na versão ANTERIOR (ponto médio da faixa saudável de Gallagher). Mantida só para a
+// triagem de sarcopenia (lib/integracao/sarcopenia.ts), cuja regra "massa magra < 90% da meta" foi montada
+// sobre esse valor e não deve mudar sem decisão clínica.
+export function percentualGorduraIdealGallagher(idade: number | null, sexo: SexoComp): number | null {
   const faixa = faixaGorduraSugerida(idade, sexo);
   if (!faixa) return null;
   return (faixa[0] + faixa[1]) / 2;
+}
+
+// %G ideal sugerido: ponto médio do nível-alvo da tabela Pollock & Wilmore para a idade e o sexo (padrão:
+// "Excelente"; o avaliador escolhe o nível na aba Física). Fora de 18 a 65 anos não há tabela: usa o ponto
+// médio da faixa saudável de Gallagher.
+export function percentualGorduraIdealSugerido(idade: number | null, sexo: SexoComp, nivel?: unknown): number | null {
+  const alvo = faixaDoNivelPW(nivelAlvoValido(nivel), idade, sexo);
+  if (alvo) return (alvo.faixa[0] + alvo.faixa[1]) / 2;
+  return percentualGorduraIdealGallagher(idade, sexo);
 }

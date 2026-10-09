@@ -72,10 +72,10 @@ export function supervisionar(paciente: PacienteRow): ResultadoSupervisao {
       add("alerta", "Composição corporal", "Gordura alta com massa magra baixa. O IMC sozinho não mostra isso: conferir força (dinamometria, 5x sentar-e-levantar) e priorizar treino de força com nutrição.");
       break;
     case "peso_normal_gordura_alta":
-      add("atencao", "Composição corporal", "IMC normal, mas %G acima da faixa saudável: o IMC subestima o risco; olhar a massa magra e a força.");
+      add("atencao", "Composição corporal", "IMC normal, mas %G acima do desejável pelas tabelas (Pollock & Wilmore ou massa magra em % do peso): o IMC subestima o risco; olhar a massa magra e a força.");
       break;
     case "imc_alto_sem_excesso_de_gordura":
-      add("ok", "Composição corporal", "IMC elevado com %G dentro da faixa: o IMC superestima a gordura nesta pessoa.");
+      add("ok", "Composição corporal", "IMC elevado com %G sem excesso pelas tabelas: o IMC superestima a gordura nesta pessoa.");
       break;
     default:
       break;

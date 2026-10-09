@@ -17,7 +17,12 @@ import {
   TODOS_SITIOS_DOBRA,
   calcularPercentualGorduraDobras,
   classificarGorduraPollockWilmore,
+  classificarMassaMagraPct,
   compararMetodosGordura,
+  faixaDoNivelPW,
+  nivelAlvoValido,
+  NIVEIS_ALVO_PERMITIDOS,
+  TABELA_MASSA_MAGRA_PCT,
   somaDobrasProtocolo,
   SOMA_DOBRAS_CAUTELA_MM,
   CORTES_CIRC_ABDOMINAL,
@@ -228,7 +233,14 @@ export function AbaFisica({
 
   const percentualGorduraEncontrado = paraNumero(d.percentual_gordura);
   const faixaIdeal = faixaGorduraSugerida(idadeNum, sexoNorm);
-  const percentualIdealSugerido = percentualGorduraIdealSugerido(idadeNum, sexoNorm);
+  const nivelAlvoPW = nivelAlvoValido(d.percentual_gordura_ideal_nivel);
+  const faixaAlvoPW = faixaDoNivelPW(nivelAlvoPW, idadeNum, sexoNorm);
+  const percentualIdealSugerido = percentualGorduraIdealSugerido(idadeNum, sexoNorm, nivelAlvoPW);
+  const massaMagraTabela = classificarMassaMagraPct(percentualGorduraEncontrado, sexoNorm);
+  const faixaMassaMagraKg =
+    peso !== null && sexoNorm !== "desconhecido"
+      ? ([TABELA_MASSA_MAGRA_PCT[sexoNorm].ideal[0], TABELA_MASSA_MAGRA_PCT[sexoNorm].ideal[1]].map((p) => (peso * p) / 100) as [number, number])
+      : null;
   const percentualIdealEfetivo = paraNumero(d.percentual_gordura_ideal) ?? percentualIdealSugerido;
 
   const percentualExcedente =
@@ -247,6 +259,8 @@ export function AbaFisica({
     massaMagraKg !== null && percentualIdealEfetivo !== null && percentualIdealEfetivo < 100
       ? massaMagraKg / (1 - percentualIdealEfetivo / 100)
       : null;
+
+  const imcNoPesoIdeal = pesoIdealKg !== null && altura ? pesoIdealKg / Math.pow(altura / 100, 2) : null;
 
   const sitiosProtocolo =
     d.protocolo_dobras === "jp3"
@@ -610,12 +624,18 @@ export function AbaFisica({
             ]}
           />
           <NumField label="%G encontrado (referência)" value={d.percentual_gordura} onChange={(v) => set("percentual_gordura", v)} />
+          <SelectField
+            label="Nível da tabela usado como %G ideal"
+            value={nivelAlvoPW}
+            onChange={(v) => set("percentual_gordura_ideal_nivel", v)}
+            opcoes={NIVEIS_ALVO_PERMITIDOS.map((n) => ({ value: n, label: n }))}
+          />
           <CampoComSugestao
             label="%G ideal"
             value={d.percentual_gordura_ideal}
             onChange={(v) => set("percentual_gordura_ideal", v)}
             sugestao={percentualIdealSugerido}
-            sufixo={faixaIdeal ? `% (faixa saudável ${faixaIdeal[0]}-${faixaIdeal[1]}%)` : "%"}
+            sufixo={faixaAlvoPW ? `% (ponto médio do nível ${nivelAlvoPW}: ${faixaAlvoPW.faixa[0]} a ${faixaAlvoPW.faixa[1]}%, ${faixaAlvoPW.faixaEtaria})` : faixaIdeal ? `% (sem tabela para esta idade: ponto médio da faixa de Gallagher ${faixaIdeal[0]}-${faixaIdeal[1]}%)` : "%"}
           />
           <ValorCalculado label="%G excedente" valor={percentualExcedente !== null ? `${percentualExcedente.toFixed(1)}%` : null} />
           <ValorCalculado label="Peso de gordura total" valor={pesoGorduraTotalKg !== null ? `${pesoGorduraTotalKg.toFixed(1)} kg` : null} />
@@ -628,22 +648,27 @@ export function AbaFisica({
             sugestao={massaMagraIdealSugerida}
             sufixo=" kg (peso atual com o %G ideal sugerido)"
           />
+          <ValorCalculado
+            label="Massa magra ideal pela tabela (% do peso)"
+            valor={
+              sexoNorm !== "desconhecido"
+                ? `${TABELA_MASSA_MAGRA_PCT[sexoNorm].ideal[0]} a ${TABELA_MASSA_MAGRA_PCT[sexoNorm].ideal[1]}%${faixaMassaMagraKg ? ` (${faixaMassaMagraKg[0].toFixed(1)} a ${faixaMassaMagraKg[1].toFixed(1)} kg)` : ""}`
+                : null
+            }
+          />
           <ValorCalculado label="Carência muscular" valor={carenciaMuscularKg !== null ? `${carenciaMuscularKg.toFixed(1)} kg` : null} />
-          <ValorCalculado label="Peso ideal" valor={pesoIdealKg !== null ? `${pesoIdealKg.toFixed(1)} kg` : null} />
+          <ValorCalculado label="Peso ideal" valor={pesoIdealKg !== null ? `${pesoIdealKg.toFixed(1)} kg` : null}>
+            {imcNoPesoIdeal !== null && imcNoPesoIdeal < 18.5 && (
+              <p className="text-xs text-danger mt-1">
+                Cuidado: esse peso daria IMC {imcNoPesoIdeal.toFixed(1)} (abaixo de 18,5). Use o %G ideal como referência de composição, não como meta de peso: a prioridade é ganhar massa magra.
+              </p>
+            )}
+          </ValorCalculado>
         </div>
         {percentualGorduraEncontrado !== null && (
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 text-sm">
-            <div className="rounded-lg bg-bg p-3">
-              <p className="text-xs uppercase tracking-wide text-muted font-semibold">Leitura 1: faixa saudável (Gallagher 2000)</p>
-              <p className="mt-1 text-ink">
-                {faixaIdeal
-                  ? `Faixa saudável para a idade e o sexo: ${faixaIdeal[0]}-${faixaIdeal[1]}%. ${percentualGorduraEncontrado > faixaIdeal[1] ? "ACIMA da faixa." : percentualGorduraEncontrado < faixaIdeal[0] ? "Abaixo da faixa." : "Dentro da faixa."}`
-                  : "Informe idade e sexo para a faixa."}
-              </p>
-              <p className="mt-1 text-xs text-muted">Faixas provisórias, derivadas do IMC (PubMed 10966886).</p>
-            </div>
-            <div className="rounded-lg bg-bg p-3">
-              <p className="text-xs uppercase tracking-wide text-muted font-semibold">Leitura 2: classificação Pollock &amp; Wilmore (1993)</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3 text-sm">
+            <div className="rounded-lg bg-accent-soft p-3">
+              <p className="text-xs uppercase tracking-wide text-muted font-semibold">%G: classificação Pollock &amp; Wilmore (leitura principal)</p>
               {classePW ? (
                 <>
                   <p className="mt-1 text-ink">
@@ -651,15 +676,38 @@ export function AbaFisica({
                     {classePW.abaixoDoExcelente && " %G abaixo do limite de Excelente: gordura muito baixa, conferir."}
                     {classePW.emLacuna && " Valor entre dois níveis da tabela: assumido o nível pior."}
                   </p>
-                  <p className="mt-1 text-xs text-muted">Livro-texto, fonte não conferida no PubMed. Classificação de condicionamento, mais rígida que a faixa saudável: leia as duas juntas.</p>
+                  <p className="mt-1 text-xs text-muted">Livro-texto (1993), fonte não conferida no PubMed. Classificação de condicionamento.</p>
                 </>
               ) : (
                 <p className="mt-1 text-muted">Disponível de 18 a 65 anos, com idade e sexo informados.</p>
               )}
             </div>
+            <div className="rounded-lg bg-accent-soft p-3">
+              <p className="text-xs uppercase tracking-wide text-muted font-semibold">Massa magra em % do peso (tabela)</p>
+              {massaMagraTabela ? (
+                <>
+                  <p className="mt-1 text-ink">
+                    <strong>{massaMagraTabela.pct.toFixed(1)}%</strong>: {massaMagraTabela.rotulo}.
+                  </p>
+                  <p className="mt-1 text-xs text-muted">
+                    Saudável {massaMagraTabela.faixaSaudavel[0]} a {massaMagraTabela.faixaSaudavel[1]}%, ideal {massaMagraTabela.faixaIdeal[0]} a {massaMagraTabela.faixaIdeal[1]}%. Massa magra % = 100 − %G: é a mesma medida do %G, com cortes diferentes. Planilha do profissional, fonte não conferida no PubMed.
+                  </p>
+                </>
+              ) : (
+                <p className="mt-1 text-muted">Informe o %G e o sexo.</p>
+              )}
+            </div>
+            <div className="rounded-lg bg-bg p-3">
+              <p className="text-xs uppercase tracking-wide text-muted font-semibold">%G: faixa saudável de Gallagher 2000 (secundária)</p>
+              <p className="mt-1 text-ink">
+                {faixaIdeal
+                  ? `Faixa saudável para a idade e o sexo: ${faixaIdeal[0]}-${faixaIdeal[1]}%. ${percentualGorduraEncontrado > faixaIdeal[1] ? "ACIMA da faixa." : percentualGorduraEncontrado < faixaIdeal[0] ? "Abaixo da faixa." : "Dentro da faixa."}`
+                  : "Informe idade e sexo para a faixa."}
+              </p>
+              <p className="mt-1 text-xs text-muted">Faixas provisórias, derivadas do IMC (PubMed 10966886). Mais permissiva que a tabela acima.</p>
+            </div>
           </div>
-        )}
-      </div>
+        )}      </div>
 
       <div className="pt-4 border-t border-border">
         <h3 className="font-display text-lg text-ink mb-1">Medidas regionais - massa magra relativa</h3>

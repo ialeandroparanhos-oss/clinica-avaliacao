@@ -17,7 +17,7 @@
 
 import type { PacienteRow } from "@/lib/anamnese/types";
 import { calcularPerfilIntegrado } from "./perfil";
-import { confirmarAdiposidade, percentualGorduraIdealSugerido, relacaoCinturaEstatura } from "@/lib/avaliacao/composicaoCorporal";
+import { confirmarAdiposidade, percentualGorduraIdealGallagher, relacaoCinturaEstatura } from "@/lib/avaliacao/composicaoCorporal";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { paraNumero } from "@/lib/numeros";
 
@@ -61,7 +61,9 @@ export function triarSarcopeniaDinapenia(paciente: PacienteRow): ResultadoSarcop
     textoMassa = `panturrilha de ${String(panturrilhaCm).replace(".", ",")} cm (${massaMuscularReduzida ? "abaixo" : "igual ou acima"} do corte de ${CORTE_PANTURRILHA_CM} cm, proxy de massa muscular estudado em idosos internados)`;
   } else {
     const percentualIdealInformado = paraNumero(paciente.fisica?.percentual_gordura_ideal) || null;
-    const percentualIdeal = percentualIdealInformado ?? percentualGorduraIdealSugerido(idade, sexo);
+    // Mantém o %G ideal da versão anterior (Gallagher): a regra "massa magra < 90% da meta" da triagem foi
+    // montada sobre ele e não muda junto com a tabela do %G ideal da aba Física.
+    const percentualIdeal = percentualIdealInformado ?? percentualGorduraIdealGallagher(idade, sexo);
     const massaMagraIdealInformada = paraNumero(paciente.fisica?.massa_magra_ideal_kg) || null;
     const massaMagraIdealKg = massaMagraIdealInformada ?? (pesoKg !== null && percentualIdeal !== null ? pesoKg * (1 - percentualIdeal / 100) : null);
     if (massaMagraKg !== null && massaMagraIdealKg !== null) {

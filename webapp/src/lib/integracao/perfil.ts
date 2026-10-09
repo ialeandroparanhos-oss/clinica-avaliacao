@@ -216,23 +216,40 @@ function avaliarComposicaoCorporal(p: PacienteRow): DomainResult {
   const notas: string[] = [];
   const f1 = (n: number, c = 1) => n.toFixed(c).replace(".", ",");
 
-  // 1) Percentual de gordura contra a faixa saudável.
+  // 1) Percentual de gordura: tabela Pollock & Wilmore por idade e sexo (leitura principal, decisão do
+  //    profissional em 09/10/2026); faixa saudável de Gallagher como leitura secundária.
   if (c.pg !== null) {
-    const faixaTxt = c.faixa ? ` (faixa saudável para a idade e o sexo: ${c.faixa[0]}-${c.faixa[1]}%)` : "";
     const fonte = c.fontePg ? `, ${c.fontePg}` : "";
-    if (c.pgStatus === "acima") {
+    const gall = c.faixa && c.pgStatusGallagher ? `; faixa saudável de Gallagher (provisória) ${c.faixa[0]}-${c.faixa[1]}%: ${c.pgStatusGallagher === "acima" ? "acima" : c.pgStatusGallagher === "abaixo" ? "abaixo" : "dentro"}` : "";
+    if (c.nivelPW) {
+      const n = c.nivelPW;
+      const extra = n.abaixoDoExcelente ? "; abaixo do limite de Excelente: gordura muito baixa, conferir" : n.emLacuna ? "; valor entre dois níveis da tabela, assumido o pior" : "";
+      if (n.nivel === "Muito ruim") elevar("prioridade");
+      else if (n.nivel === "Ruim" || n.nivel === "Abaixo da média") elevar("atencao");
+      notas.push(`%G ${f1(c.pg)}%${fonte}: nível "${n.nivel}" na classificação Pollock & Wilmore para ${n.faixaEtaria} (${n.faixa[0]} a ${n.faixa[1]}%)${extra}${gall}`);
+    } else if (c.pgStatus === "acima") {
       elevar("atencao");
-      notas.push(`%G ${f1(c.pg)}%${fonte} acima da faixa saudável${faixaTxt}`);
+      notas.push(`%G ${f1(c.pg)}%${fonte} acima da faixa saudável de Gallagher (a tabela Pollock & Wilmore vale de 18 a 65 anos)${gall}`);
     } else if (c.pgStatus === "abaixo") {
-      notas.push(`%G ${f1(c.pg)}%${fonte} abaixo da faixa saudável${faixaTxt}`);
+      notas.push(`%G ${f1(c.pg)}%${fonte} abaixo da faixa saudável de Gallagher${gall}`);
     } else {
-      notas.push(`%G ${f1(c.pg)}%${fonte} dentro da faixa saudável${faixaTxt}`);
+      notas.push(`%G ${f1(c.pg)}%${fonte} dentro da faixa saudável de Gallagher${gall}`);
     }
   } else {
     notas.push("sem %G registrado (dobras ou bioimpedância): o IMC sozinho não separa gordura de massa magra");
   }
 
-  // 2) Massa magra (índice de massa livre de gordura, corte GLIM).
+  // 2) Massa magra: tabela em % do peso (leitura principal) e índice de massa livre de gordura (GLIM).
+  const mm = c.massaMagraTabela;
+  if (mm) {
+    const fx = `saudável ${mm.faixaSaudavel[0]} a ${mm.faixaSaudavel[1]}%, ideal ${mm.faixaIdeal[0]} a ${mm.faixaIdeal[1]}%`;
+    if (mm.nivel === "baixa") {
+      elevar("atencao");
+      notas.push(`massa magra ${f1(mm.pct)}% do peso: BAIXA pela tabela (${fx})`);
+    } else {
+      notas.push(`massa magra ${f1(mm.pct)}% do peso: ${mm.rotulo} pela tabela (${fx})`);
+    }
+  }
   if (c.massaMagraKg !== null) {
     const corte = sexo !== "desconhecido" ? CORTE_FFMI[sexo] : null;
     const ffmiTxt = c.ffmi !== null ? `, índice ${f1(c.ffmi)} kg/m²` : "";

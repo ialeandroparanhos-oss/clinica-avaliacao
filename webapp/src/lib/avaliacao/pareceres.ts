@@ -18,7 +18,7 @@ import { calcularPerfilIntegrado, type Classificacao, type DomainKey, type Domai
 import { paraNumero } from "@/lib/numeros";
 import { linhasBaseCientifica, nomeComTitulo, type AgenteId } from "@/lib/agentes";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
-import { analisarComposicao, classificarGorduraPollockWilmore, compararMetodosGordura, CORTE_FFMI, percentualGorduraIdealSugerido } from "@/lib/avaliacao/composicaoCorporal";
+import { analisarComposicao, compararMetodosGordura, CORTE_FFMI, faixaDoNivelPW } from "@/lib/avaliacao/composicaoCorporal";
 import { assimetriaLados, CAMPOS_CIRCUNFERENCIA, LIMITE_ASSIMETRIA_PCT } from "@/lib/avaliacao/medidasRegionais";
 
 export type EstiloParecer = "sucinto" | "explicativo";
@@ -59,7 +59,7 @@ const EXPLICACAO: Record<DomainKey, { avalia: string; criterio: string }> = {
   composicao_corporal: {
     avalia: "composição corporal: gordura, massa magra e distribuição da gordura.",
     criterio:
-      "leitura combinada, nesta ordem: %G contra a faixa saudável por idade e sexo (Gallagher 2000); massa magra pelo índice de massa livre de gordura (< 17 kg/m² em homens e < 15 em mulheres, critério GLIM); cintura (OMS), RCQ e relação cintura/estatura (corte de 0,5); e, por último, o IMC, que é só triagem e está em debate como critério isolado (Lancet 2025). Gordura alta com massa magra baixa é a combinação de maior atenção. Sem %G registrado, o sistema avisa que a leitura fica limitada.",
+      "leitura combinada, nesta ordem: %G pela tabela Pollock & Wilmore por idade e sexo (18 a 65 anos; abaixo da média = atenção, ruim = atenção, muito ruim = prioridade) e massa magra em % do peso pela tabela do profissional (baixa = atenção), com a faixa saudável de Gallagher 2000 como leitura secundária; massa magra absoluta pelo índice de massa livre de gordura (< 17 kg/m² em homens e < 15 em mulheres, critério GLIM); cintura (OMS), RCQ e relação cintura/estatura (corte de 0,5); e, por último, o IMC, que é só triagem e está em debate como critério isolado (Lancet 2025). Gordura alta com massa magra absoluta baixa é a combinação de maior atenção. As duas tabelas vêm de livro/planilha, não conferidas no PubMed. Sem %G registrado, o sistema avisa que a leitura fica limitada.",
   },  dor: {
     avalia: "dor relatada na anamnese.",
     criterio: "bandeira vermelha ou intensidade de 7/10 ou mais = prioridade; dor sem esses sinais = atenção; sem dor = adequado.",
@@ -206,40 +206,67 @@ function leituraMarco(p: PacienteRow, estilo: EstiloParecer): string[] {
   const faixaTxt = c.faixa ? `${c.faixa[0]}-${c.faixa[1]}%` : null;
   const L: string[] = [];
 
+  const AVALIA_NIVEL: Record<string, string> = {
+    Excelente: "excelente",
+    Bom: "bom",
+    "Acima da média": "acima da média (bom)",
+    Média: "na média",
+    "Abaixo da média": "ABAIXO da média: gordura acima do desejável",
+    Ruim: "RUIM: gordura bem acima do desejável",
+    "Muito ruim": "MUITO RUIM: gordura muito acima do desejável",
+  };
+  const pesoKg = paraNumero(f.peso_kg);
+  const alturaCm = paraNumero(f.altura_cm);
   if (c.pg !== null) {
-    const rel = c.pgStatus === "acima" ? "ACIMA da faixa saudável" : c.pgStatus === "abaixo" ? "abaixo da faixa saudável" : c.pgStatus === "na_faixa" ? "dentro da faixa saudável" : "sem faixa de referência (faltam idade ou sexo)";
-    L.push(`Gordura corporal: ${fmt(c.pg, 1, "%")}${c.fontePg ? ` (${c.fontePg})` : ""}${faixaTxt ? `, faixa saudável para a idade e o sexo ${faixaTxt}` : ""}: ${rel}.`);
-    const pgIdeal = paraNumero(f.percentual_gordura_ideal) ?? percentualGorduraIdealSugerido(idade, sexo);
-    const peso = paraNumero(f.peso_kg);
-    if (peso !== null && pgIdeal !== null && c.pgStatus === "acima") {
-      L.push(`Gordura acima do ponto médio da faixa: cerca de ${fmt((peso * (c.pg - pgIdeal)) / 100, 1, "kg")}.`);
+    const fonteTxt = c.fontePg ? ` (${c.fontePg})` : "";
+    const relG = c.pgStatusGallagher === "acima" ? "acima da faixa" : c.pgStatusGallagher === "abaixo" ? "abaixo da faixa" : c.pgStatusGallagher === "na_faixa" ? "dentro da faixa" : "sem faixa (faltam idade ou sexo)";
+    const gallTxt = c.faixa ? `${c.faixa[0]}-${c.faixa[1]}%: ${relG}` : relG;
+    if (c.nivelPW) {
+      const n = c.nivelPW;
+      const extra = n.abaixoDoExcelente ? "; abaixo do limite de Excelente: gordura muito baixa, conferir" : n.emLacuna ? "; valor entre dois níveis da tabela, assumido o nível pior" : "";
+      L.push(`Gordura corporal: ${fmt(c.pg, 1, "%")}${fonteTxt}: nível "${n.nivel}" na classificação Pollock & Wilmore para ${n.faixaEtaria} (${n.faixa[0]} a ${n.faixa[1]}%), ou seja, ${AVALIA_NIVEL[n.nivel]}${extra}. Tabela de livro-texto (1993), fonte não conferida no PubMed.`);
+      L.push(`Faixa saudável de Gallagher 2000 (leitura secundária, provisória, derivada do IMC): ${gallTxt}.`);
+    } else {
+      L.push(`Gordura corporal: ${fmt(c.pg, 1, "%")}${fonteTxt}; faixa saudável de Gallagher ${gallTxt} (a tabela Pollock & Wilmore vale de 18 a 65 anos, com idade e sexo informados).`);
+    }
+    if (c.pgIdeal !== null) {
+      const alvo = faixaDoNivelPW(c.nivelAlvo, idade, sexo);
+      const informado = paraNumero(f.percentual_gordura_ideal) !== null;
+      L.push(
+        `%G ideal de referência: ${fmt(c.pgIdeal, 1, "%")}${informado ? " (valor informado pelo avaliador)" : alvo ? ` (ponto médio do nível "${c.nivelAlvo}" da tabela, ${alvo.faixa[0]} a ${alvo.faixa[1]}%; o avaliador pode trocar o nível)` : " (faixa de Gallagher: sem tabela para esta idade)"}.`
+      );
+      if (pesoKg !== null && c.pg > c.pgIdeal) L.push(`Gordura acima do %G ideal de referência: cerca de ${fmt((pesoKg * (c.pg - c.pgIdeal)) / 100, 1, "kg")}.`);
+      if (pesoKg !== null && alturaCm !== null && c.massaMagraKg !== null && c.pgIdeal < 100) {
+        const pesoIdeal = c.massaMagraKg / (1 - c.pgIdeal / 100);
+        const imcIdeal = pesoIdeal / Math.pow(alturaCm / 100, 2);
+        if (imcIdeal < 18.5) {
+          L.push(`CUIDADO: manter a massa magra atual e chegar a esse %G daria ${fmt(pesoIdeal, 1, "kg")} (IMC ${fmt(imcIdeal, 1)}, abaixo de 18,5). Use o %G ideal como referência de composição, não como meta de peso: a prioridade é ganhar massa magra.`);
+        }
+      }
     }
   } else {
     L.push("Gordura corporal: NÃO registrada (dobras ou bioimpedância). Sem ela só há o IMC, que não separa gordura de massa magra: registre o %G para uma leitura confiável.");
   }
-  const pw = classificarGorduraPollockWilmore(c.pg, idade, sexo);
-  if (pw) {
-    L.push(
-      `Segunda leitura do %G (classificação de livro-texto, Pollock & Wilmore 1993, fonte não conferida no PubMed): nível "${pw.nivel}" (${pw.faixa[0]} a ${pw.faixa[1]}% para ${pw.faixaEtaria})${
-        pw.abaixoDoExcelente ? "; %G abaixo do limite de \"Excelente\": gordura muito baixa, conferir" : pw.emLacuna ? "; valor entre dois níveis da tabela, assumido o nível pior" : ""
-      }. É uma classificação de condicionamento, mais rígida que a faixa saudável de Gallagher: leia as duas juntas.`
-    );
-  }
   const diverg = compararMetodosGordura(f, idade, sexo);
   if (diverg?.divergente) L.push(`ATENÇÃO, métodos divergentes: ${diverg.texto}`);
+  const mm = c.massaMagraTabela;
+  if (mm) {
+    L.push(
+      `Massa magra em % do peso: ${fmt(mm.pct, 1, "%")}: ${mm.rotulo} pela tabela do profissional (saudável ${mm.faixaSaudavel[0]} a ${mm.faixaSaudavel[1]}%, ideal ${mm.faixaIdeal[0]} a ${mm.faixaIdeal[1]}%; fonte não conferida no PubMed). Lembrete: massa magra % = 100 − %G, então esta tabela e a do %G leem a mesma medida com cortes diferentes.`
+    );
+  }
   if (c.massaMagraKg !== null) {
     const corte = sexo !== "desconhecido" ? CORTE_FFMI[sexo] : null;
     L.push(
-      `Massa magra: ${fmt(c.massaMagraKg, 1, "kg")}${c.ffmi !== null ? `, índice ${fmt(c.ffmi, 1)} kg/m²` : ""}${corte !== null && c.ffmi !== null ? ` (corte de massa reduzida: ${corte} kg/m²): ${c.ffmiBaixo ? "BAIXA" : "adequada"}` : ""}${
+      `Massa magra absoluta: ${fmt(c.massaMagraKg, 1, "kg")}${c.ffmi !== null ? `, índice ${fmt(c.ffmi, 1)} kg/m²` : ""}${corte !== null && c.ffmi !== null ? ` (corte de massa reduzida GLIM: ${corte} kg/m²): ${c.ffmiBaixo ? "BAIXA" : "adequada"}` : ""}${
         c.massaMagraPctDaMeta !== null ? `; equivale a ${fmt(c.massaMagraPctDaMeta, 0, "%")} da meta calculada pelo sistema (regra do sistema, sem validação publicada)` : ""
-      }.`
+      }. É a única leitura de massa magra independente do %G, porque considera a altura.`
     );
-  }
-  const padraoTxt: Record<string, string> = {
+  }  const padraoTxt: Record<string, string> = {
     gordura_alta_massa_baixa: "Padrão de MAIOR ATENÇÃO: gordura alta com massa magra baixa. Peso e IMC podem parecer aceitáveis e esconder o problema; a prioridade é ganhar massa magra (treino de força progressivo, com nutrição) e reduzir gordura sem perder músculo. Se a força também estiver reduzida, é compatível com obesidade sarcopênica (triagem; confirmar).",
-    gordura_alta: "Gordura acima da faixa com massa magra preservada: foco em reduzir gordura mantendo a massa magra (força + aeróbio + orientação nutricional).",
+    gordura_alta: "Gordura acima do desejável pelas tabelas, com massa magra absoluta preservada: foco em reduzir gordura mantendo a massa magra (força + aeróbio + orientação nutricional).",
     peso_normal_gordura_alta: "Peso normal pelo IMC, mas com excesso de gordura: o IMC subestima o risco nesta pessoa. Vale olhar a massa magra e a força.",
-    massa_baixa: "Massa magra baixa com gordura dentro da faixa: foco em ganhar massa magra (força progressiva e aporte proteico adequado).",
+    massa_baixa: "Massa magra absoluta baixa (índice em kg/m²) sem excesso de gordura pelas tabelas: foco em ganhar massa magra (força progressiva e aporte proteico adequado).",
     imc_alto_sem_excesso_de_gordura: "IMC elevado sem excesso de gordura medido: provável massa muscular. O IMC superestima a gordura aqui; não use como critério de excesso.",
     adequado: "Gordura e massa magra sem alteração nos critérios usados.",
     indeterminado: "Sem dados suficientes para concluir o padrão de composição.",
@@ -271,7 +298,7 @@ function leituraMarco(p: PacienteRow, estilo: EstiloParecer): string[] {
   } else {
     linhas.push("LEITURA DA COMPOSIÇÃO CORPORAL", ...L.map((x) => `- ${x}`));
     linhas.push(
-      "- Como ler: a ordem é %G, massa magra, gordura central e, por último, IMC. As faixas de %G (Gallagher 2000) foram derivadas ligando limites de IMC à gordura medida por 4 compartimentos e DXA, então são provisórias; o corte de massa magra (índice < 17 kg/m² em homens e < 15 em mulheres) vem dos critérios GLIM, pensados para DXA ou bioimpedância: com dobras ou bioimpedância comum a massa magra é estimativa.",
+      "- Como ler: a ordem é %G (tabela Pollock & Wilmore por idade e sexo), massa magra (tabela em % do peso e índice em kg/m²), gordura central e, por último, IMC. A tabela do %G é uma classificação de condicionamento, mais rígida que a faixa saudável de Gallagher 2000 (provisória, derivada do IMC); as duas tabelas do profissional não foram conferidas no PubMed. O corte de massa magra absoluta (índice < 17 kg/m² em homens e < 15 em mulheres) vem dos critérios GLIM, pensados para DXA ou bioimpedância: com dobras ou bioimpedância comum a massa magra é estimativa.",
       "- Use o mesmo método e o mesmo avaliador nas reavaliações: a tendência é mais confiável que o valor absoluto.",
       ""
     );

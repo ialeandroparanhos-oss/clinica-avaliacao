@@ -9,7 +9,7 @@ import type { PacienteRow } from "@/lib/anamnese/types";
 import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import { regioesEfetivas } from "@/lib/anamnese/dorPorRegiao";
 import { calcularPSQI } from "@/lib/anamnese/psqi";
-import { analisarComposicao, CORTE_FFMI } from "@/lib/avaliacao/composicaoCorporal";
+import { NIVEIS_POLLOCK_WILMORE, analisarComposicao, CORTE_FFMI } from "@/lib/avaliacao/composicaoCorporal";
 import { corteDinamometriaKgf, limite5stsPorIdade, limitesRikli, CORTE_5STS_SEG } from "@/lib/avaliacao/forca";
 import { avaliarVO2max, ROTULO_CLASSE_VO2, vo2maxDeRegistro } from "@/lib/avaliacao/cardiorrespiratoria";
 import { avaliarMobilidadeObjetiva, diferencaEntreLados, LIMITE_ASSIMETRIA_GRAUS, paresDeMobilidade } from "@/lib/avaliacao/mobilidade";
@@ -84,13 +84,26 @@ export function resultadosParaApresentacao(paciente: PacienteRow, perfil: Perfil
     const altura = n(f, "altura_cm");
     if (peso !== null && altura !== null) L.push(linha("Peso e altura", `${f1(peso)} kg · ${f1(altura, 0)} cm`, "ponto de partida", "info"));
     if (c.pg !== null) {
+      const n = c.nivelPW;
       L.push(
         linha(
           "Gordura corporal",
           `${f1(c.pg)}%`,
-          c.faixa ? `faixa saudável para a sua idade: ${c.faixa[0]} a ${c.faixa[1]}%` : "sem faixa (faltam idade ou sexo)",
+          n ? (n.emLacuna ? `classificação para a sua idade e sexo: entre "${NIVEIS_POLLOCK_WILMORE[Math.max(0, NIVEIS_POLLOCK_WILMORE.indexOf(n.nivel) - 1)]}" e "${n.nivel}" (${n.faixa[0]} a ${n.faixa[1]}%); consideramos "${n.nivel}"` : `classificação para a sua idade e sexo: "${n.nivel}" (${n.faixa[0]} a ${n.faixa[1]}%)`) : c.faixa ? `faixa saudável para a sua idade: ${c.faixa[0]} a ${c.faixa[1]}%` : "sem faixa (faltam idade ou sexo)",
           c.pgStatus === "acima" ? "atencao" : c.pgStatus ? "ok" : "info",
-          c.pgStatus === "acima" ? "acima da faixa" : c.pgStatus === "abaixo" ? "abaixo da faixa" : c.pgStatus === "na_faixa" ? "dentro da faixa" : undefined
+          n ? n.nivel.toLowerCase() : c.pgStatus === "acima" ? "acima da faixa" : c.pgStatus === "abaixo" ? "abaixo da faixa" : c.pgStatus === "na_faixa" ? "dentro da faixa" : undefined
+        )
+      );
+    }
+    if (c.massaMagraTabela) {
+      const mm = c.massaMagraTabela;
+      L.push(
+        linha(
+          "Massa magra em relação ao peso",
+          `${f1(mm.pct, 0)}%`,
+          `saudável: ${mm.faixaSaudavel[0]} a ${mm.faixaSaudavel[1]}% · ideal: ${mm.faixaIdeal[0]} a ${mm.faixaIdeal[1]}%`,
+          mm.nivel === "baixa" ? "atencao" : "ok",
+          mm.nivel === "baixa" ? "abaixo do saudável" : mm.nivel === "saudavel" ? "saudável" : mm.nivel === "ideal" ? "ideal" : "muito alta (conferir)"
         )
       );
     }

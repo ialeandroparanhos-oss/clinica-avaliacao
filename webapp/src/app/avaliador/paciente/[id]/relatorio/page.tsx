@@ -16,7 +16,7 @@ import { escorePSS10, escoreTSK11, somaSemNulos, escoreCurto, rotuloNivel } from
 import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { calcularRiscoCardiovascular } from "@/lib/anamnese/riscoCardiovascular";
 import { linhasDorPorRegiao } from "@/lib/anamnese/dorPorRegiao";
-import { classificarRCEst, percentualGorduraIdealSugerido, relacaoCinturaEstatura } from "@/lib/avaliacao/composicaoCorporal";
+import { analisarComposicao, classificarRCEst, nivelAlvoValido, percentualGorduraIdealSugerido, relacaoCinturaEstatura } from "@/lib/avaliacao/composicaoCorporal";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { CAMPOS_CIRCUNFERENCIA, calcularMassaMagraRelativa, expansibilidadeToracica } from "@/lib/avaliacao/medidasRegionais";
 import { paraNumero } from "@/lib/numeros";
@@ -201,7 +201,9 @@ export default function RelatorioTecnico() {
   const previstoTc6 = !formatoTc6 || formatoTc6 === "Corredor de 30 m (padrão)" ? tc6Previsto(idadeNum, sexoNorm, imcRel) : null;
   const pctTc6 = percentualDoPrevisto(paraNumero(paciente.funcional?.tc6_metros), previstoTc6);
   const tc6Texto = previstoTc6 !== null ? `${Math.round(previstoTc6)} m${pctTc6 !== null ? ` (realizado = ${Math.round(pctTc6)}% do previsto; sem corte de classificação adotado)` : ""}` : null;
-  const percentualIdealSugerido = percentualGorduraIdealSugerido(idadeNum, sexoNorm);
+  const nivelAlvoRel = nivelAlvoValido(paciente.fisica?.percentual_gordura_ideal_nivel);
+  const percentualIdealSugerido = percentualGorduraIdealSugerido(idadeNum, sexoNorm, nivelAlvoRel);
+  const compRel = analisarComposicao(paciente.fisica, idadeNum, sexoNorm);
   const percentualIdealEfetivo = paraNumero(paciente.fisica?.percentual_gordura_ideal) ?? percentualIdealSugerido;
   const percentualExcedente = percentualGordura && percentualIdealEfetivo !== null ? percentualGordura - percentualIdealEfetivo : null;
   const gorduraExcedenteKg = pesoKg && percentualExcedente !== null ? Math.max(0, (pesoKg * percentualExcedente) / 100) : null;
@@ -333,6 +335,14 @@ export default function RelatorioTecnico() {
                   ? `${paciente.fisica.percentual_gordura}%${paciente.fisica?.protocolo_referencia_gordura ? ` (${ROTULO_PROTOCOLO_REF[paciente.fisica.protocolo_referencia_gordura] ?? paciente.fisica.protocolo_referencia_gordura})` : ""}`
                   : null
               }
+            />
+            <L
+              label="Classificação do %G (Pollock & Wilmore, 1993)"
+              value={compRel.nivelPW ? `${compRel.nivelPW.nivel} (${compRel.nivelPW.faixa[0]} a ${compRel.nivelPW.faixa[1]}% para ${compRel.nivelPW.faixaEtaria}); livro-texto, fonte não conferida no PubMed` : null}
+            />
+            <L
+              label="Massa magra em % do peso (tabela)"
+              value={compRel.massaMagraTabela ? `${compRel.massaMagraTabela.pct.toFixed(1)}%: ${compRel.massaMagraTabela.rotulo} (saudável ${compRel.massaMagraTabela.faixaSaudavel[0]} a ${compRel.massaMagraTabela.faixaSaudavel[1]}%, ideal ${compRel.massaMagraTabela.faixaIdeal[0]} a ${compRel.massaMagraTabela.faixaIdeal[1]}%)` : null}
             />
             <L label="%G ideal / %G excedente" value={percentualIdealEfetivo !== null ? `${percentualIdealEfetivo.toFixed(1)}% / ${percentualExcedente !== null ? percentualExcedente.toFixed(1) : "–"}%` : null} />
             <L label="Massa gorda / magra (calculadas)" value={massaGordaKg !== null && massaMagraKg !== null ? `${massaGordaKg.toFixed(1)} kg / ${massaMagraKg.toFixed(1)} kg` : null} />

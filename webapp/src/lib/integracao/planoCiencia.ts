@@ -319,7 +319,7 @@ const REGRAS: Partial<Record<DomainKey, RegraDominio>> = {
       evidencia: evidPeso,
     });
     emit("90", "90", "intervencao", "Acima de 250 min/semana é o volume associado a perda clinicamente significativa (≥ 5%) - escalonar conforme tolerância e tempo disponível; manter força 2-3x/semana e proteína adequada para preservar a massa magra.", {
-      indicador: "Cintura abaixo do corte da OMS e relação cintura/estatura < 0,5; %G na faixa ideal para idade/sexo.",
+      indicador: "Cintura abaixo do corte da OMS e relação cintura/estatura < 0,5; %G em nível melhor na tabela por idade e sexo (ou dentro do ideal definido na aba Física).",
       evidencia: evidPeso,
     });
     emit("365", "365", "intervencao", "Fase de manutenção: 200-300 min/semana de atividade e força 2-3x/semana; reavaliar composição a cada 90 dias com o mesmo método.", {
@@ -327,7 +327,8 @@ const REGRAS: Partial<Record<DomainKey, RegraDominio>> = {
       evidencia: evidPeso,
     });
     // Massa magra baixa (índice de massa livre de gordura): o treino de força é a prioridade da composição.
-    if (comp.ffmiBaixo === true) {
+    const massaBaixa = comp.ffmiBaixo === true || comp.massaMagraTabela?.nivel === "baixa";
+    if (massaBaixa) {
       const evidMassa: Evidencia = {
         resumo:
           "Na gordura alta com massa magra baixa (padrão compatível com obesidade sarcopênica quando a função muscular também está reduzida), o consenso ESPEN/EASO recomenda avaliar a função muscular e a composição corporal e tratar os dois lados: reduzir a gordura sem perder músculo. O treino de resistência progressivo é a base do ganho de massa magra.",
@@ -339,9 +340,9 @@ const REGRAS: Partial<Record<DomainKey, RegraDominio>> = {
         indicador: `Massa magra e força estáveis ou maiores na reavaliação de 90 dias (hoje: ${comp.massaMagraKg !== null ? `${comp.massaMagraKg.toFixed(1).replace(".", ",")} kg` : "massa magra baixa"}${comp.ffmi !== null ? `, índice ${comp.ffmi.toFixed(1).replace(".", ",")} kg/m²` : ""}).`,
         evidencia: evidMassa,
       });
-      enc.push({ id: gerarId(), especialidade: "Nutrição", motivo: "Gordura alta com massa magra baixa: plano alimentar que preserve e ganhe massa magra durante a redução de gordura.", regra: "composicao_corporal|nutricao-massa-magra", evidencia: evidMassa, status: "sugerido" });
+      enc.push({ id: gerarId(), especialidade: "Nutrição", motivo: "Gordura alta ou massa magra baixa (pela tabela de massa magra em % do peso ou pelo índice em kg/m²): plano alimentar que preserve e ganhe massa magra durante a redução de gordura, associado ao programa de exercício.", regra: "composicao_corporal|nutricao-massa-magra", evidencia: evidMassa, status: "sugerido" });
     }
-    if ((imc !== null && imc >= 25) || comp.pgStatus === "acima") {
+    if (!massaBaixa && ((imc !== null && imc >= 25) || comp.pgStatus === "acima")) {
       enc.push({
         id: gerarId(),
         especialidade: "Nutrição",
