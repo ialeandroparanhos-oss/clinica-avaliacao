@@ -233,7 +233,7 @@ function leituraMarco(p: PacienteRow, estilo: EstiloParecer): string[] {
       const alvo = faixaDoNivelPW(c.nivelAlvo, idade, sexo);
       const informado = paraNumero(f.percentual_gordura_ideal) !== null;
       L.push(
-        `%G ideal de referência: ${fmt(c.pgIdeal, 1, "%")}${informado ? " (valor informado pelo avaliador)" : alvo ? ` (ponto médio do nível "${c.nivelAlvo}" da tabela, ${alvo.faixa[0]} a ${alvo.faixa[1]}%; o avaliador pode trocar o nível)` : " (faixa de Gallagher: sem tabela para esta idade)"}.`
+        `%G ideal de referência: ${fmt(c.pgIdeal, 1, "%")}${informado ? " (valor informado pelo avaliador)" : alvo ? ` (ponto médio da faixa ideal da tabela para ${alvo.faixaEtaria}, ${alvo.faixa[0]} a ${alvo.faixa[1]}%)` : " (faixa de Gallagher: sem tabela para esta idade)"}.`
       );
       if (pesoKg !== null && c.pg > c.pgIdeal) L.push(`Gordura acima do %G ideal de referência: cerca de ${fmt((pesoKg * (c.pg - c.pgIdeal)) / 100, 1, "kg")}.`);
       if (pesoKg !== null && alturaCm !== null && c.massaMagraKg !== null && c.pgIdeal < 100) {

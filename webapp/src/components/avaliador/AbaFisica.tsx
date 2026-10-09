@@ -20,8 +20,7 @@ import {
   classificarMassaMagraPct,
   compararMetodosGordura,
   faixaDoNivelPW,
-  nivelAlvoValido,
-  NIVEIS_ALVO_PERMITIDOS,
+  NIVEL_ALVO_PADRAO,
   TABELA_MASSA_MAGRA_PCT,
   somaDobrasProtocolo,
   SOMA_DOBRAS_CAUTELA_MM,
@@ -233,7 +232,7 @@ export function AbaFisica({
 
   const percentualGorduraEncontrado = paraNumero(d.percentual_gordura);
   const faixaIdeal = faixaGorduraSugerida(idadeNum, sexoNorm);
-  const nivelAlvoPW = nivelAlvoValido(d.percentual_gordura_ideal_nivel);
+  const nivelAlvoPW = NIVEL_ALVO_PADRAO;
   const faixaAlvoPW = faixaDoNivelPW(nivelAlvoPW, idadeNum, sexoNorm);
   const percentualIdealSugerido = percentualGorduraIdealSugerido(idadeNum, sexoNorm, nivelAlvoPW);
   const massaMagraTabela = classificarMassaMagraPct(percentualGorduraEncontrado, sexoNorm);
@@ -624,18 +623,12 @@ export function AbaFisica({
             ]}
           />
           <NumField label="%G encontrado (referência)" value={d.percentual_gordura} onChange={(v) => set("percentual_gordura", v)} />
-          <SelectField
-            label="Nível da tabela usado como %G ideal"
-            value={nivelAlvoPW}
-            onChange={(v) => set("percentual_gordura_ideal_nivel", v)}
-            opcoes={NIVEIS_ALVO_PERMITIDOS.map((n) => ({ value: n, label: n }))}
-          />
           <CampoComSugestao
             label="%G ideal"
             value={d.percentual_gordura_ideal}
             onChange={(v) => set("percentual_gordura_ideal", v)}
             sugestao={percentualIdealSugerido}
-            sufixo={faixaAlvoPW ? `% (ponto médio do nível ${nivelAlvoPW}: ${faixaAlvoPW.faixa[0]} a ${faixaAlvoPW.faixa[1]}%, ${faixaAlvoPW.faixaEtaria})` : faixaIdeal ? `% (sem tabela para esta idade: ponto médio da faixa de Gallagher ${faixaIdeal[0]}-${faixaIdeal[1]}%)` : "%"}
+            sufixo={faixaAlvoPW ? `% (ideal da tabela para ${faixaAlvoPW.faixaEtaria}: ${faixaAlvoPW.faixa[0]} a ${faixaAlvoPW.faixa[1]}%)` : faixaIdeal ? `% (sem tabela para esta idade: faixa saudável ${faixaIdeal[0]}-${faixaIdeal[1]}%)` : "%"}
           />
           <ValorCalculado label="%G excedente" valor={percentualExcedente !== null ? `${percentualExcedente.toFixed(1)}%` : null} />
           <ValorCalculado label="Peso de gordura total" valor={pesoGorduraTotalKg !== null ? `${pesoGorduraTotalKg.toFixed(1)} kg` : null} />
