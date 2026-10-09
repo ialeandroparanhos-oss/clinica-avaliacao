@@ -255,6 +255,101 @@ export function faixaGorduraSugerida(idade: number | null, sexo: SexoComp): [num
   return faixa[sexo];
 }
 
+// ---------------------------------------------------------------------------
+// Leitura integrada da composição corporal (Dr. Marco)
+//
+// O IMC não separa gordura de massa magra e está em debate como critério isolado (Comissão da
+// Lancet Diabetes & Endocrinology, 2025: usar o IMC só como triagem e confirmar a adiposidade por
+// medida direta ou por outro critério antropométrico). Por isso a leitura combina, em ordem de peso:
+//   1. %G contra a faixa saudável por idade e sexo (Gallagher 2000: faixas provisórias obtidas ligando
+//      os limites de IMC à gordura medida por 4 compartimentos/DXA);
+//   2. massa magra: índice de massa livre de gordura (kg/m²) abaixo de 17 (homens) ou 15 (mulheres),
+//      corte usado como critério de massa reduzida nos critérios GLIM (Cederholm 2019; valores
+//      conforme Sobestiansky 2021). Esses cortes foram pensados para DXA/bioimpedância: a massa magra
+//      vinda de dobras ou da bioimpedância comum é estimativa, com erro maior;
+//   3. cintura, RCQ e RCEst (adiposidade central);
+//   4. IMC, por último, como triagem.
+// Gordura alta + massa magra baixa é o padrão de maior atenção (compatível com obesidade sarcopênica
+// quando há função muscular reduzida: ESPEN/EASO 2022).
+// ---------------------------------------------------------------------------
+export const CORTE_FFMI: Record<"masculino" | "feminino", number> = { masculino: 17, feminino: 15 };
+
+export type AnaliseComposicao = {
+  imc: number | null;
+  pg: number | null;
+  fontePg: string | null;
+  faixa: [number, number] | null;
+  pgStatus: "abaixo" | "na_faixa" | "acima" | null;
+  massaGordaKg: number | null;
+  massaMagraKg: number | null;
+  ffmi: number | null;
+  ffmiBaixo: boolean | null;
+  massaMagraIdealKg: number | null;
+  massaMagraPctDaMeta: number | null;
+  cintura: number | null;
+  rcq: number | null;
+  rcest: number | null;
+  adiposidade: ConfirmacaoAdiposidade | null;
+  classeCintura: ClasseCircAbdominal | null;
+  padrao: "gordura_alta_massa_baixa" | "gordura_alta" | "massa_baixa" | "imc_alto_sem_excesso_de_gordura" | "peso_normal_gordura_alta" | "adequado" | "indeterminado";
+};
+
+const ROTULO_FONTE_PG: Record<string, string> = { dobras: "dobras cutâneas", bioimpedancia: "bioimpedância", media: "média de dobras e bioimpedância", outro: "outro método" };
+
+export function analisarComposicao(fisica: Record<string, any> | undefined, idade: number | null, sexo: SexoComp): AnaliseComposicao {
+  const f = fisica ?? {};
+  const peso = paraNumero(f.peso_kg);
+  const altura = paraNumero(f.altura_cm);
+  const imc = peso !== null && altura !== null && altura > 0 ? peso / Math.pow(altura / 100, 2) : null;
+
+  // %G de referência: o escolhido pelo avaliador; senão a bioimpedância; senão o calculado pelas dobras.
+  let pg = paraNumero(f.percentual_gordura);
+  let fontePg: string | null = pg !== null ? ROTULO_FONTE_PG[String(f.protocolo_referencia_gordura ?? "")] ?? "valor registrado" : null;
+  if (pg === null) {
+    const bio = paraNumero(f.bio_percentual_gordura);
+    if (bio !== null) {
+      pg = bio;
+      fontePg = "bioimpedância";
+    } else if (["jp3", "jp7", "faulkner4"].includes(String(f.protocolo_dobras ?? ""))) {
+      const calc = calcularPercentualGorduraDobras(f.protocolo_dobras as ProtocoloDobras, f as Record<string, string>, idade, sexo);
+      if (calc !== null) {
+        pg = calc;
+        fontePg = "dobras cutâneas";
+      }
+    }
+  }
+
+  const faixa = faixaGorduraSugerida(idade, sexo);
+  const pgStatus = pg !== null && faixa ? (pg > faixa[1] ? "acima" : pg < faixa[0] ? "abaixo" : "na_faixa") : null;
+  const massaGordaKg = peso !== null && pg !== null ? (peso * pg) / 100 : null;
+  const massaMagraRegistrada = paraNumero(f.bio_massa_magra_kg);
+  const massaMagraKg = peso !== null && massaGordaKg !== null ? peso - massaGordaKg : massaMagraRegistrada;
+  const ffmi = massaMagraKg !== null && altura !== null && altura > 0 ? massaMagraKg / Math.pow(altura / 100, 2) : null;
+  const ffmiBaixo = ffmi !== null && sexo !== "desconhecido" ? ffmi < CORTE_FFMI[sexo] : null;
+
+  const idealInformado = paraNumero(f.massa_magra_ideal_kg);
+  const pgIdeal = paraNumero(f.percentual_gordura_ideal) ?? percentualGorduraIdealSugerido(idade, sexo);
+  const massaMagraIdealKg = idealInformado ?? (peso !== null && pgIdeal !== null ? peso * (1 - pgIdeal / 100) : null);
+  const massaMagraPctDaMeta = massaMagraKg !== null && massaMagraIdealKg !== null && massaMagraIdealKg > 0 ? (massaMagraKg / massaMagraIdealKg) * 100 : null;
+
+  const cintura = paraNumero(f.circ_cintura);
+  const quadril = paraNumero(f.circ_quadril);
+  const rcq = cintura !== null && quadril !== null && quadril > 0 ? cintura / quadril : null;
+  const rcest = relacaoCinturaEstatura(cintura, altura);
+  const adiposidade = confirmarAdiposidade({ imc, cinturaCm: cintura, rcq, rcest, sexo });
+  const medidaTronco = cintura ?? paraNumero(f.circ_abdomen);
+  const classeCintura = medidaTronco !== null ? classificarCircAbdominal(medidaTronco, sexo) : null;
+
+  let padrao: AnaliseComposicao["padrao"] = "indeterminado";
+  if (pgStatus === "acima" && ffmiBaixo === true) padrao = "gordura_alta_massa_baixa";
+  else if (pgStatus === "acima") padrao = imc !== null && imc < 25 ? "peso_normal_gordura_alta" : "gordura_alta";
+  else if (ffmiBaixo === true) padrao = "massa_baixa";
+  else if (imc !== null && imc >= 25 && (pgStatus === "na_faixa" || pgStatus === "abaixo")) padrao = "imc_alto_sem_excesso_de_gordura";
+  else if (pgStatus === "na_faixa" || pgStatus === "abaixo" || (imc !== null && imc >= 18.5 && imc < 25 && pg === null)) padrao = pg === null ? "indeterminado" : "adequado";
+
+  return { imc, pg, fontePg, faixa, pgStatus, massaGordaKg, massaMagraKg, ffmi, ffmiBaixo, massaMagraIdealKg, massaMagraPctDaMeta, cintura, rcq, rcest, adiposidade, classeCintura, padrao };
+}
+
 export function percentualGorduraIdealSugerido(idade: number | null, sexo: SexoComp): number | null {
   const faixa = faixaGorduraSugerida(idade, sexo);
   if (!faixa) return null;

@@ -244,6 +244,14 @@ Pergunta feita a cada agente: o que você faz hoje no sistema, isso corresponde 
 - **Mais testes de mobilidade:** teste de Thomas modificado, rotação torácica, rotação cervical (assimetria D/E em graus, corte de 8°) e Y-Balance (alcance anterior, só a diferença em cm, sem corte).
 - **Pollock 3 e 7 dobras:** conferido que os protocolos diferem por sexo. Jackson & Pollock 1978 (homens, PMID 718832) e Jackson, Pollock & Ward 1980 (mulheres, PMID 7402053) são trabalhos separados. 3 dobras: homens peitoral, abdominal e coxa; mulheres tríceps, suprailíaca e coxa; equações diferentes. 7 dobras: os mesmos 7 sítios nos dois sexos, com equações diferentes. O app já separa por sexo (sítios do 3 dobras e coeficientes); os coeficientes seguem as versões de livro-texto (ACSM), que os resumos do PubMed não reproduzem: **[confirmar no livro]**.
 
+**Terceira parte de 08/10/2026 (pedido urgente do profissional, caso Nathalia: %G alto, massa magra baixa e parecer só com IMC):**
+- **Dr. Marco, mais criterioso:** a leitura da composição corporal (`analisarComposicao`, `lib/avaliacao/composicaoCorporal.ts`) passa a olhar, nesta ordem: **%G contra a faixa saudável por idade e sexo** (Gallagher 2000, faixas provisórias derivadas do IMC), **massa magra pelo índice de massa livre de gordura** (cortes 17 kg/m² homens e 15 mulheres, GLIM 2019 conforme Sobestiansky 2021; pensados para DXA/bioimpedância, então com dobras é estimativa), **gordura central** (cintura, RCQ, RCEst) e só então o **IMC, como triagem** (Lancet Commission 2025). Gordura alta com massa magra baixa vira **prioridade** (padrão compatível com obesidade sarcopênica, ESPEN/EASO 2022); IMC alto com %G na faixa não eleva o domínio e a nota diz que o IMC pode superestimar. O parecer do Marco ganhou o bloco "LEITURA DA COMPOSIÇÃO CORPORAL" (gordura excedente em kg, índice de massa magra, padrão, gordura central, assimetrias de circunferência ≥ 10%, PA ≥ 140/90) e lista todos os dados coletados. O plano passa a trazer **treino de força com meta de massa magra** e **encaminhamento à Nutrição** quando a massa magra está baixa. **Limites:** as faixas de Gallagher são provisórias e a regra de meta de massa magra é prática do sistema, sem validação publicada.
+- **Dra. Nina, supervisão:** `lib/avaliacao/supervisao.ts` e painel "Supervisão da Dra. Nina" (aba Perfil e relatório técnico). Confere cobertura (o que foi avaliado), cruzamentos entre áreas (por exemplo %G alto com massa magra baixa, PA elevada, queda sem teste de equilíbrio, teste máximo sem liberação) e pareceres ausentes, desatualizados ou não revisados. São avisos para o avaliador conferir, não diagnóstico.
+- **Slides:** agora trazem **mais resultados** (com números e o que significam), **possíveis intervenções** ao lado dos achados e, **no final, o plano de intervenção** (visão geral, detalhe por fase de 30/60/90 dias e 12 meses, serviços da clínica e encaminhamentos). Dados em `lib/integracao/resultadosApresentacao.ts`.
+- **Imagens dos agentes:** ilustrações fictícias (SVG) em `components/avaliador/AgenteAvatar.tsx`, página "Equipe de IA" (`/avaliador/agentes`) com download em SVG e PNG, e avatar no cabeçalho dos pareceres e da supervisão. Não representam pessoas reais.
+
+**Referências novas conferidas no PubMed:** Gallagher 2000 (PMID 10966886); Cederholm/GLIM 2019 (30181091).
+
 ## Registro de referências verificadas no PubMed (08/10/2026)
 
 Todas abaixo tiveram a existência e o título conferidos no PubMed (consulta por revista, ano, volume e primeira página). Conferir a existência **não** é o mesmo que ler o texto completo: o que cada uma sustenta no sistema está descrito em `src/lib/agentes.ts`.
@@ -270,6 +278,8 @@ Todas abaixo tiveram a existência e o título conferidos no PubMed (consulta po
 | TC6, equação brasileira (ainda não usada no sistema) | Britto RR et al. Braz J Phys Ther 2013;17:556 | 24271092 |
 | Comunicação de risco (qualitativo) | Richter R et al. PLoS One 2020;15:e0236751 | 32790675 |
 | Exercício supervisionado x não supervisionado (≥ 60 anos) | Gómez-Redondo P et al. Sports Med 2024;54:1877 | 38647999 |
+| Faixas de %G saudável (provisórias, derivadas do IMC) | Gallagher D et al. Am J Clin Nutr 2000;72:694 | 10966886 |
+| Critérios GLIM de desnutrição (massa muscular reduzida) | Cederholm T et al. Clin Nutr 2019;38:1 | 30181091 |
 
 Duas correções feitas nesta conferência estão marcadas nos itens "Agente 4" e "Clara" acima.
 

@@ -75,6 +75,8 @@ const R: Referencia[] = [
   { id: "williams2020", curta: "Williams 2020", citacao: "Williams ACC, et al. Cochrane Database Syst Rev 2020;CD007407", pmid: "32794606", apoia: "terapia cognitivo-comportamental na dor crônica: benefício pequeno ou muito pequeno sobre dor, incapacidade e sofrimento (75 estudos)" },
   { id: "gonzalez2021", curta: "Gonzalez-Medina 2021", citacao: "Gonzalez-Medina G, et al. J Clin Med 2021;10:5327", pmid: "34830609", apoia: "RPG na dor lombar crônica: 7 ensaios (334 pacientes) com menos dor e melhor função que outros programas de exercício; poucos estudos e amostras pequenas" },
   { id: "hempen2025", curta: "Hempen 2025", citacao: "Hempen M, Hummelsberger J. Complement Ther Med 2025;89:103149", pmid: "40021024", apoia: "revisão de revisões (2017-2022): acupuntura com efeito positivo em dor crônica, dor lombar e artrose de joelho; autores ligados a sociedade de medicina chinesa e qualidade variável dos ensaios; diretriz NICE NG59 não recomenda acupuntura na dor lombar" },
+  { id: "gallagher2000", curta: "Gallagher 2000", citacao: "Gallagher D, et al. Am J Clin Nutr 2000;72:694", pmid: "10966886", apoia: "faixas provisórias de %G saudável por idade e sexo, obtidas ligando os limites de IMC (subpeso < 18,5; sobrepeso ≥ 25; obesidade ≥ 30) à gordura medida por 4 compartimentos e DXA; amostra com IMC até 35" },
+  { id: "glim2019", curta: "GLIM 2019", citacao: "Cederholm T, et al. Clin Nutr 2019;38:1", pmid: "30181091", apoia: "critérios GLIM: massa muscular reduzida como critério fenotípico (índice de massa livre de gordura < 17 kg/m² em homens e < 15 em mulheres, valores conforme Sobestiansky 2021); pensados para DXA ou bioimpedância" },
   { id: "gomez2024", curta: "Gómez-Redondo 2024", citacao: "Gómez-Redondo P, et al. Sports Med 2024;54:1877", pmid: "38647999", apoia: "34 ensaios com pessoas de 60 anos ou mais: exercício supervisionado e não supervisionado foram seguros, com presença semelhante (81%); a supervisão trouxe ganho extra, só robusto na força de extensão do joelho, e os autores pedem mais pesquisa" },
   { id: "richter2020", curta: "Richter 2020", citacao: "Richter R, et al. PLoS One 2020;15:e0236751", pmid: "32790675", apoia: "comunicação de risco ao paciente é complexa; o equilíbrio entre informar e não gerar ansiedade (estudo qualitativo com 15 clínicos)" },
 ];
@@ -84,7 +86,7 @@ const POR_ID = new Map(R.map((r) => [r.id, r]));
 const REFS_POR_AGENTE: Record<Exclude<AgenteId, "iris">, string[]> = {
   nina: ["acsm2015"],
   sofia: ["psqi", "phq9", "gad7", "pss", "acsm2015"],
-  marco: ["rubino2025"],
+  marco: ["rubino2025", "gallagher2000", "glim2019", "sobestiansky2021", "donini2022"],
   paula: ["rani2023", "dhondt2020"],
   rita: ["ewgsop2", "rikli2013", "fernandes2021", "barry2014", "podsiadlo1991", "macedo2008", "britto2013"],
   caio: ["friend2015", "mandsager2018", "ross2016", "tanaka2001"],

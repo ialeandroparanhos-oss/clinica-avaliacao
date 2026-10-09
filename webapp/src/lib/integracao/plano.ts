@@ -92,6 +92,8 @@ export type Plano = {
   // Serviços da clínica sugeridos (fisioterapia, musculação, Pilates...), com o momento de entrada.
   servicos?: ServicoPlano[];
   metas?: Record<string, string>;
+  // Pareceres dos agentes sem ficha própria (anamnese e perfil), guardados com o plano.
+  pareceres?: Record<string, { texto: string; estilo?: string; automatico?: string; revisado?: boolean }>;
   avaliador?: string | null;
   atualizado_em?: string;
   versao?: number;

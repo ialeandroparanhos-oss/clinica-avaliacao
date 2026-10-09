@@ -18,8 +18,10 @@ import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import { calcularPerfilIntegrado, type Classificacao } from "@/lib/integracao/perfil";
 import { itemAprovado, type Plano } from "@/lib/integracao/plano";
 import { INDICADORES, extrairSerie, type LinhaHistorico } from "@/lib/integracao/historico";
-import { COMBINADOS, FONTE_PORQUE, PORQUE_VALE_A_PENA, servicosParaPaciente, ROTULO_SITUACAO, TEXTO_DOMINIO, fasesDoPlano, frentesPrioritarias, objetivoDoPaciente, primeiroNome } from "@/lib/integracao/devolutiva";
+import { COMBINADOS, FONTE_PORQUE, PORQUE_VALE_A_PENA, servicosParaPaciente, ROTULO_SITUACAO, TEXTO_DOMINIO, fasesDoPlano, frentesPrioritarias, nomeFrenteDoItem, objetivoDoPaciente, primeiroNome } from "@/lib/integracao/devolutiva";
 import { NOME_PROFISSIONAL } from "@/lib/marca";
+import { resultadosParaApresentacao } from "@/lib/integracao/resultadosApresentacao";
+import { NOME_SERVICO } from "@/lib/integracao/servicos";
 import { SerieChart } from "@/components/SerieChart";
 
 const LARGURA = 1280;
@@ -34,6 +36,17 @@ const COR_SITUACAO: Record<Classificacao, { fundo: string; ponto: string }> = {
 };
 
 type SlideDef = { id: string; nav: string; notas: string[]; conteudo: ReactNode };
+
+// Versão compacta (tabelas de resultado): título menor e menos margem, para caber 6 linhas.
+function QuadroCompacto({ titulo, subtitulo, children }: { titulo: string; subtitulo?: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col h-full px-16 pt-10 pb-14">
+      <h2 className="font-display text-[42px] leading-tight text-ink">{titulo}</h2>
+      {subtitulo && <p className="text-[21px] text-muted mt-1">{subtitulo}</p>}
+      <div className="flex-1 mt-4 min-h-0">{children}</div>
+    </div>
+  );
+}
 
 function Quadro({ titulo, subtitulo, children }: { titulo: string; subtitulo?: string; children: ReactNode }) {
   return (
@@ -223,29 +236,29 @@ export default function Apresentacao() {
 
     lista.push({
       id: "plano",
-      nav: "Plano 30, 60 e 90 dias",
+      nav: "Plano: visão geral",
       notas: [
         semPlano ? "O plano ainda não foi aprovado na aba Plano de Intervenção: aqui aparecem só as fases. Aprove os itens para que o foco de cada fase apareça." : "O foco de cada fase vem dos itens que você aprovou na aba Plano de Intervenção.",
         "Peça a opinião: o ritmo parece possível para a sua rotina? Ajuste o que for preciso.",
       ],
       conteudo: (
-        <Quadro titulo="Seu plano ao longo do tempo" subtitulo="Um passo de cada vez, com avaliação para você enxergar o que melhorou.">
-          <div className={`grid gap-6 h-[430px] ${fases.length > 4 ? "grid-cols-5" : "grid-cols-4"}`}>
+        <QuadroCompacto titulo="Seu plano ao longo do tempo" subtitulo="Um passo de cada vez, com avaliação para você enxergar o que melhorou.">
+          <div className={`grid gap-4 ${fases.length > 4 ? "grid-cols-5" : "grid-cols-4"}`}>
             {fases.map((f, i) => (
-              <div key={f.chave} className="rounded-3xl border-2 border-border bg-surface p-7 flex flex-col">
+              <div key={f.chave} className="rounded-3xl border-2 border-border bg-surface p-5 flex flex-col">
                 <span className={`inline-flex h-12 w-12 items-center justify-center rounded-full text-white font-display text-[26px] ${i === 0 ? "bg-accent" : i === 1 ? "bg-accent-dark" : i === 2 ? "bg-info" : "bg-ink"}`}>{i + 1}</span>
-                <p className="font-display text-[38px] text-ink mt-4">{f.curto}</p>
-                <p className="text-[20px] text-muted mt-2 leading-snug">{f.texto}</p>
+                <p className="font-display text-[32px] text-ink mt-3">{f.curto}</p>
+                <p className="text-[16px] text-muted mt-1.5 leading-snug">{f.texto}</p>
                 {f.nomes.length > 0 && (
                   <div className="mt-auto pt-4 border-t border-border">
                     <p className="text-[16px] uppercase tracking-wide text-muted font-semibold">Foco</p>
-                    <p className="text-[22px] text-ink leading-snug mt-1">{f.nomes.join(" · ")}</p>
+                    <p className="text-[18px] text-ink leading-snug mt-1">{f.nomes.join(" · ")}</p>
                   </div>
                 )}
               </div>
             ))}
           </div>
-        </Quadro>
+        </QuadroCompacto>
       ),
     });
 
@@ -260,18 +273,18 @@ export default function Apresentacao() {
           ...servicos.map((s) => `${s.nome}: para ${s.para}; ${s.quando}${s.opcional ? " (opcional)" : ""}.`),
         ],
         conteudo: (
-          <Quadro titulo="Serviços que podem ajudar no seu cuidado" subtitulo="Cada um entra quando fizer sentido para você. A continuidade é conversada junto, sem compromisso.">
-            <ul className={`grid gap-5 ${servicos.length > 4 ? "grid-cols-3" : "grid-cols-2"}`}>
+          <QuadroCompacto titulo="Serviços que podem ajudar no seu cuidado" subtitulo="Cada um entra quando fizer sentido para você. A continuidade é conversada junto, sem compromisso.">
+            <ul className={`grid gap-4 ${servicos.length > 4 ? "grid-cols-3" : "grid-cols-2"}`}>
               {servicos.map((s) => (
-                <li key={s.servico} className="rounded-3xl border-2 border-border bg-surface p-6">
-                  <p className="font-display text-[34px] text-ink leading-tight">{s.nome}</p>
-                  {s.opcional && <p className="text-[18px] text-muted mt-1">se você quiser</p>}
-                  <p className="text-[22px] text-ink mt-3 leading-snug">Para {s.para}.</p>
-                  <p className="text-[20px] text-accent-dark mt-2">Pode começar {s.quando}.</p>
+                <li key={s.servico} className="rounded-3xl border-2 border-border bg-surface px-5 py-4">
+                  <p className="font-display text-[28px] text-ink leading-tight">{s.nome}</p>
+                  {s.opcional && <p className="text-[15px] text-muted">se você quiser</p>}
+                  <p className="text-[18px] text-ink mt-1.5 leading-snug">Para {s.para}.</p>
+                  <p className="text-[16px] text-accent-dark mt-1">Pode começar {s.quando}.</p>
                 </li>
               ))}
             </ul>
-          </Quadro>
+          </QuadroCompacto>
         ),
       });
     }
@@ -378,7 +391,106 @@ export default function Apresentacao() {
       ),
     });
 
-    return lista;
+    // ---------------------------------------------------------------- resultados por área (com números)
+    resultadosParaApresentacao(paciente, perfil).forEach((g) => {
+      const COR_LEITURA = { ok: "bg-accent-soft text-accent-dark", atencao: "bg-warn-soft text-warn", info: "bg-surface text-muted border border-border" } as const;
+      lista.push({
+        id: `resultado-${g.id}`,
+        nav: `Resultados: ${g.titulo}`,
+        notas: [...g.notas.filter(Boolean).map((x) => `Detalhe técnico (só para você): ${x}`), "Leia cada linha com o paciente: o que foi medido, com o que comparamos e o que isso significa para o dia a dia.", "Mostre a caixa de possíveis intervenções como o caminho, não como cobrança."],
+        conteudo: (
+          <QuadroCompacto titulo={g.titulo} subtitulo={g.subtitulo}>
+            <div className="flex flex-col gap-3">
+              <div className="rounded-2xl border border-border overflow-hidden">
+                {g.linhas.slice(0, 6).map((l, i) => (
+                  <div key={i} className={`grid grid-cols-[1.3fr_1fr_1.3fr_0.9fr] gap-4 items-center px-5 py-2 ${i % 2 === 1 ? "bg-bg" : "bg-surface"}`}>
+                    <p className="text-[19px] text-ink leading-tight">{l.indicador}</p>
+                    <p className="font-display text-[23px] text-ink leading-tight">{l.valor}</p>
+                    <p className="text-[15px] text-muted leading-tight">{l.referencia}</p>
+                    <span className={`justify-self-start rounded-full px-3 py-0.5 text-[15px] font-medium leading-tight ${COR_LEITURA[l.leitura]}`}>{l.texto}</span>
+                  </div>
+                ))}
+              </div>
+              {g.intervencoes.length > 0 && (
+                <div className="rounded-2xl bg-info-soft px-6 py-3">
+                  <p className="text-[15px] uppercase tracking-wide text-info font-semibold">Possível intervenção</p>
+                  <ul className="mt-1 space-y-0.5">
+                    {g.intervencoes.slice(0, 2).map((x, i) => (
+                      <li key={i} className="text-[18px] text-ink leading-snug">
+                        • {x.length > 140 ? x.slice(0, 137) + "..." : x}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </QuadroCompacto>
+        ),
+      });
+    });
+
+    // ---------------------------------------------------------------- plano de intervenção detalhado, por fase
+    {
+      const aprovados = (plano?.itens ?? []).filter(itemAprovado);
+      const servAprov = (plano?.servicos ?? []).filter(itemAprovado);
+      const ROTULO_TAG: Record<string, string> = { seguranca: "Segurança", intervencao: "Intervenção", orientacao: "Orientação", reavaliacao: "Reavaliação", encaminhamento: "Encaminhamento", servico: "Serviço" };
+      const ORDEM_TAG = ["seguranca", "intervencao", "servico", "orientacao", "reavaliacao"];
+      const resumo = (txt: string) => {
+        const frases = txt.replace(/\s*\(Entra em .*$/, "").split(/(?<=[.!?])\s/);
+        const dois = frases.slice(0, 2).join(" ");
+        return dois.length > 190 ? dois.slice(0, 187) + "..." : dois;
+      };
+      for (const h of fases) {
+        const entradas = [
+          ...aprovados.filter((i) => i.horizonte === h.chave && (i.categoria ?? "intervencao") !== "reavaliacao").map((i) => ({ tag: i.categoria ?? "intervencao", titulo: nomeFrenteDoItem(i, perfil), texto: resumo(i.descricao) })),
+          ...servAprov.flatMap((s) => s.etapas.filter((e) => e.horizonte === h.chave && e.texto.trim() !== "").map((e) => ({ tag: "servico", titulo: `${NOME_SERVICO[s.servico].split(" (")[0]}${s.prioridade === "opcional" ? " (opcional)" : ""}`, texto: resumo(e.texto) }))),
+        ].sort((a, b) => ORDEM_TAG.indexOf(a.tag) - ORDEM_TAG.indexOf(b.tag));
+        if (entradas.length === 0) continue;
+        const paginas: (typeof entradas)[] = [];
+        for (let k = 0; k < entradas.length; k += 4) paginas.push(entradas.slice(k, k + 4));
+        paginas.forEach((pg, k) => {
+          lista.push({
+            id: `fase-${h.chave}-${k + 1}`,
+            nav: `Plano: ${h.curto}${paginas.length > 1 ? ` (${k + 1}/${paginas.length})` : ""}`,
+            notas: ["Esta é a parte final: o plano de intervenção que você aprovou. Passe item por item e pergunte se o ritmo é possível para a rotina do paciente.", "Ajuste na hora o que for preciso na aba Plano: a apresentação acompanha os dados em tempo real."],
+            conteudo: (
+              <QuadroCompacto titulo={`Plano de intervenção: ${h.curto}${paginas.length > 1 ? ` (${k + 1}/${paginas.length})` : ""}`} subtitulo={h.texto}>
+                <div className="space-y-3">
+                  {pg.map((e, i) => (
+                    <div key={i} className="rounded-3xl border-2 border-border bg-surface px-7 py-3 flex gap-6 items-start">
+                      <span className="shrink-0 rounded-full bg-accent-soft text-accent-dark px-4 py-1 text-[18px] font-medium mt-1">{ROTULO_TAG[e.tag] ?? "Plano"}</span>
+                      <div>
+                        <p className="font-display text-[26px] text-ink leading-tight">{e.titulo}</p>
+                        <p className="text-[19px] text-muted mt-0.5 leading-snug">{e.texto}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </QuadroCompacto>
+            ),
+          });
+        });
+      }
+    }
+
+    // Ordem final: panorama -> resultados -> achados e intervenções -> motivos e medidas -> PLANO -> combinados.
+    const RANK = (idSlide: string) => {
+      if (idSlide === "capa") return 0;
+      if (idSlide === "objetivo") return 1;
+      if (idSlide === "hoje") return 2;
+      if (idSlide === "fortes") return 3;
+      if (idSlide.startsWith("resultado-")) return 4;
+      if (idSlide.startsWith("achado-")) return 5;
+      if (idSlide === "depois") return 6;
+      if (idSlide === "vale") return 7;
+      if (idSlide === "medir") return 8;
+      if (idSlide === "plano") return 9;
+      if (idSlide.startsWith("fase-")) return 10;
+      if (idSlide === "servicos") return 11;
+      if (idSlide === "encaminhamentos") return 12;
+      return 13; // fim
+    };
+    return lista.map((s, i) => ({ s, i })).sort((x, y) => RANK(x.s.id) - RANK(y.s.id) || x.i - y.i).map((x) => x.s);
   }, [paciente, historico]);
 
   const total = slides.length;

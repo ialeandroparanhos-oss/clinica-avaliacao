@@ -14,7 +14,7 @@ import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { paraNumero } from "@/lib/numeros";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { avaliarForca as avaliarForcaIntegrada } from "@/lib/avaliacao/forca";
-import { classificarCircAbdominal, classificarRCEst, confirmarAdiposidade, relacaoCinturaEstatura } from "@/lib/avaliacao/composicaoCorporal";
+import { analisarComposicao, CORTE_FFMI, classificarRCEst } from "@/lib/avaliacao/composicaoCorporal";
 import { avaliarMobilidadeObjetiva } from "@/lib/avaliacao/mobilidade";
 import { avaliarVO2max, ROTULO_CLASSE_VO2, vo2maxDeRegistro, type ClasseVO2 } from "@/lib/avaliacao/cardiorrespiratoria";
 
@@ -192,73 +192,82 @@ function avaliarCardio(p: PacienteRow): DomainResult {
 }
 
 // ---------------------------------------------------------------------------
-// 5. Composição corporal — IMC (OMS) + circunferência de cintura (OMS)
+// 5. Composição corporal — leitura integrada (Dr. Marco): %G contra a faixa
+//    saudável, massa magra (índice de massa livre de gordura), cintura/RCEst/RCQ
+//    e, por último, o IMC. O IMC isolado está em debate (Lancet D&E, 2025): ele não
+//    separa gordura de massa magra, então só confirma excesso de peso, não de gordura.
+//    Ver analisarComposicao em lib/avaliacao/composicaoCorporal.ts.
 // ---------------------------------------------------------------------------
 function avaliarComposicaoCorporal(p: PacienteRow): DomainResult {
-  const peso = num(p.fisica?.peso_kg);
-  const altura = num(p.fisica?.altura_cm);
-  const cintura = num(p.fisica?.circ_cintura);
   const sexo = sexoEfetivo(p);
+  const idade = idadeEfetiva(p);
+  const c = analisarComposicao(p.fisica, idade, sexo);
+  const abdomen = num(p.fisica?.circ_abdomen);
 
-  const imc = peso !== null && altura !== null ? peso / Math.pow(altura / 100, 2) : null;
-
-  if (imc === null && cintura === null && num(p.fisica?.circ_abdomen) === null) {
-    return resultado("composicao_corporal", "investigar", "Peso/altura e circunferência de cintura/abdômen ainda não registrados.");
+  if (c.imc === null && c.pg === null && c.cintura === null && abdomen === null) {
+    return resultado("composicao_corporal", "investigar", "Peso/altura, %G e circunferência de cintura/abdômen ainda não registrados.");
   }
 
   const severidade: Record<Classificacao, number> = { adequado: 0, atencao: 1, investigar: 1, prioridade: 2 };
   let pior: Classificacao = "adequado";
-  const elevar = (c: Classificacao) => {
-    if (severidade[c] > severidade[pior]) pior = c;
+  const elevar = (cl: Classificacao) => {
+    if (severidade[cl] > severidade[pior]) pior = cl;
   };
   const notas: string[] = [];
+  const f1 = (n: number, c = 1) => n.toFixed(c).replace(".", ",");
 
-  const quadril = num(p.fisica?.circ_quadril);
-  const rcq = cintura !== null && quadril !== null && quadril > 0 ? cintura / quadril : null;
-  const rcest = relacaoCinturaEstatura(cintura, altura);
-  const adiposidade = confirmarAdiposidade({ imc, cinturaCm: cintura, rcq, rcest, sexo });
-  const textoAdiposidade =
-    adiposidade === null
-      ? ""
-      : adiposidade.estado === "confirmada"
-        ? `; adiposidade central confirmada por ${adiposidade.criterios.join(", ")}`
-        : adiposidade.estado === "nao_confirmada"
-          ? `; sem sinal de excesso de adiposidade central em ${adiposidade.avaliados.join(", ")} - confirmar pelo %G`
-          : "; adiposidade a confirmar (sem cintura/RCQ/RCEst)";
-
-  if (imc !== null) {
-    if (imc >= 30) {
-      elevar("prioridade");
-      notas.push(`IMC ${imc.toFixed(1)} (obesidade, critério OMS${textoAdiposidade})`);
-    } else if (imc >= 25 || imc < 18.5) {
+  // 1) Percentual de gordura contra a faixa saudável.
+  if (c.pg !== null) {
+    const faixaTxt = c.faixa ? ` (faixa saudável para a idade e o sexo: ${c.faixa[0]}-${c.faixa[1]}%)` : "";
+    const fonte = c.fontePg ? `, ${c.fontePg}` : "";
+    if (c.pgStatus === "acima") {
       elevar("atencao");
-      notas.push(`IMC ${imc.toFixed(1)} (${imc >= 25 ? "sobrepeso" : "baixo peso"}, critério OMS${textoAdiposidade})`);
+      notas.push(`%G ${f1(c.pg)}%${fonte} acima da faixa saudável${faixaTxt}`);
+    } else if (c.pgStatus === "abaixo") {
+      notas.push(`%G ${f1(c.pg)}%${fonte} abaixo da faixa saudável${faixaTxt}`);
     } else {
-      notas.push(`IMC ${imc.toFixed(1)} (eutrofia)`);
+      notas.push(`%G ${f1(c.pg)}%${fonte} dentro da faixa saudável${faixaTxt}`);
     }
+  } else {
+    notas.push("sem %G registrado (dobras ou bioimpedância): o IMC sozinho não separa gordura de massa magra");
   }
 
-  if (rcest !== null) {
-    const txt = rcest.toFixed(2).replace(".", ",");
-    if (classificarRCEst(rcest) === "aumentado") {
+  // 2) Massa magra (índice de massa livre de gordura, corte GLIM).
+  if (c.massaMagraKg !== null) {
+    const corte = sexo !== "desconhecido" ? CORTE_FFMI[sexo] : null;
+    const ffmiTxt = c.ffmi !== null ? `, índice ${f1(c.ffmi)} kg/m²` : "";
+    if (c.ffmiBaixo === true && corte !== null) {
       elevar("atencao");
-      notas.push(`relação cintura/estatura ${txt} (≥ 0,5, risco aumentado, corte do NICE)`);
+      notas.push(`massa magra ${f1(c.massaMagraKg)} kg${ffmiTxt}, abaixo de ${corte} kg/m² (critério GLIM de massa reduzida; é estimativa a partir de dobras/bioimpedância)`);
     } else {
-      notas.push(`relação cintura/estatura ${txt} (< 0,5)`);
+      notas.push(`massa magra ${f1(c.massaMagraKg)} kg${ffmiTxt}${corte !== null ? `, acima do corte de ${corte} kg/m²` : ""}`);
     }
   }
+  if (c.padrao === "gordura_alta_massa_baixa") {
+    elevar("prioridade");
+    notas.push("gordura alta com massa magra baixa: combinação de maior atenção (compatível com obesidade sarcopênica se a força também estiver reduzida)");
+  } else if (c.padrao === "peso_normal_gordura_alta") {
+    notas.push("peso normal pelo IMC, mas com excesso de gordura: o IMC subestima o risco nesta pessoa");
+  } else if (c.padrao === "imc_alto_sem_excesso_de_gordura") {
+    notas.push("IMC elevado sem excesso de gordura medido: o IMC superestima a gordura aqui (provável massa muscular)");
+  }
 
-  // Cintura (corte da OMS); se não houve cintura, o abdômen medido no umbigo
-  // entra como aproximação, com o aviso de que o corte foi definido p/ cintura.
-  const abdomen = num(p.fisica?.circ_abdomen);
-  const medidaTronco = cintura !== null ? cintura : abdomen;
-  const nomeMedida = cintura !== null ? "cintura" : "abdômen (usado como aproximação da cintura)";
+  // 3) Adiposidade central: cintura (OMS), RCQ e relação cintura/estatura.
+  if (c.rcest !== null) {
+    if (classificarRCEst(c.rcest) === "aumentado") {
+      elevar("atencao");
+      notas.push(`relação cintura/estatura ${c.rcest.toFixed(2).replace(".", ",")} (≥ 0,5, risco aumentado, corte do NICE)`);
+    } else {
+      notas.push(`relação cintura/estatura ${c.rcest.toFixed(2).replace(".", ",")} (< 0,5)`);
+    }
+  }
+  const medidaTronco = c.cintura !== null ? c.cintura : abdomen;
+  const nomeMedida = c.cintura !== null ? "cintura" : "abdômen (usado como aproximação da cintura)";
   if (medidaTronco !== null && sexo !== "desconhecido") {
-    const classe = classificarCircAbdominal(medidaTronco, sexo);
-    if (classe === "muito_aumentado") {
+    if (c.classeCintura === "muito_aumentado") {
       elevar("prioridade");
       notas.push(`circunferência de ${nomeMedida} ${medidaTronco}cm (risco cardiometabólico substancialmente aumentado, critério OMS)`);
-    } else if (classe === "aumentado") {
+    } else if (c.classeCintura === "aumentado") {
       elevar("atencao");
       notas.push(`circunferência de ${nomeMedida} ${medidaTronco}cm (risco aumentado, critério OMS)`);
     } else {
@@ -268,9 +277,39 @@ function avaliarComposicaoCorporal(p: PacienteRow): DomainResult {
     notas.push(`circunferência de ${nomeMedida} ${medidaTronco}cm (sexo não registrado — corte OMS não aplicado)`);
   }
 
+  // 4) IMC, por último: triagem. Só eleva a classe quando a gordura não o contradiz.
+  if (c.imc !== null) {
+    const adipConfirmada = c.pgStatus === "acima" || c.adiposidade?.estado === "confirmada";
+    if (c.imc >= 40) {
+      elevar("prioridade");
+      notas.push(`IMC ${f1(c.imc)} (obesidade grau III, critério OMS; acima de 40 o excesso de adiposidade é presumido)`);
+    } else if (c.imc >= 30) {
+      if (adipConfirmada) {
+        elevar("prioridade");
+        notas.push(`IMC ${f1(c.imc)} (obesidade, critério OMS; excesso de gordura confirmado por ${c.pgStatus === "acima" ? "%G" : (c.adiposidade as { criterios: string[] }).criterios.join(", ")})`);
+      } else if (c.pgStatus === "na_faixa" || c.pgStatus === "abaixo") {
+        notas.push(`IMC ${f1(c.imc)} (faixa de obesidade pela OMS, mas o %G está na faixa: o IMC superestima a gordura aqui)`);
+      } else {
+        elevar("atencao");
+        notas.push(`IMC ${f1(c.imc)} (faixa de obesidade pela OMS, adiposidade a confirmar pelo %G e pelas medidas de cintura)`);
+      }
+    } else if (c.imc >= 25) {
+      if (c.padrao === "imc_alto_sem_excesso_de_gordura") {
+        notas.push(`IMC ${f1(c.imc)} (sobrepeso pela OMS)`);
+      } else {
+        elevar("atencao");
+        notas.push(`IMC ${f1(c.imc)} (sobrepeso, critério OMS${adipConfirmada ? "; excesso de gordura confirmado" : "; adiposidade a confirmar"})`);
+      }
+    } else if (c.imc < 18.5) {
+      elevar("atencao");
+      notas.push(`IMC ${f1(c.imc)} (baixo peso, critério OMS)`);
+    } else {
+      notas.push(`IMC ${f1(c.imc)} (eutrofia)`);
+    }
+  }
+
   return resultado("composicao_corporal", pior, notas.join("; ") + ".");
 }
-
 // ---------------------------------------------------------------------------
 // 6. Dor
 // ---------------------------------------------------------------------------

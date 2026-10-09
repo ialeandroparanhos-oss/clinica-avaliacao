@@ -21,6 +21,7 @@ import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { CAMPOS_CIRCUNFERENCIA, calcularMassaMagraRelativa, expansibilidadeToracica } from "@/lib/avaliacao/medidasRegionais";
 import { paraNumero } from "@/lib/numeros";
 import { mensagemTecnica } from "@/lib/avaliacao/whatsapp";
+import { PainelSupervisao } from "@/components/avaliador/PainelSupervisao";
 import { NOME_SERVICO, ROTULO_PRIORIDADE_SERVICO } from "@/lib/integracao/servicos";
 import { avaliarMobilidadeObjetiva, paresDeMobilidade } from "@/lib/avaliacao/mobilidade";
 import { percentualDoPrevisto, tc6Previsto } from "@/lib/avaliacao/tc6";
@@ -246,6 +247,10 @@ export default function RelatorioTecnico() {
             <strong>{{ alta: "Alta", media: "Média", baixa: "Baixa" }[perfil.confianca]}</strong>
           </p>
         </header>
+
+        <div className="mb-8">
+          <PainelSupervisao paciente={paciente} compacto />
+        </div>
 
         {paciente.alertas?.length > 0 && (
           <Secao titulo="Alertas emitidos">

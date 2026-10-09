@@ -20,6 +20,7 @@ import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { avaliarVO2max, fcAlvoKarvonen, fcMaxTanaka, testePrincipalDoRegistro, vo2maxDeRegistro, ROTULO_CLASSE_VO2 } from "@/lib/avaliacao/cardiorrespiratoria";
 import { paraNumero } from "@/lib/numeros";
 import { triarSarcopeniaDinapenia } from "./sarcopenia";
+import { analisarComposicao } from "@/lib/avaliacao/composicaoCorporal";
 import { conectarObjetivo } from "./objetivo";
 import { liberacaoPara } from "@/lib/avaliacao/liberacaoTeste";
 import type { DomainKey, DomainResult, PerfilIntegrado } from "./perfil";
@@ -293,6 +294,7 @@ const REGRAS: Partial<Record<DomainKey, RegraDominio>> = {
     const peso = paraNumero(fis.peso_kg);
     const altura = paraNumero(fis.altura_cm);
     const imc = peso !== null && altura !== null ? peso / Math.pow(altura / 100, 2) : null;
+    const comp = analisarComposicao(fis, ctx.idade, sexoEfetivo(ctx.paciente));
     const evidPeso: Evidencia = {
       resumo:
         "Para peso: 150-250 min/semana de atividade moderada previnem ganho e produzem perda modesta; mais de 250 min/semana se associam a perda clinicamente significativa (≥ 5%). Automonitoramento combinado a outra técnica de mudança de comportamento (metas, feedback) foi mais efetivo (efeito 0,42 vs 0,26). Força preserva a massa magra durante a perda de peso.",
@@ -324,7 +326,22 @@ const REGRAS: Partial<Record<DomainKey, RegraDominio>> = {
       indicador: "Peso mantido (±3%) e medidas estáveis ou melhores em 12 meses.",
       evidencia: evidPeso,
     });
-    if (imc !== null && imc >= 25) {
+    // Massa magra baixa (índice de massa livre de gordura): o treino de força é a prioridade da composição.
+    if (comp.ffmiBaixo === true) {
+      const evidMassa: Evidencia = {
+        resumo:
+          "Na gordura alta com massa magra baixa (padrão compatível com obesidade sarcopênica quando a função muscular também está reduzida), o consenso ESPEN/EASO recomenda avaliar a função muscular e a composição corporal e tratar os dois lados: reduzir a gordura sem perder músculo. O treino de resistência progressivo é a base do ganho de massa magra.",
+        certeza: "Consenso de especialistas; a triagem do sistema (massa magra por dobras ou bioimpedância) é estimativa.",
+        ressalva: "A massa magra por dobras ou bioimpedância comum tem erro maior que DXA; confirme antes de decidir condutas definitivas. Aporte proteico e energético são decisões da Nutrição.",
+        referencias: [R.ACSM_FORCA_2026],
+      };
+      emit("massa-magra", "30", "intervencao", "Treino de força progressivo como prioridade da composição corporal (2-3x/semana, todos os grandes grupos), com avaliação nutricional do aporte proteico e energético; evitar dietas muito restritivas, que perdem músculo junto com a gordura.", {
+        indicador: `Massa magra e força estáveis ou maiores na reavaliação de 90 dias (hoje: ${comp.massaMagraKg !== null ? `${comp.massaMagraKg.toFixed(1).replace(".", ",")} kg` : "massa magra baixa"}${comp.ffmi !== null ? `, índice ${comp.ffmi.toFixed(1).replace(".", ",")} kg/m²` : ""}).`,
+        evidencia: evidMassa,
+      });
+      enc.push({ id: gerarId(), especialidade: "Nutrição", motivo: "Gordura alta com massa magra baixa: plano alimentar que preserve e ganhe massa magra durante a redução de gordura.", regra: "composicao_corporal|nutricao-massa-magra", evidencia: evidMassa, status: "sugerido" });
+    }
+    if ((imc !== null && imc >= 25) || comp.pgStatus === "acima") {
       enc.push({
         id: gerarId(),
         especialidade: "Nutrição",

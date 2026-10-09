@@ -9,6 +9,7 @@ import { TextArea } from "@/components/forms";
 import { createClient } from "@/lib/supabase/client";
 import { gerarParecerAgente, ROTULO_ESTILO, type AgenteParecer, type EstiloParecer } from "@/lib/avaliacao/pareceres";
 import { AGENTES_SISTEMA, nomeComTitulo, revisaoVencida, textoRevisao, type AgenteId } from "@/lib/agentes";
+import AgenteAvatar from "./AgenteAvatar";
 import type { PacienteRow } from "@/lib/anamnese/types";
 import { mesclarNoPlano, TextoAuto, useAutoSalvar } from "./campos";
 
@@ -103,11 +104,14 @@ export function PainelParecer({
   return (
     <div className="rounded-2xl border border-border bg-surface p-5 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 className="font-display text-lg text-ink">
-            Parecer {nomeComTitulo(agente)} <span className="align-middle text-xs font-sans font-medium rounded-full bg-info-soft text-info px-2 py-0.5 ml-1">assistente de IA</span>
-          </h3>
-          <p className="text-xs text-muted">{AGENTES_SISTEMA[agente].especialidade}</p>
+        <div className="flex items-center gap-3">
+          <AgenteAvatar id={agente} tamanho={48} titulo={`Ilustração de ${nomeComTitulo(agente)}`} />
+          <div>
+            <h3 className="font-display text-lg text-ink">
+              Parecer {nomeComTitulo(agente)} <span className="align-middle text-xs font-sans font-medium rounded-full bg-info-soft text-info px-2 py-0.5 ml-1">assistente de IA</span>
+            </h3>
+            <p className="text-xs text-muted">{AGENTES_SISTEMA[agente].especialidade}</p>
+          </div>
         </div>
         <div className="inline-flex rounded-lg border border-border overflow-hidden text-sm" role="group" aria-label="Estilo do parecer">
           {(["sucinto", "explicativo"] as EstiloParecer[]).map((e) => (

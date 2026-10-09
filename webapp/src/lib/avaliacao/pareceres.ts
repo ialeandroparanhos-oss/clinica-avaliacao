@@ -17,6 +17,9 @@ import { perguntasParQ } from "@/lib/anamnese/questionnaires";
 import { calcularPerfilIntegrado, type Classificacao, type DomainKey, type DomainResult } from "@/lib/integracao/perfil";
 import { paraNumero } from "@/lib/numeros";
 import { linhasBaseCientifica, nomeComTitulo, type AgenteId } from "@/lib/agentes";
+import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
+import { analisarComposicao, CORTE_FFMI, percentualGorduraIdealSugerido } from "@/lib/avaliacao/composicaoCorporal";
+import { assimetriaLados, CAMPOS_CIRCUNFERENCIA, LIMITE_ASSIMETRIA_PCT } from "@/lib/avaliacao/medidasRegionais";
 
 export type EstiloParecer = "sucinto" | "explicativo";
 export type AgenteParecer = "anamnese" | "fisica" | "funcional" | "cardio" | "perfil";
@@ -54,10 +57,10 @@ const EXPLICACAO: Record<DomainKey, { avalia: string; criterio: string }> = {
       "VO2máx classificado por idade e sexo pelos percentis de esteira do registro FRIEND; velocidade de marcha com cortes de 0,8 e 1,0 m/s (EWGSOP2). Quando há mais de um indicador, vale a média das notas (0 adequado, 1 atenção, 2 prioridade).",
   },
   composicao_corporal: {
-    avalia: "composição corporal e distribuição de gordura.",
-    criterio: "IMC (OMS), relação cintura/estatura (corte de 0,5, NICE) e circunferência de cintura (OMS, por sexo). O IMC sozinho não diferencia massa magra de gordura: a adiposidade é confirmada pelas medidas de cintura e, quando houver, pelo percentual de gordura.",
-  },
-  dor: {
+    avalia: "composição corporal: gordura, massa magra e distribuição da gordura.",
+    criterio:
+      "leitura combinada, nesta ordem: %G contra a faixa saudável por idade e sexo (Gallagher 2000); massa magra pelo índice de massa livre de gordura (< 17 kg/m² em homens e < 15 em mulheres, critério GLIM); cintura (OMS), RCQ e relação cintura/estatura (corte de 0,5); e, por último, o IMC, que é só triagem e está em debate como critério isolado (Lancet 2025). Gordura alta com massa magra baixa é a combinação de maior atenção. Sem %G registrado, o sistema avisa que a leitura fica limitada.",
+  },  dor: {
     avalia: "dor relatada na anamnese.",
     criterio: "bandeira vermelha ou intensidade de 7/10 ou mais = prioridade; dor sem esses sinais = atenção; sem dor = adequado.",
   },
@@ -167,22 +170,104 @@ function fmt(v: number | null, casas = 0, un = ""): string | null {
 // ---------------------------------------------------------------------------
 function dadosFisica(p: PacienteRow): string[] {
   const f = p.fisica ?? {};
-  const peso = paraNumero(f.peso_kg);
-  const altura = paraNumero(f.altura_cm);
-  const imc = peso && altura ? peso / Math.pow(altura / 100, 2) : null;
+  const c = analisarComposicao(f, idadeEfetiva(p), sexoEfetivo(p));
+  const n = (k: string) => paraNumero(f[k]);
+  const peso = n("peso_kg");
+  const altura = n("altura_cm");
+  const regionais = CAMPOS_CIRCUNFERENCIA.filter((x) => n(x.chave) !== null && !["circ_cintura", "circ_quadril", "circ_abdomen"].includes(x.chave)).length;
   const itens = [
     peso !== null ? `peso ${fmt(peso, 1, "kg")}` : null,
     altura !== null ? `altura ${fmt(altura, 0, "cm")}` : null,
-    imc !== null ? `IMC ${fmt(imc, 1)}` : null,
-    paraNumero(f.circ_cintura) !== null ? `cintura ${fmt(paraNumero(f.circ_cintura), 1, "cm")}` : null,
-    paraNumero(f.circ_quadril) !== null ? `quadril ${fmt(paraNumero(f.circ_quadril), 1, "cm")}` : null,
-    paraNumero(f.percentual_gordura) !== null ? `gordura ${fmt(paraNumero(f.percentual_gordura), 1, "%")}` : null,
-    paraNumero(f.pa_sistolica) !== null && paraNumero(f.pa_diastolica) !== null ? `PA ${f.pa_sistolica}/${f.pa_diastolica} mmHg` : null,
-    paraNumero(f.fc_repouso) !== null ? `FC de repouso ${f.fc_repouso} bpm` : null,
+    c.imc !== null ? `IMC ${fmt(c.imc, 1)} (triagem)` : null,
+    c.pg !== null ? `%G ${fmt(c.pg, 1, "%")}${c.fontePg ? ` (${c.fontePg})` : ""}` : null,
+    c.massaGordaKg !== null ? `massa gorda ${fmt(c.massaGordaKg, 1, "kg")}` : null,
+    c.massaMagraKg !== null ? `massa magra ${fmt(c.massaMagraKg, 1, "kg")}${c.ffmi !== null ? ` (índice ${fmt(c.ffmi, 1)} kg/m²)` : ""}` : null,
+    n("bio_agua_corporal_pct") !== null ? `água corporal ${fmt(n("bio_agua_corporal_pct"), 1, "%")}` : null,
+    c.cintura !== null ? `cintura ${fmt(c.cintura, 1, "cm")}` : null,
+    n("circ_abdomen") !== null ? `abdômen ${fmt(n("circ_abdomen"), 1, "cm")}` : null,
+    n("circ_quadril") !== null ? `quadril ${fmt(n("circ_quadril"), 1, "cm")}` : null,
+    c.rcq !== null ? `RCQ ${fmt(c.rcq, 2)}` : null,
+    c.rcest !== null ? `relação cintura/estatura ${fmt(c.rcest, 2)}` : null,
+    regionais > 0 ? `${regionais} circunferência(s) regional(is)` : null,
+    n("pa_sistolica") !== null && n("pa_diastolica") !== null ? `PA ${f.pa_sistolica}/${f.pa_diastolica} mmHg` : null,
+    n("fc_repouso") !== null ? `FC de repouso ${f.fc_repouso} bpm` : null,
+    n("spo2") !== null ? `SpO2 ${f.spo2}%` : null,
   ].filter(Boolean);
   return itens as string[];
 }
 
+// Leitura criteriosa do Dr. Marco: usa TUDO o que foi medido, com o IMC por último.
+function leituraMarco(p: PacienteRow, estilo: EstiloParecer): string[] {
+  const f = p.fisica ?? {};
+  const idade = idadeEfetiva(p);
+  const sexo = sexoEfetivo(p);
+  const c = analisarComposicao(f, idade, sexo);
+  const linhas: string[] = [];
+  const faixaTxt = c.faixa ? `${c.faixa[0]}-${c.faixa[1]}%` : null;
+  const L: string[] = [];
+
+  if (c.pg !== null) {
+    const rel = c.pgStatus === "acima" ? "ACIMA da faixa saudável" : c.pgStatus === "abaixo" ? "abaixo da faixa saudável" : c.pgStatus === "na_faixa" ? "dentro da faixa saudável" : "sem faixa de referência (faltam idade ou sexo)";
+    L.push(`Gordura corporal: ${fmt(c.pg, 1, "%")}${c.fontePg ? ` (${c.fontePg})` : ""}${faixaTxt ? `, faixa saudável para a idade e o sexo ${faixaTxt}` : ""}: ${rel}.`);
+    const pgIdeal = paraNumero(f.percentual_gordura_ideal) ?? percentualGorduraIdealSugerido(idade, sexo);
+    const peso = paraNumero(f.peso_kg);
+    if (peso !== null && pgIdeal !== null && c.pgStatus === "acima") {
+      L.push(`Gordura acima do ponto médio da faixa: cerca de ${fmt((peso * (c.pg - pgIdeal)) / 100, 1, "kg")}.`);
+    }
+  } else {
+    L.push("Gordura corporal: NÃO registrada (dobras ou bioimpedância). Sem ela só há o IMC, que não separa gordura de massa magra: registre o %G para uma leitura confiável.");
+  }
+  if (c.massaMagraKg !== null) {
+    const corte = sexo !== "desconhecido" ? CORTE_FFMI[sexo] : null;
+    L.push(
+      `Massa magra: ${fmt(c.massaMagraKg, 1, "kg")}${c.ffmi !== null ? `, índice ${fmt(c.ffmi, 1)} kg/m²` : ""}${corte !== null && c.ffmi !== null ? ` (corte de massa reduzida: ${corte} kg/m²): ${c.ffmiBaixo ? "BAIXA" : "adequada"}` : ""}${
+        c.massaMagraPctDaMeta !== null ? `; equivale a ${fmt(c.massaMagraPctDaMeta, 0, "%")} da meta calculada pelo sistema (regra do sistema, sem validação publicada)` : ""
+      }.`
+    );
+  }
+  const padraoTxt: Record<string, string> = {
+    gordura_alta_massa_baixa: "Padrão de MAIOR ATENÇÃO: gordura alta com massa magra baixa. Peso e IMC podem parecer aceitáveis e esconder o problema; a prioridade é ganhar massa magra (treino de força progressivo, com nutrição) e reduzir gordura sem perder músculo. Se a força também estiver reduzida, é compatível com obesidade sarcopênica (triagem; confirmar).",
+    gordura_alta: "Gordura acima da faixa com massa magra preservada: foco em reduzir gordura mantendo a massa magra (força + aeróbio + orientação nutricional).",
+    peso_normal_gordura_alta: "Peso normal pelo IMC, mas com excesso de gordura: o IMC subestima o risco nesta pessoa. Vale olhar a massa magra e a força.",
+    massa_baixa: "Massa magra baixa com gordura dentro da faixa: foco em ganhar massa magra (força progressiva e aporte proteico adequado).",
+    imc_alto_sem_excesso_de_gordura: "IMC elevado sem excesso de gordura medido: provável massa muscular. O IMC superestima a gordura aqui; não use como critério de excesso.",
+    adequado: "Gordura e massa magra sem alteração nos critérios usados.",
+    indeterminado: "Sem dados suficientes para concluir o padrão de composição.",
+  };
+  L.push(padraoTxt[c.padrao]);
+  if (c.rcest !== null || c.cintura !== null) {
+    const partes = [c.cintura !== null ? `cintura ${fmt(c.cintura, 1, "cm")}${c.classeCintura ? ` (${{ adequado: "dentro da faixa", aumentado: "risco aumentado", muito_aumentado: "risco muito aumentado" }[c.classeCintura]}, corte OMS)` : ""}` : null, c.rcq !== null ? `RCQ ${fmt(c.rcq, 2)}` : null, c.rcest !== null ? `relação cintura/estatura ${fmt(c.rcest, 2)} (${c.rcest >= 0.5 ? "≥ 0,5" : "< 0,5"})` : null].filter(Boolean);
+    L.push(`Gordura central: ${partes.join("; ")}.`);
+  }
+  if (c.imc !== null) L.push(`IMC ${fmt(c.imc, 1)}: usado só como triagem (o IMC isolado está em debate: a Comissão da Lancet de 2025 recomenda confirmar o excesso de gordura por medida direta ou por outro critério).`);
+
+  // Assimetrias de membros (referência prática de 10%).
+  const assim: string[] = [];
+  for (const campo of CAMPOS_CIRCUNFERENCIA) {
+    if (!campo.chave.endsWith("_d")) continue;
+    const e = campo.chave.slice(0, -2) + "_e";
+    const a = assimetriaLados(paraNumero(f[campo.chave]), paraNumero(f[e]));
+    if (a && a.pct >= LIMITE_ASSIMETRIA_PCT) assim.push(`${campo.rotulo.replace(/ D$/, "")}: diferença de ${fmt(a.difCm, 1, "cm")} (${fmt(a.pct, 0, "%")}), maior no lado ${a.maior === "D" ? "direito" : "esquerdo"}`);
+  }
+  if (assim.length > 0) L.push(`Assimetria entre os lados acima de ${LIMITE_ASSIMETRIA_PCT}% (referência prática; a dominância explica parte, sobretudo nos braços): ${assim.join("; ")}.`);
+
+  // Pressão arterial.
+  const sis = paraNumero(f.pa_sistolica);
+  const dia = paraNumero(f.pa_diastolica);
+  if (sis !== null && dia !== null && (sis >= 140 || dia >= 90)) L.push(`Pressão arterial ${sis}/${dia} mmHg, acima de 140/90 (valor usado como limite de hipertensão em diretrizes): repita a medida em outro momento e oriente avaliação médica se persistir.`);
+
+  if (estilo === "sucinto") {
+    linhas.push(...L.map((x) => `- ${x}`));
+  } else {
+    linhas.push("LEITURA DA COMPOSIÇÃO CORPORAL", ...L.map((x) => `- ${x}`));
+    linhas.push(
+      "- Como ler: a ordem é %G, massa magra, gordura central e, por último, IMC. As faixas de %G (Gallagher 2000) foram derivadas ligando limites de IMC à gordura medida por 4 compartimentos e DXA, então são provisórias; o corte de massa magra (índice < 17 kg/m² em homens e < 15 em mulheres) vem dos critérios GLIM, pensados para DXA ou bioimpedância: com dobras ou bioimpedância comum a massa magra é estimativa.",
+      "- Use o mesmo método e o mesmo avaliador nas reavaliações: a tendência é mais confiável que o valor absoluto.",
+      ""
+    );
+  }
+  return linhas;
+}
 function dadosFuncional(p: PacienteRow): string[] {
   const f = p.funcional ?? {};
   const n = (chave: string) => paraNumero(f[chave]);
@@ -372,8 +457,14 @@ export function gerarParecerAgente(agente: AgenteParecer, paciente: PacienteRow,
       const dados = agente === "fisica" ? dadosFisica(paciente) : dadosFuncional(paciente);
       linhas.push(estilo === "sucinto" ? `Dados: ${dados.join("; ")}.` : `DADOS REGISTRADOS\n- ${dados.join("\n- ")}\n`);
     }
+    if (agente === "fisica") linhas.push(...leituraMarco(paciente, estilo));
     if (estilo === "explicativo" && agente === "anamnese") linhas.push("INTERPRETAÇÃO DOS DOMÍNIOS");
-    for (const chave of info.dominios) linhas.push(...linhaDominio(dominio(perfil, chave), estilo));
+    for (const chave of info.dominios) {
+      const d = dominio(perfil, chave);
+      // No parecer sucinto do Dr. Marco os itens já foram listados acima; aqui só a classificação.
+      if (agente === "fisica" && estilo === "sucinto") linhas.push(`- ${d.titulo}: ${ROTULO_CLASSE[d.classificacao]} (critérios acima).`);
+      else linhas.push(...linhaDominio(d, estilo));
+    }
   }
 
   if (estilo === "sucinto") {

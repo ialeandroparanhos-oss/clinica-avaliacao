@@ -19,6 +19,7 @@ import { INDICADORES, extrairSerie, type LinhaHistorico } from "@/lib/integracao
 import { detectarDiscrepancias } from "@/lib/integracao/discrepancias";
 import { EVENTO_RASCUNHO, SalvarBar, mesclarNoPlano, useAutoSalvar } from "@/components/avaliador/campos";
 import { ParecerNoPlano } from "@/components/avaliador/PainelParecer";
+import { PainelSupervisao } from "@/components/avaliador/PainelSupervisao";
 import { AbaFisica } from "@/components/avaliador/AbaFisica";
 import { AbaFuncional } from "@/components/avaliador/AbaFuncional";
 import { AbaCardio } from "@/components/avaliador/AbaCardio";
@@ -206,6 +207,8 @@ function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
           ))}
         </div>
       </div>
+
+      <PainelSupervisao paciente={paciente} />
 
       <ParecerNoPlano paciente={paciente} agente="perfil" />
 
