@@ -361,9 +361,10 @@ export function analisarComposicao(fisica: Record<string, any> | undefined, idad
 //    valor em lacuna vai para o nível pior (mais gordura);
 //  - a célula "Ruim" de homens de 26 a 35 anos aparecia como 20 a 24%, que repete a de 18 a 25 e
 //    sobrepõe "Abaixo da média" (22 a 24%): assumido 25 a 27% (continuidade com "Muito ruim" 28 a 36%).
-//    [confirmar com o profissional / livro];
+//    Confirmado pelo profissional em 09/10/2026;
 //  - sobreposições de 1 ponto (homens: 18-25 em 20%, 26-35 em 18%, 36-45 em 21%) resolvem-se pelo
-//    nível melhor.
+//    nível melhor (confirmado pelo profissional em 09/10/2026);
+//  - abaixo do limite inferior de "Excelente" o app avisa gordura muito baixa (confirmado em 09/10/2026).
 // ---------------------------------------------------------------------------
 export const NIVEIS_POLLOCK_WILMORE = ["Excelente", "Bom", "Acima da média", "Média", "Abaixo da média", "Ruim", "Muito ruim"] as const;
 export type NivelPollockWilmore = (typeof NIVEIS_POLLOCK_WILMORE)[number];
