@@ -16,6 +16,7 @@ import {
   SITIOS_JP7,
   TODOS_SITIOS_DOBRA,
   calcularPercentualGorduraDobras,
+  classificarGorduraPollockWilmore,
   compararMetodosGordura,
   somaDobrasProtocolo,
   SOMA_DOBRAS_CAUTELA_MM,
@@ -223,6 +224,7 @@ export function AbaFisica({
   const somaDobras = somaDobrasProtocolo(d.protocolo_dobras as ProtocoloDobras, d, sexoNorm);
   const percentualBioInformado = paraNumero(d.bio_percentual_gordura);
   const divergenciaGordura = compararMetodosGordura(d, idadeNum, sexoNorm);
+  const classePW = classificarGorduraPollockWilmore(paraNumero(d.percentual_gordura), idadeNum, sexoNorm);
 
   const percentualGorduraEncontrado = paraNumero(d.percentual_gordura);
   const faixaIdeal = faixaGorduraSugerida(idadeNum, sexoNorm);
@@ -629,6 +631,34 @@ export function AbaFisica({
           <ValorCalculado label="Carência muscular" valor={carenciaMuscularKg !== null ? `${carenciaMuscularKg.toFixed(1)} kg` : null} />
           <ValorCalculado label="Peso ideal" valor={pesoIdealKg !== null ? `${pesoIdealKg.toFixed(1)} kg` : null} />
         </div>
+        {percentualGorduraEncontrado !== null && (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 text-sm">
+            <div className="rounded-lg bg-bg p-3">
+              <p className="text-xs uppercase tracking-wide text-muted font-semibold">Leitura 1: faixa saudável (Gallagher 2000)</p>
+              <p className="mt-1 text-ink">
+                {faixaIdeal
+                  ? `Faixa saudável para a idade e o sexo: ${faixaIdeal[0]}-${faixaIdeal[1]}%. ${percentualGorduraEncontrado > faixaIdeal[1] ? "ACIMA da faixa." : percentualGorduraEncontrado < faixaIdeal[0] ? "Abaixo da faixa." : "Dentro da faixa."}`
+                  : "Informe idade e sexo para a faixa."}
+              </p>
+              <p className="mt-1 text-xs text-muted">Faixas provisórias, derivadas do IMC (PubMed 10966886).</p>
+            </div>
+            <div className="rounded-lg bg-bg p-3">
+              <p className="text-xs uppercase tracking-wide text-muted font-semibold">Leitura 2: classificação Pollock &amp; Wilmore (1993)</p>
+              {classePW ? (
+                <>
+                  <p className="mt-1 text-ink">
+                    <strong>{classePW.nivel}</strong> ({classePW.faixa[0]} a {classePW.faixa[1]}% para {classePW.faixaEtaria}).
+                    {classePW.abaixoDoExcelente && " %G abaixo do limite de Excelente: gordura muito baixa, conferir."}
+                    {classePW.emLacuna && " Valor entre dois níveis da tabela: assumido o nível pior."}
+                  </p>
+                  <p className="mt-1 text-xs text-muted">Livro-texto, fonte não conferida no PubMed. Classificação de condicionamento, mais rígida que a faixa saudável: leia as duas juntas.</p>
+                </>
+              ) : (
+                <p className="mt-1 text-muted">Disponível de 18 a 65 anos, com idade e sexo informados.</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="pt-4 border-t border-border">

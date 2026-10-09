@@ -18,7 +18,7 @@ import { calcularPerfilIntegrado, type Classificacao, type DomainKey, type Domai
 import { paraNumero } from "@/lib/numeros";
 import { linhasBaseCientifica, nomeComTitulo, type AgenteId } from "@/lib/agentes";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
-import { analisarComposicao, compararMetodosGordura, CORTE_FFMI, percentualGorduraIdealSugerido } from "@/lib/avaliacao/composicaoCorporal";
+import { analisarComposicao, classificarGorduraPollockWilmore, compararMetodosGordura, CORTE_FFMI, percentualGorduraIdealSugerido } from "@/lib/avaliacao/composicaoCorporal";
 import { assimetriaLados, CAMPOS_CIRCUNFERENCIA, LIMITE_ASSIMETRIA_PCT } from "@/lib/avaliacao/medidasRegionais";
 
 export type EstiloParecer = "sucinto" | "explicativo";
@@ -216,6 +216,14 @@ function leituraMarco(p: PacienteRow, estilo: EstiloParecer): string[] {
     }
   } else {
     L.push("Gordura corporal: NÃO registrada (dobras ou bioimpedância). Sem ela só há o IMC, que não separa gordura de massa magra: registre o %G para uma leitura confiável.");
+  }
+  const pw = classificarGorduraPollockWilmore(c.pg, idade, sexo);
+  if (pw) {
+    L.push(
+      `Segunda leitura do %G (classificação de livro-texto, Pollock & Wilmore 1993, fonte não conferida no PubMed): nível "${pw.nivel}" (${pw.faixa[0]} a ${pw.faixa[1]}% para ${pw.faixaEtaria})${
+        pw.abaixoDoExcelente ? "; %G abaixo do limite de \"Excelente\": gordura muito baixa, conferir" : pw.emLacuna ? "; valor entre dois níveis da tabela, assumido o nível pior" : ""
+      }. É uma classificação de condicionamento, mais rígida que a faixa saudável de Gallagher: leia as duas juntas.`
+    );
   }
   const diverg = compararMetodosGordura(f, idade, sexo);
   if (diverg?.divergente) L.push(`ATENÇÃO, métodos divergentes: ${diverg.texto}`);

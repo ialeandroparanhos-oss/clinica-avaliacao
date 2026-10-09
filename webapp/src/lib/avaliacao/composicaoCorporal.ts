@@ -351,6 +351,79 @@ export function analisarComposicao(fisica: Record<string, any> | undefined, idad
 }
 
 // ---------------------------------------------------------------------------
+// Segunda leitura do %G: classificação de livro-texto (Pollock & Wilmore, 1993), enviada pelo
+// profissional em 09/10/2026. FONTE NÃO CONFERIDA NO PUBMED (livro): [confirmar no livro]. É uma
+// classificação de condicionamento físico, mais rígida que a faixa saudável de Gallagher (ex.: mulher de
+// 26 a 35 anos fica "Ruim" a partir de 31%, enquanto a faixa de Gallagher vai até 32%): por isso é
+// mostrada AO LADO da de Gallagher, nunca no lugar dela, e não decide sozinha o domínio no perfil.
+// Vale de 18 a 65 anos. Transcrição da planilha do profissional; pontos de atenção:
+//  - a planilha tem lacunas entre níveis (ex.: homens de 36 a 45 anos, 26%): decisão do profissional,
+//    valor em lacuna vai para o nível pior (mais gordura);
+//  - a célula "Ruim" de homens de 26 a 35 anos aparecia como 20 a 24%, que repete a de 18 a 25 e
+//    sobrepõe "Abaixo da média" (22 a 24%): assumido 25 a 27% (continuidade com "Muito ruim" 28 a 36%).
+//    [confirmar com o profissional / livro];
+//  - sobreposições de 1 ponto (homens: 18-25 em 20%, 26-35 em 18%, 36-45 em 21%) resolvem-se pelo
+//    nível melhor.
+// ---------------------------------------------------------------------------
+export const NIVEIS_POLLOCK_WILMORE = ["Excelente", "Bom", "Acima da média", "Média", "Abaixo da média", "Ruim", "Muito ruim"] as const;
+export type NivelPollockWilmore = (typeof NIVEIS_POLLOCK_WILMORE)[number];
+
+type FaixaPW = [number, number];
+const FAIXAS_ETARIAS_PW: { min: number; max: number; rotulo: string }[] = [
+  { min: 18, max: 25, rotulo: "18 a 25 anos" },
+  { min: 26, max: 35, rotulo: "26 a 35 anos" },
+  { min: 36, max: 45, rotulo: "36 a 45 anos" },
+  { min: 46, max: 55, rotulo: "46 a 55 anos" },
+  { min: 56, max: 65, rotulo: "56 a 65 anos" },
+];
+
+// Por sexo: uma lista de 5 faixas etárias, cada uma com os 7 níveis (mesma ordem de NIVEIS_POLLOCK_WILMORE).
+const TABELA_PW: Record<"masculino" | "feminino", FaixaPW[][]> = {
+  masculino: [
+    [[4, 6], [8, 10], [12, 13], [14, 16], [17, 20], [20, 24], [26, 36]],
+    [[8, 11], [12, 15], [16, 18], [18, 20], [22, 24], [25, 27], [28, 36]],
+    [[10, 14], [16, 18], [19, 21], [21, 23], [24, 25], [27, 29], [30, 39]],
+    [[12, 16], [18, 20], [21, 23], [24, 25], [26, 27], [28, 30], [32, 38]],
+    [[13, 18], [20, 21], [22, 23], [24, 25], [26, 27], [28, 30], [32, 38]],
+  ],
+  feminino: [
+    [[13, 16], [17, 19], [20, 22], [23, 25], [26, 28], [29, 31], [33, 43]],
+    [[14, 16], [18, 20], [21, 23], [24, 25], [27, 29], [31, 33], [36, 49]],
+    [[16, 19], [20, 23], [24, 26], [27, 29], [30, 32], [33, 36], [38, 48]],
+    [[17, 21], [23, 25], [26, 28], [29, 31], [32, 34], [35, 38], [39, 50]],
+    [[18, 22], [24, 26], [27, 29], [30, 32], [33, 35], [36, 38], [39, 49]],
+  ],
+};
+
+export type ClassificacaoPW = {
+  nivel: NivelPollockWilmore;
+  faixa: [number, number]; // faixa da tabela para o nível, na idade e sexo do paciente
+  faixaEtaria: string;
+  abaixoDoExcelente: boolean; // %G menor que o limite inferior de "Excelente" (gordura muito baixa)
+  emLacuna: boolean; // %G entre dois níveis da planilha: assumido o nível pior
+};
+
+// O nível é o primeiro (do melhor para o pior) cujo limite superior, somando 1 ponto (a planilha usa
+// inteiros: "24 a 25%" cobre até 25,99), fica acima do valor. Valor em lacuna cai no nível seguinte
+// (pior), como pediu o profissional; acima de tudo, "Muito ruim".
+export function classificarGorduraPollockWilmore(pg: number | null, idade: number | null, sexo: SexoComp): ClassificacaoPW | null {
+  if (pg === null || !Number.isFinite(pg) || idade === null || sexo === "desconhecido") return null;
+  const idx = FAIXAS_ETARIAS_PW.findIndex((f) => idade >= f.min && idade < f.max + 1);
+  if (idx < 0) return null;
+  const faixas = TABELA_PW[sexo][idx];
+  let i = faixas.findIndex((f) => pg < f[1] + 1);
+  if (i < 0) i = faixas.length - 1;
+  const [min, max] = faixas[i];
+  return {
+    nivel: NIVEIS_POLLOCK_WILMORE[i],
+    faixa: [min, max],
+    faixaEtaria: FAIXAS_ETARIAS_PW[idx].rotulo,
+    abaixoDoExcelente: i === 0 && pg < min,
+    emLacuna: i > 0 && pg < min && pg >= faixas[i - 1][1] + 1,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Proteção: dobras x bioimpedância. Quando os dois métodos estão registrados e divergem muito, o %G de
 // um deles provavelmente tem erro de técnica ou de preparo; o sistema mostra os dois e pede conferência
 // em vez de escolher sozinho. O limite de 5 pontos percentuais é regra prática do sistema, sem corte
