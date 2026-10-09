@@ -16,7 +16,7 @@ import { calcularPerfilIntegrado } from "@/lib/integracao/perfil";
 import { detectarDiscrepancias } from "@/lib/integracao/discrepancias";
 import { triarSarcopeniaDinapenia } from "@/lib/integracao/sarcopenia";
 import { itemAprovado, type Plano } from "@/lib/integracao/plano";
-import { analisarComposicao } from "@/lib/avaliacao/composicaoCorporal";
+import { analisarComposicao, compararMetodosGordura } from "@/lib/avaliacao/composicaoCorporal";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { liberacaoPara } from "@/lib/avaliacao/liberacaoTeste";
 import { testePrincipalDoRegistro } from "@/lib/avaliacao/cardiorrespiratoria";
@@ -80,6 +80,8 @@ export function supervisionar(paciente: PacienteRow): ResultadoSupervisao {
     default:
       break;
   }
+  const diverg = compararMetodosGordura(f, idade, sexo);
+  if (diverg?.divergente) add("atencao", "Composição corporal", diverg.texto);
   if (comp.pg === null && ((comp.imc !== null && comp.imc >= 25) || comp.classeCintura === "aumentado" || comp.classeCintura === "muito_aumentado")) {
     add("atencao", "Composição corporal", "Há sinal de excesso de peso ou de gordura central, mas nenhum %G registrado (dobras ou bioimpedância): a leitura fica limitada ao IMC e às medidas de cintura.");
   }

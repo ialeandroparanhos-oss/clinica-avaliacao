@@ -350,6 +350,39 @@ export function analisarComposicao(fisica: Record<string, any> | undefined, idad
   return { imc, pg, fontePg, faixa, pgStatus, massaGordaKg, massaMagraKg, ffmi, ffmiBaixo, massaMagraIdealKg, massaMagraPctDaMeta, cintura, rcq, rcest, adiposidade, classeCintura, padrao };
 }
 
+// ---------------------------------------------------------------------------
+// Proteção: dobras x bioimpedância. Quando os dois métodos estão registrados e divergem muito, o %G de
+// um deles provavelmente tem erro de técnica ou de preparo; o sistema mostra os dois e pede conferência
+// em vez de escolher sozinho. O limite de 5 pontos percentuais é regra prática do sistema, sem corte
+// publicado (os dois métodos têm erro individual de alguns pontos).
+// ---------------------------------------------------------------------------
+export const LIMITE_DIVERGENCIA_PG_PP = 5;
+
+export type DivergenciaGordura = {
+  dobras: number;
+  bio: number;
+  diferenca: number; // dobras - bioimpedância (pontos percentuais)
+  divergente: boolean;
+  texto: string;
+};
+
+export function compararMetodosGordura(fisica: Record<string, any> | undefined, idade: number | null, sexo: SexoComp): DivergenciaGordura | null {
+  const f = fisica ?? {};
+  const protocolo = String(f.protocolo_dobras ?? "");
+  if (!["jp3", "jp7", "faulkner4"].includes(protocolo)) return null;
+  const dobras = calcularPercentualGorduraDobras(protocolo as ProtocoloDobras, f as Record<string, string>, idade, sexo);
+  const bio = paraNumero(f.bio_percentual_gordura);
+  if (dobras === null || bio === null) return null;
+  const diferenca = dobras - bio;
+  const divergente = Math.abs(diferenca) >= LIMITE_DIVERGENCIA_PG_PP;
+  const v = (n: number) => n.toFixed(1).replace(".", ",");
+  const pts = Math.abs(diferenca).toFixed(1).replace(".", ",");
+  const texto = divergente
+    ? `%G por dobras ${v(dobras)}% e por bioimpedância ${v(bio)}%: diferença de ${pts} pontos (dobras ${diferenca > 0 ? "mais altas" : "mais baixas"}). Confira a técnica das dobras (3 leituras por local, pontos corretos, lado direito, pinça sem pressionar demais) e o preparo da bioimpedância (jejum, bexiga vazia, hidratação normal, sem exercício antes). Enquanto isso, trate o %G como faixa e não como valor exato; use o mesmo método nas reavaliações.`
+    : `%G por dobras ${v(dobras)}% e por bioimpedância ${v(bio)}%: diferença de ${pts} pontos, dentro do esperado entre métodos.`;
+  return { dobras, bio, diferenca, divergente, texto };
+}
+
 export function percentualGorduraIdealSugerido(idade: number | null, sexo: SexoComp): number | null {
   const faixa = faixaGorduraSugerida(idade, sexo);
   if (!faixa) return null;

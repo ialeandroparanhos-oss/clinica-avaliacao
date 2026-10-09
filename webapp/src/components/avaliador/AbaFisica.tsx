@@ -16,6 +16,7 @@ import {
   SITIOS_JP7,
   TODOS_SITIOS_DOBRA,
   calcularPercentualGorduraDobras,
+  compararMetodosGordura,
   somaDobrasProtocolo,
   SOMA_DOBRAS_CAUTELA_MM,
   CORTES_CIRC_ABDOMINAL,
@@ -221,6 +222,7 @@ export function AbaFisica({
   const percentualDobrasCalc = calcularPercentualGorduraDobras(d.protocolo_dobras as ProtocoloDobras, d, idadeNum, sexoNorm);
   const somaDobras = somaDobrasProtocolo(d.protocolo_dobras as ProtocoloDobras, d, sexoNorm);
   const percentualBioInformado = paraNumero(d.bio_percentual_gordura);
+  const divergenciaGordura = compararMetodosGordura(d, idadeNum, sexoNorm);
 
   const percentualGorduraEncontrado = paraNumero(d.percentual_gordura);
   const faixaIdeal = faixaGorduraSugerida(idadeNum, sexoNorm);
@@ -577,6 +579,12 @@ export function AbaFisica({
         )}
         {d.bio_percentual_gordura && percentualBioInformado === null && (
           <p className="mt-2 text-xs text-danger">Valor não reconhecido - digite apenas números (ex.: 18,5).</p>
+        )}
+        {divergenciaGordura && (
+          <p className={`mt-3 rounded-lg p-3 text-sm ${divergenciaGordura.divergente ? "bg-warn-soft text-warn" : "bg-bg text-muted"}`}>
+            <strong>{divergenciaGordura.divergente ? "Métodos divergentes. " : "Métodos coerentes. "}</strong>
+            {divergenciaGordura.texto}
+          </p>
         )}
       </div>
 

@@ -18,7 +18,7 @@ import { calcularPerfilIntegrado, type Classificacao, type DomainKey, type Domai
 import { paraNumero } from "@/lib/numeros";
 import { linhasBaseCientifica, nomeComTitulo, type AgenteId } from "@/lib/agentes";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
-import { analisarComposicao, CORTE_FFMI, percentualGorduraIdealSugerido } from "@/lib/avaliacao/composicaoCorporal";
+import { analisarComposicao, compararMetodosGordura, CORTE_FFMI, percentualGorduraIdealSugerido } from "@/lib/avaliacao/composicaoCorporal";
 import { assimetriaLados, CAMPOS_CIRCUNFERENCIA, LIMITE_ASSIMETRIA_PCT } from "@/lib/avaliacao/medidasRegionais";
 
 export type EstiloParecer = "sucinto" | "explicativo";
@@ -217,6 +217,8 @@ function leituraMarco(p: PacienteRow, estilo: EstiloParecer): string[] {
   } else {
     L.push("Gordura corporal: NÃO registrada (dobras ou bioimpedância). Sem ela só há o IMC, que não separa gordura de massa magra: registre o %G para uma leitura confiável.");
   }
+  const diverg = compararMetodosGordura(f, idade, sexo);
+  if (diverg?.divergente) L.push(`ATENÇÃO, métodos divergentes: ${diverg.texto}`);
   if (c.massaMagraKg !== null) {
     const corte = sexo !== "desconhecido" ? CORTE_FFMI[sexo] : null;
     L.push(
