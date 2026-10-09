@@ -6,6 +6,8 @@
 // entra em "fontes" referência conferida no PubMed (ver lib/agentes.ts). Sem fonte, o texto é conhecimento
 // geral de saúde e a tela diz isso. Evitei números e cortes que não tenham fonte conferida.
 
+import { referenciaPorId, type Referencia } from "@/lib/agentes";
+
 export type GrupoCondicao = "Cardiovascular" | "Metabólica e endócrina" | "Respiratória" | "Musculoesquelética e dor" | "Neurológica" | "Saúde mental e sono" | "Outras";
 
 export type Condicao = {
@@ -32,7 +34,7 @@ export const CATALOGO: Condicao[] = [
     grupo: "Cardiovascular",
     aliases: ["hipertens*", "pressao alta", "has", "pressao elevada"],
     oQueE: "A pressão nas artérias fica elevada de forma persistente. Em geral não dá sintoma, por isso muita gente descobre tarde. Com o tempo, aumenta o risco de AVC, infarto, insuficiência cardíaca e doença renal. O diagnóstico exige medidas repetidas e é do médico; o valor de 140/90 mmHg no consultório é o ponto de corte clássico das diretrizes (conferir no texto da diretriz).",
-    importaParaExercicio: "O exercício regular ajuda a baixar a pressão e faz parte do tratamento, mas a pressão muito elevada em repouso pede cuidado antes de esforço. Alguns remédios para pressão alteram a resposta ao exercício: betabloqueadores limitam a frequência cardíaca (use a percepção de esforço, não só a FC), e outros podem causar tontura ao levantar.",
+    importaParaExercicio: "O exercício de resistência (aeróbio) regular baixa a pressão em hipertensos, em cerca de 5 a 7 mmHg segundo o posicionamento do ACSM, e faz parte do tratamento, mas a pressão muito elevada em repouso pede cuidado antes de esforço. Alguns remédios para pressão alteram a resposta ao exercício: betabloqueadores limitam a frequência cardíaca (use a percepção de esforço, não só a FC), e outros podem causar tontura ao levantar.",
     cuidados: [
       "Medir a pressão em repouso antes de começar a sessão e anotar.",
       "Perguntar quais remédios usa e se tomou no dia.",
@@ -43,7 +45,7 @@ export const CATALOGO: Condicao[] = [
     sinaisDeAlerta: ["Dor ou aperto no peito", "Falta de ar desproporcional ao esforço", "Tontura forte, desmaio ou visão turva", "Dor de cabeça intensa e súbita", "Pressão em repouso muito elevada na medida do dia"],
     encaminhar: "Sem acompanhamento médico, com pressão elevada em medidas repetidas ou com qualquer sinal de alerta: orientar avaliação médica antes de esforço intenso.",
     noApp: "Pressão a partir de 140/90 mmHg gera aviso no parecer do Dr. Marco e na supervisão da Dra. Nina, para repetir a medida e considerar avaliação médica.",
-    fontes: ["esceesh2018"],
+    fontes: ["esceesh2018", "pescatello2004"],
   },
   {
     id: "cardiopatia",
@@ -51,7 +53,7 @@ export const CATALOGO: Condicao[] = [
     grupo: "Cardiovascular",
     aliases: ["cardiopat*", "coracao", "infarto", "angina", "coronari*", "marcapasso", "stent", "safena", "revasculariza*", "valvul*", "miocardi*", "problema cardiaco", "doenca cardiaca", "doenca do coracao"],
     oQueE: "\"Cardiopatia\" é um termo amplo. Pode ser doença das artérias do coração (coronárias, que causa angina e infarto), problema nas válvulas, doença do músculo cardíaco ou do ritmo. O tratamento e o que é seguro fazer dependem do tipo específico, por isso o primeiro passo é saber QUAL é o diagnóstico e o que o cardiologista liberou.",
-    importaParaExercicio: "Na maioria dos casos o exercício é recomendado e traz benefício, mas com prescrição individual e liberação médica, com limites de intensidade bem definidos. Testes máximos e esforço vigoroso só com liberação.",
+    importaParaExercicio: "Na doença coronariana, a reabilitação com exercício reduz a mortalidade cardiovascular e as internações (revisão Cochrane), mas com prescrição individual e liberação médica, com limites de intensidade bem definidos. Testes máximos e esforço vigoroso só com liberação.",
     cuidados: [
       "Pedir o diagnóstico específico e a liberação médica por escrito, com limites de frequência cardíaca e intensidade.",
       "Perguntar sobre cirurgias, stents, marcapasso ou desfibrilador (limitam o tipo de esforço e a FC).",
@@ -62,7 +64,7 @@ export const CATALOGO: Condicao[] = [
     sinaisDeAlerta: ["Dor, aperto ou peso no peito, ou irradiando para braço ou mandíbula", "Falta de ar anormal", "Palpitações com tontura", "Desmaio ou quase desmaio", "Suor frio"],
     encaminhar: "Interromper o esforço diante de qualquer sinal de alerta e acionar atendimento de emergência; sem liberação médica atual, não iniciar esforço vigoroso nem teste máximo.",
     noApp: "A resposta \"problema cardíaco\" do PAR-Q+ aciona a liberação para teste máximo e esforço vigoroso pelo critério do ACSM 2015, com item de segurança no plano.",
-    fontes: ["pelliccia2021", "acsm2015"],
+    fontes: ["pelliccia2021", "anderson2016", "acsm2015"],
   },
   {
     id: "insuficiencia_cardiaca",
@@ -104,7 +106,7 @@ export const CATALOGO: Condicao[] = [
     grupo: "Cardiovascular",
     aliases: ["avc", "derrame", "acidente vascular*", "isquemia cerebral", "avci", "avch"],
     oQueE: "Interrupção do fluxo de sangue em uma parte do cérebro (isquêmico) ou sangramento (hemorrágico). As sequelas variam: fraqueza de um lado do corpo, alteração de equilíbrio, de fala ou de sensibilidade. O risco de novo AVC está ligado a pressão alta, diabetes, colesterol e arritmias.",
-    importaParaExercicio: "Com liberação médica, o exercício ajuda a recuperar força, equilíbrio e marcha e a controlar fatores de risco. O foco costuma ser segurança contra quedas e simetria do movimento.",
+    importaParaExercicio: "Com liberação médica, treino aeróbio e de força é apoiado após AVC: melhora a capacidade funcional, as atividades do dia a dia e a qualidade de vida e reduz novos eventos cardiovasculares. A ênfase é em atividade aeróbia leve a moderada e força, individualizada, com segurança contra quedas.",
     cuidados: [
       "Liberação médica e conhecimento das sequelas (lado afetado, equilíbrio, comunicação).",
       "Pressão arterial controlada e medida antes da sessão.",
@@ -113,6 +115,7 @@ export const CATALOGO: Condicao[] = [
     ],
     sinaisDeAlerta: ["Fraqueza ou formigamento súbito de um lado", "Boca torta ou fala enrolada", "Perda súbita de visão", "Dor de cabeça súbita e muito forte"],
     encaminhar: "Qualquer sinal súbito acima: acionar o serviço de emergência na hora, sem esperar melhorar.",
+    fontes: ["billinger2014"],
   },
   {
     id: "dislipidemia",
@@ -120,7 +123,7 @@ export const CATALOGO: Condicao[] = [
     grupo: "Cardiovascular",
     aliases: ["colesterol", "dislipidemia", "triglicer*", "estatina*", "gordura no sangue"],
     oQueE: "Excesso de gorduras no sangue (colesterol e triglicerídeos). Não dá sintoma, mas é um fator de risco cardiovascular importante e modificável. Muitas pessoas usam estatinas.",
-    importaParaExercicio: "O exercício regular, junto com a alimentação, ajuda a melhorar o perfil de gorduras. Estatinas podem causar dor muscular em algumas pessoas.",
+    importaParaExercicio: "O exercício regular, junto com a alimentação, ajuda a melhorar o perfil de gorduras. Estatinas podem causar sintomas musculares (dor ou desconforto): é uma das principais razões de abandono do tratamento, e a miopatia grave é rara.",
     cuidados: [
       "Perguntar se usa estatina e se sente dor ou fraqueza muscular diferente da dor de treino.",
       "Tratar como fator de risco cardiovascular na triagem de liberação.",
@@ -129,6 +132,7 @@ export const CATALOGO: Condicao[] = [
     sinaisDeAlerta: ["Dor muscular intensa e inexplicada, com urina escura ou fraqueza importante em uso de estatina"],
     encaminhar: "Dor muscular intensa e persistente com estatina: orientar contato com o médico que prescreveu.",
     noApp: "\"Colesterol alto ou uso de estatina\" é fator de risco cardiovascular na anamnese (triagem ACSM).",
+    fontes: ["stroes2015"],
   },
   {
     id: "trombose_varizes",
@@ -207,7 +211,7 @@ export const CATALOGO: Condicao[] = [
     grupo: "Respiratória",
     aliases: ["asma*", "bronquite asmatica", "broncoespasmo", "bombinha"],
     oQueE: "Inflamação crônica das vias aéreas, com crises de falta de ar, chiado e tosse, em geral desencadeadas por alérgenos, infecções, ar frio ou seco e pelo próprio exercício.",
-    importaParaExercicio: "Asma controlada não impede o exercício, que é indicado. O esforço pode provocar broncoespasmo, sobretudo em ar frio, seco ou poluído.",
+    importaParaExercicio: "Na asma estável o treino físico foi bem tolerado nos estudos, sem piora dos sintomas, e melhora o condicionamento (consumo de oxigênio), embora não mude a função pulmonar medida: por isso o exercício é encorajado. O esforço pode provocar broncoespasmo, sobretudo em ar frio, seco ou poluído.",
     cuidados: [
       "Perguntar se está controlada e se usa medicação de resgate (a bombinha) e profilática.",
       "Manter o resgate à mão durante a sessão.",
@@ -216,6 +220,7 @@ export const CATALOGO: Condicao[] = [
     ],
     sinaisDeAlerta: ["Chiado, tosse ou aperto no peito que não melhora com o resgate", "Dificuldade de falar frases completas", "Lábios arroxeados"],
     encaminhar: "Crise que não melhora em poucos minutos com o resgate: acionar atendimento de emergência.",
+    fontes: ["carson2013"],
   },
   {
     id: "dpoc",
@@ -241,7 +246,7 @@ export const CATALOGO: Condicao[] = [
     grupo: "Respiratória",
     aliases: ["apneia*", "cpap", "ronco*"],
     oQueE: "Paradas repetidas da respiração durante o sono, com ronco alto, sono não reparador e sonolência durante o dia. Está ligada à obesidade e a pressão alta, arritmias e risco cardiovascular.",
-    importaParaExercicio: "O tratamento (CPAP, perda de peso) e o exercício ajudam. A sonolência e a fadiga podem reduzir o rendimento e a segurança em exercícios que exigem atenção.",
+    importaParaExercicio: "Em estudos pequenos, o treino supervisionado reduziu a gravidade da apneia, melhorou o sono e a sonolência diurna, mesmo com pouca perda de peso; é complemento, e não substitui o tratamento (CPAP, perda de peso). A sonolência e a fadiga podem reduzir o rendimento e a segurança em exercícios que exigem atenção.",
     cuidados: [
       "Perguntar sobre diagnóstico e uso de CPAP e sobre sonolência diurna.",
       "Verificar pressão arterial, que costuma estar elevada.",
@@ -250,6 +255,7 @@ export const CATALOGO: Condicao[] = [
     sinaisDeAlerta: ["Sonolência intensa durante o dia", "Pausas respiratórias presenciadas por quem dorme junto", "Pressão arterial elevada"],
     encaminhar: "Sintomas sem diagnóstico: orientar avaliação do sono com médico.",
     noApp: "As perguntas do PSQI (ronco, respirar mal à noite) ajudam a levantar suspeita.",
+    fontes: ["iftikhar2014"],
   },
 
   // ------------------------------------------------------------------ Musculoesquelética e dor
@@ -276,7 +282,7 @@ export const CATALOGO: Condicao[] = [
     grupo: "Musculoesquelética e dor",
     aliases: ["osteopor*", "osteopenia", "ossos fracos", "fratura vertebral"],
     oQueE: "Perda de massa e de qualidade do osso, que fica frágil e aumenta o risco de fratura (punho, vértebras, quadril). A osteopenia é a fase anterior, de perda menor.",
-    importaParaExercicio: "O consenso recomenda programa multicomponente com treino de força e de equilíbrio, e não apenas aeróbio. O ponto principal é fortalecer e prevenir quedas, evitando movimentos que sobrecarregam a coluna.",
+    importaParaExercicio: "O consenso recomenda programa multicomponente com treino de força e de equilíbrio, e não apenas aeróbio. O ponto principal é fortalecer e prevenir quedas: em idosos da comunidade, exercícios de equilíbrio e funcionais (com ou sem força) reduzem a taxa de quedas. Evitar movimentos que sobrecarregam a coluna.",
     cuidados: [
       "Treino de força progressivo e de equilíbrio como base.",
       "Evitar flexão forçada do tronco (por exemplo, abdominal tradicional) e torções bruscas da coluna, sobretudo se há fratura vertebral.",
@@ -285,7 +291,7 @@ export const CATALOGO: Condicao[] = [
     ],
     sinaisDeAlerta: ["Dor súbita e intensa nas costas após esforço ou queda", "Perda de altura recente", "Qualquer queda com dor forte"],
     encaminhar: "Dor intensa e súbita na coluna, ou queda com dor persistente: interromper e orientar avaliação médica.",
-    fontes: ["giangregorio2014"],
+    fontes: ["giangregorio2014", "sherrington2019"],
   },
   {
     id: "lombalgia",
@@ -344,7 +350,7 @@ export const CATALOGO: Condicao[] = [
     grupo: "Musculoesquelética e dor",
     aliases: ["artrite*", "reumatoide", "lupus", "espondilite*", "psoriatica", "reumatismo"],
     oQueE: "São doenças em que o sistema imune ataca as articulações ou outros órgãos, com períodos de crise (dor, inchaço e rigidez prolongada, sobretudo de manhã) e períodos de calma. O tratamento costuma incluir medicamentos que reduzem a imunidade.",
-    importaParaExercicio: "O exercício é benéfico para dor, força e função fora das crises. Nas crises, a articulação inflamada deve ser poupada.",
+    importaParaExercicio: "Na artrite reumatoide, treino aeróbio combinado com força é recomendado e melhora a capacidade aeróbia e a força, sem efeitos prejudiciais nos estudos (a revisão não cobre lúpus nem espondilite). Nas crises, a articulação inflamada deve ser poupada.",
     cuidados: [
       "Perguntar se está em crise e quais medicamentos usa (imunossupressores aumentam o risco de infecção, corticoide fragiliza osso e tendão).",
       "Evitar carga alta e impacto sobre a articulação inflamada.",
@@ -353,6 +359,7 @@ export const CATALOGO: Condicao[] = [
     ],
     sinaisDeAlerta: ["Articulação inchada, quente e muito dolorida", "Febre ou mal-estar geral", "Falta de ar ou dor no peito (podem indicar envolvimento de outros órgãos)"],
     encaminhar: "Crise ou sintomas novos: orientar o reumatologista antes de seguir com carga.",
+    fontes: ["hurkmans2009"],
   },
   {
     id: "tendinopatia",
@@ -425,7 +432,7 @@ export const CATALOGO: Condicao[] = [
     grupo: "Neurológica",
     aliases: ["parkinson*"],
     oQueE: "Doença neurológica progressiva com tremor de repouso, lentidão e rigidez dos movimentos e alteração de equilíbrio e da marcha. Os sintomas variam ao longo do dia, conforme o efeito do remédio.",
-    importaParaExercicio: "O exercício é parte do tratamento e ajuda no equilíbrio, na marcha e na função. A segurança contra quedas é central.",
+    importaParaExercicio: "A fisioterapia e o exercício tiveram benefício de curto prazo em velocidade da marcha, equilíbrio e função motora na meta-análise; faltam estudos de longo prazo. A segurança contra quedas é central.",
     cuidados: [
       "Treinar no período em que o remédio está fazendo efeito (\"fase on\").",
       "Instruções simples e demonstradas; pistas visuais e de ritmo ajudam na marcha.",
@@ -434,6 +441,7 @@ export const CATALOGO: Condicao[] = [
     ],
     sinaisDeAlerta: ["Quedas ou quase quedas", "Congelamento da marcha", "Tontura importante ao ficar de pé"],
     encaminhar: "Piora rápida ou quedas repetidas: orientar o neurologista.",
+    fontes: ["tomlinson2012"],
   },
   {
     id: "vertigem",
@@ -474,7 +482,7 @@ export const CATALOGO: Condicao[] = [
     grupo: "Saúde mental e sono",
     aliases: ["ansiedade", "depress*", "panico", "transtorno de ansiedade", "estresse cronico", "burnout", "tristeza"],
     oQueE: "A depressão envolve humor deprimido ou perda de interesse e prazer, com alterações de sono, energia e concentração. A ansiedade envolve preocupação excessiva, tensão e, às vezes, sintomas físicos como palpitações e falta de ar. Costumam aparecer juntas e com dor crônica.",
-    importaParaExercicio: "O exercício regular ajuda no humor e na ansiedade e é uma parte do cuidado, mas não substitui o acompanhamento psicológico e médico. A motivação e a energia podem oscilar, e o ambiente acolhedor pesa na adesão.",
+    importaParaExercicio: "Na depressão, o exercício reduz os sintomas (efeito moderado em revisão Cochrane, menor quando só se consideram os estudos mais rigorosos), sem diferença para psicoterapia ou medicamento em poucos estudos pequenos. Para ansiedade a evidência não foi conferida aqui. É uma parte do cuidado, não substitui o acompanhamento psicológico e médico. A motivação e a energia podem oscilar, e o ambiente acolhedor pesa na adesão.",
     cuidados: [
       "Começar com metas pequenas e alcançáveis para criar sensação de êxito.",
       "Escutar sem julgar e respeitar os dias ruins; ajustar a sessão em vez de cobrar.",
@@ -484,6 +492,7 @@ export const CATALOGO: Condicao[] = [
     sinaisDeAlerta: ["Fala de desesperança, de não querer viver ou de se machucar", "Piora importante do humor ou do sono", "Crise de pânico com dor no peito"],
     encaminhar: "Qualquer fala sobre suicídio ou autolesão: acolher, não deixar a pessoa sozinha e acionar apoio profissional ou serviço de emergência na hora. Sintomas persistentes: orientar psicólogo ou psiquiatra.",
     noApp: "O módulo de bem-estar emocional usa PHQ-9 e GAD-7; o item 9 do PHQ-9 (ideação) gera alerta crítico. A porta de entrada é o PHQ-2 (a partir de 2 pontos).",
+    fontes: ["cooney2013"],
   },
 
   // ------------------------------------------------------------------ Outras
@@ -493,7 +502,7 @@ export const CATALOGO: Condicao[] = [
     grupo: "Outras",
     aliases: ["renal", "rins", "insuficiencia renal", "irc", "dialise*", "hemodialise", "nefropatia*"],
     oQueE: "Perda gradual da função dos rins, frequentemente por diabetes e pressão alta. Pode levar a acúmulo de líquidos, anemia, alteração de minerais e, em fase avançada, a diálise.",
-    importaParaExercicio: "O exercício costuma ser benéfico para função física e controle de pressão e glicemia, mas exige liberação e ajuste individual. Fadiga, anemia e restrição de líquidos mudam a tolerância.",
+    importaParaExercicio: "Em revisão Cochrane, o exercício regular melhorou a aptidão física, a capacidade de caminhada, a pressão arterial, a frequência cardíaca de repouso e a qualidade de vida, mas exige liberação e ajuste individual (metade dos estudos tinha alto risco de viés). Fadiga, anemia e restrição de líquidos mudam a tolerância.",
     cuidados: [
       "Liberação do nefrologista e conhecimento da fase (diálise ou não).",
       "Em hemodiálise, treinar nos dias sem diálise e poupar o braço da fístula.",
@@ -501,6 +510,7 @@ export const CATALOGO: Condicao[] = [
     ],
     sinaisDeAlerta: ["Inchaço súbito ou falta de ar", "Cãibras intensas ou fraqueza importante", "Tontura, náusea ou confusão"],
     encaminhar: "Sintomas acima ou piora do quadro: orientar o nefrologista.",
+    fontes: ["heiwe2011"],
   },
   {
     id: "cancer",
@@ -508,7 +518,7 @@ export const CATALOGO: Condicao[] = [
     grupo: "Outras",
     aliases: ["cancer", "cancro", "tumor", "quimioterapia", "radioterapia", "oncolog*", "mastectomia", "neoplasia"],
     oQueE: "Grupo de doenças com crescimento anormal de células. O que é seguro depende do tipo, da fase e do tratamento (cirurgia, quimioterapia, radioterapia, hormonioterapia), que podem causar fadiga, queda de defesas e fragilidade óssea.",
-    importaParaExercicio: "Em geral o exercício é indicado e ajuda na fadiga e na função, mas deve ser adaptado ao momento do tratamento e liberado pelo oncologista.",
+    importaParaExercicio: "O consenso internacional conclui que o exercício é em geral seguro em quem teve câncer e que todos devem evitar a inatividade; doses de aeróbio e/ou força melhoram ansiedade, sintomas depressivos, fadiga, função física e qualidade de vida. Deve ser adaptado ao momento do tratamento e liberado pelo oncologista.",
     cuidados: [
       "Obter liberação do oncologista, com restrições do momento (contagem de células, osso, cateter).",
       "Ajustar a intensidade ao dia: fadiga oscila bastante.",
@@ -517,6 +527,7 @@ export const CATALOGO: Condicao[] = [
     ],
     sinaisDeAlerta: ["Febre", "Dor óssea nova e intensa", "Falta de ar, dor no peito ou inchaço novo em um membro"],
     encaminhar: "Febre durante tratamento, dor óssea nova ou inchaço de um braço ou perna: orientar contato com a equipe oncológica.",
+    fontes: ["campbell2019"],
   },
   {
     id: "hernia_abdominal",
@@ -554,6 +565,25 @@ export function condicoesNoTexto(texto: string): string[] {
   const t = normalizar(texto);
   if (!t.trim()) return [];
   return REGEX_POR_CONDICAO.filter((c) => c.regex.some((r) => r.test(t))).map((c) => c.id);
+}
+
+// Bibliografia consolidada da aba: todas as referências citadas em alguma condição, com as condições em que
+// são usadas, e a lista das condições que ainda não têm fonte conferida.
+export function referenciasUsadas(): { referencia: Referencia; condicoes: string[] }[] {
+  const mapa = new Map<string, { referencia: Referencia; condicoes: string[] }>();
+  for (const c of CATALOGO) {
+    for (const id of c.fontes ?? []) {
+      const r = referenciaPorId(id);
+      if (!r) continue;
+      if (!mapa.has(id)) mapa.set(id, { referencia: r, condicoes: [] });
+      mapa.get(id)!.condicoes.push(c.nome);
+    }
+  }
+  return Array.from(mapa.values()).sort((a, b) => a.referencia.citacao.localeCompare(b.referencia.citacao, "pt"));
+}
+
+export function condicoesSemFonte(): Condicao[] {
+  return CATALOGO.filter((c) => !c.fontes || c.fontes.length === 0);
 }
 
 export function condicaoPorId(id: string): Condicao | undefined {

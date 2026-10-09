@@ -6,7 +6,7 @@
 
 import { useMemo, useState } from "react";
 import type { PacienteRow } from "@/lib/anamnese/types";
-import { CATALOGO, buscarCondicoes, condicaoPorId, type Condicao, type GrupoCondicao } from "@/lib/condicoes/catalogo";
+import { CATALOGO, buscarCondicoes, condicaoPorId, condicoesSemFonte, referenciasUsadas, type Condicao, type GrupoCondicao } from "@/lib/condicoes/catalogo";
 import { condicoesDoPaciente } from "@/lib/condicoes/deteccao";
 import { referenciaPorId } from "@/lib/agentes";
 import { paraNumero } from "@/lib/numeros";
@@ -125,6 +125,8 @@ export function AbaCondicoes({ paciente }: { paciente: PacienteRow }) {
       return n;
     });
 
+  const referencias = useMemo(() => referenciasUsadas(), []);
+  const semFonte = useMemo(() => condicoesSemFonte(), []);
   const idsDetectados = new Set(det.condicoes.map((d) => d.id));
   // Sem busca, as condições já citadas ficam só na lista de cima (evita o mesmo item duas vezes na tela).
   const resultado = useMemo(() => buscarCondicoes(busca).filter((c) => busca.trim() !== "" || !idsDetectados.has(c.id)), [busca, det]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -203,6 +205,36 @@ export function AbaCondicoes({ paciente }: { paciente: PacienteRow }) {
             </div>
           );
         })}
+      </section>
+
+      <section className="rounded-2xl border border-border bg-surface p-5 space-y-3 break-inside-avoid">
+        <h3 className="font-display text-lg text-ink">Referências bibliográficas</h3>
+        <p className="text-xs text-muted leading-relaxed">
+          Todas as obras abaixo tiveram a existência conferida no PubMed (autor, revista, ano, volume e página). Conferir a existência não é o mesmo que ter lido o texto completo: onde o PubMed não traz o resumo (diretrizes), o campo &quot;o que apoia&quot; diz só o escopo pelo título e o conteúdo deve ser conferido no texto original.
+        </p>
+        <ol className="space-y-3 text-sm list-decimal pl-5">
+          {referencias.map(({ referencia: r, condicoes }) => (
+            <li key={r.id} className="text-ink leading-relaxed">
+              <span>{r.citacao}. </span>
+              <a href={`https://pubmed.ncbi.nlm.nih.gov/${r.pmid}/`} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                PubMed {r.pmid}
+              </a>
+              <span className="block text-xs text-muted mt-0.5">
+                <strong>O que apoia:</strong> {r.apoia}.
+              </span>
+              <span className="block text-xs text-muted">
+                <strong>Usada em:</strong> {condicoes.join("; ")}.
+              </span>
+            </li>
+          ))}
+        </ol>
+        {semFonte.length > 0 && (
+          <div className="rounded-lg bg-warn-soft px-3 py-2 text-sm">
+            <p className="font-medium text-warn">Condições sem referência conferida ({semFonte.length}): texto educativo geral do sistema</p>
+            <p className="text-ink mt-1">{semFonte.map((c) => c.nome).join("; ")}.</p>
+            <p className="text-xs text-muted mt-1">Nessas, o conteúdo é conhecimento geral de saúde escrito pelo assistente de IA e deve ser conferido em fonte clínica antes de mudar uma conduta.</p>
+          </div>
+        )}
       </section>
     </div>
   );
