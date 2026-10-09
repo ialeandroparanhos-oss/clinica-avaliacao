@@ -21,6 +21,7 @@ import { EVENTO_RASCUNHO, SalvarBar, mesclarNoPlano, useAutoSalvar } from "@/com
 import { ParecerNoPlano } from "@/components/avaliador/PainelParecer";
 import { PainelSupervisao } from "@/components/avaliador/PainelSupervisao";
 import { AbaFisica } from "@/components/avaliador/AbaFisica";
+import { AbaCondicoes } from "@/components/avaliador/AbaCondicoes";
 import { AbaFuncional } from "@/components/avaliador/AbaFuncional";
 import { AbaCardio } from "@/components/avaliador/AbaCardio";
 import { AbaPostural } from "@/components/avaliador/AbaPostural";
@@ -31,7 +32,7 @@ import { idadeEfetiva } from "@/lib/avaliacao/identificacao";
 import { conectarObjetivo } from "@/lib/integracao/objetivo";
 import { triarSarcopeniaDinapenia } from "@/lib/integracao/sarcopenia";
 
-type Aba = "perfil" | "plano" | "reavaliacao" | "anamnese" | "fisica" | "postural" | "funcional" | "cardio";
+type Aba = "perfil" | "plano" | "reavaliacao" | "anamnese" | "condicoes" | "fisica" | "postural" | "funcional" | "cardio";
 
 export default function DetalhePaciente() {
   const { id } = useParams<{ id: string }>();
@@ -121,6 +122,7 @@ export default function DetalhePaciente() {
             ["perfil", "Perfil Integrado"],
             ["reavaliacao", "Reavaliação"],
             ["anamnese", "Anamnese"],
+            ["condicoes", "Condições de saúde"],
             ["fisica", "Física e Antropométrica"],
             ["postural", "Postural e Biomecânica"],
             ["funcional", "Avaliação Funcional"],
@@ -144,6 +146,7 @@ export default function DetalhePaciente() {
       {aba === "plano" && <AbaPlano paciente={paciente} onSalvo={carregar} />}
       {aba === "reavaliacao" && <AbaReavaliacao paciente={paciente} onSalvo={carregar} />}
       {aba === "anamnese" && <AbaAnamnese anamnese={anamnese} status={paciente.anamnese_status} paciente={paciente} />}
+      {aba === "condicoes" && <AbaCondicoes paciente={paciente} />}
       {aba === "fisica" && <AbaFisica pacienteId={paciente.id} dados={paciente.fisica} paciente={paciente} onSalvo={carregar} />}
       {aba === "postural" && <AbaPostural pacienteId={paciente.id} dados={paciente.postural} onSalvo={carregar} />}
       {aba === "funcional" && <AbaFuncional pacienteId={paciente.id} dados={paciente.funcional} paciente={paciente} onSalvo={carregar} />}

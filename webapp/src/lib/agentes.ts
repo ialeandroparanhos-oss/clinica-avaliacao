@@ -78,6 +78,16 @@ const R: Referencia[] = [
   { id: "gallagher2000", curta: "Gallagher 2000", citacao: "Gallagher D, et al. Am J Clin Nutr 2000;72:694", pmid: "10966886", apoia: "faixas provisórias de %G saudável por idade e sexo, obtidas ligando os limites de IMC (subpeso < 18,5; sobrepeso ≥ 25; obesidade ≥ 30) à gordura medida por 4 compartimentos e DXA; amostra com IMC até 35" },
   { id: "glim2019", curta: "GLIM 2019", citacao: "Cederholm T, et al. Clin Nutr 2019;38:1", pmid: "30181091", apoia: "critérios GLIM: massa muscular reduzida como critério fenotípico (índice de massa livre de gordura < 17 kg/m² em homens e < 15 em mulheres, valores conforme Sobestiansky 2021); pensados para DXA ou bioimpedância" },
   { id: "gomez2024", curta: "Gómez-Redondo 2024", citacao: "Gómez-Redondo P, et al. Sports Med 2024;54:1877", pmid: "38647999", apoia: "34 ensaios com pessoas de 60 anos ou mais: exercício supervisionado e não supervisionado foram seguros, com presença semelhante (81%); a supervisão trouxe ganho extra, só robusto na força de extensão do joelho, e os autores pedem mais pesquisa" },
+  // Referências da aba "Condições de saúde" (conferidas no PubMed em 09/10/2026). Onde o PubMed não trouxe o
+  // resumo (diretrizes), "apoia" diz só o escopo pelo título; o conteúdo exato deve ser conferido no texto.
+  { id: "esceesh2018", curta: "ESC/ESH 2018", citacao: "Williams B, et al. Eur Heart J 2018;39:3021", pmid: "30165516", apoia: "diretriz europeia para o manejo da hipertensão arterial (resumo não disponível no PubMed: valores de corte e condutas devem ser conferidos no texto)" },
+  { id: "ponikowski2016", curta: "ESC 2016 IC", citacao: "Ponikowski P, et al. Eur Heart J 2016;37:2129", pmid: "27206819", apoia: "diretriz europeia para diagnóstico e tratamento da insuficiência cardíaca aguda e crônica (resumo não disponível no PubMed; tem terapia por exercício entre os temas indexados)" },
+  { id: "pelliccia2021", curta: "ESC 2020 esporte", citacao: "Pelliccia A, et al. Eur Heart J 2021;42:17", pmid: "32860412", apoia: "diretriz europeia (2020) de cardiologia do esporte e exercício em pessoas com doença cardiovascular: cobre doença coronariana crônica, insuficiência cardíaca, arritmias, valvopatias e fatores de risco (resumo não disponível no PubMed)" },
+  { id: "colberg2016", curta: "ADA 2016", citacao: "Colberg SR, et al. Diabetes Care 2016;39:2065", pmid: "27926890", apoia: "posição da Associação Americana de Diabetes sobre atividade física e exercício no diabetes (resumo não disponível no PubMed)" },
+  { id: "giangregorio2014", curta: "Too Fit To Fracture 2014", citacao: "Giangregorio LM, et al. Osteoporos Int 2014;25:821", pmid: "24281053", apoia: "consenso: programa multicomponente com treino de força e de equilíbrio é fortemente recomendado na osteoporose ou fratura vertebral; não fazer só aeróbio; recomendações condicionais e poucos dados sobre riscos" },
+  { id: "hayden2021", curta: "Hayden 2021", citacao: "Hayden JA, et al. Cochrane Database Syst Rev 2021;9:CD009790", pmid: "34580864", apoia: "exercício na dor lombar crônica inespecífica: provavelmente reduz a dor em relação a nenhum tratamento ou cuidado habitual (evidência moderada); efeito pequeno sobre a função; mais eficaz que orientação isolada, sem diferença para terapia manual; efeitos adversos em geral leves (dor muscular)" },
+  { id: "spruit2013", curta: "ATS/ERS 2013", citacao: "Spruit MA, et al. Am J Respir Crit Care Med 2013;188:e13", pmid: "24127811", apoia: "declaração oficial: reabilitação pulmonar (com exercício) é parte central do manejo da doença respiratória crônica, incluindo DPOC" },
+  { id: "macfarlane2017", curta: "EULAR 2017", citacao: "Macfarlane GJ, et al. Ann Rheum Dis 2017;76:318", pmid: "27377815", apoia: "recomendações EULAR na fibromialgia: o exercício foi a única terapia com recomendação forte; começar por educação e terapias não farmacológicas" },
   { id: "richter2020", curta: "Richter 2020", citacao: "Richter R, et al. PLoS One 2020;15:e0236751", pmid: "32790675", apoia: "comunicação de risco ao paciente é complexa; o equilíbrio entre informar e não gerar ansiedade (estudo qualitativo com 15 clínicos)" },
 ];
 
@@ -93,6 +103,10 @@ const REFS_POR_AGENTE: Record<Exclude<AgenteId, "iris">, string[]> = {
   theo: ["oms2020", "acsm2015", "gomez2024", "fransen2015", "yamato2015", "furlan2015", "williams2020", "gonzalez2021", "hempen2025"],
   clara: ["richter2020", "oms2020", "gomez2024"],
 };
+
+export function referenciaPorId(id: string): Referencia | undefined {
+  return POR_ID.get(id);
+}
 
 // A Íris integra todas as áreas: usa as referências dos agentes que alimentam o perfil.
 export function referenciasDoAgente(id: AgenteId): Referencia[] {
