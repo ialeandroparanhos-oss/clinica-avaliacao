@@ -295,6 +295,9 @@ export type AnaliseComposicao = {
   ffmiBaixo: boolean | null;
   massaMagraIdealKg: number | null;
   massaMagraPctDaMeta: number | null;
+  // Teste (09/10/2026): quanto falta de massa magra para o índice chegar ao corte GLIM (17 kg/m² homens,
+  // 15 mulheres). Independe do %G porque considera a altura. 0 quando o índice já atinge o corte.
+  carenciaIndiceKg: number | null;
   cintura: number | null;
   rcq: number | null;
   rcest: number | null;
@@ -355,6 +358,8 @@ export function analisarComposicao(fisica: Record<string, any> | undefined, idad
   const massaMagraIdealKg = idealInformado ?? (peso !== null && pgIdeal !== null ? peso * (1 - pgIdeal / 100) : null);
   const massaMagraPctDaMeta = massaMagraKg !== null && massaMagraIdealKg !== null && massaMagraIdealKg > 0 ? (massaMagraKg / massaMagraIdealKg) * 100 : null;
 
+  const carenciaIndiceKg = massaMagraKg !== null && altura !== null && altura > 0 && sexo !== "desconhecido" ? Math.max(0, CORTE_FFMI[sexo] * Math.pow(altura / 100, 2) - massaMagraKg) : null;
+
   const cintura = paraNumero(f.circ_cintura);
   const quadril = paraNumero(f.circ_quadril);
   const rcq = cintura !== null && quadril !== null && quadril > 0 ? cintura / quadril : null;
@@ -372,7 +377,7 @@ export function analisarComposicao(fisica: Record<string, any> | undefined, idad
 
   return {
     imc, pg, fontePg, faixa, pgStatus, pgStatusGallagher, nivelPW, massaMagraTabela, pgIdeal, nivelAlvo,
-    massaGordaKg, massaMagraKg, ffmi, ffmiBaixo, massaMagraIdealKg, massaMagraPctDaMeta,
+    massaGordaKg, massaMagraKg, ffmi, ffmiBaixo, massaMagraIdealKg, massaMagraPctDaMeta, carenciaIndiceKg,
     cintura, rcq, rcest, adiposidade, classeCintura, padrao,
   };
 }

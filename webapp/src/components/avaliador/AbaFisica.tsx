@@ -17,6 +17,8 @@ import {
   TODOS_SITIOS_DOBRA,
   calcularPercentualGorduraDobras,
   classificarGorduraPollockWilmore,
+  analisarComposicao,
+  CORTE_FFMI,
   classificarMassaMagraPct,
   compararMetodosGordura,
   faixaDoNivelPW,
@@ -236,6 +238,7 @@ export function AbaFisica({
   const faixaAlvoPW = faixaDoNivelPW(nivelAlvoPW, idadeNum, sexoNorm);
   const percentualIdealSugerido = percentualGorduraIdealSugerido(idadeNum, sexoNorm, nivelAlvoPW);
   const massaMagraTabela = classificarMassaMagraPct(percentualGorduraEncontrado, sexoNorm);
+  const composicaoAtual = analisarComposicao(d, idadeNum, sexoNorm);
   const faixaMassaMagraKg =
     peso !== null && sexoNorm !== "desconhecido"
       ? ([TABELA_MASSA_MAGRA_PCT[sexoNorm].ideal[0], TABELA_MASSA_MAGRA_PCT[sexoNorm].ideal[1]].map((p) => (peso * p) / 100) as [number, number])
@@ -649,7 +652,19 @@ export function AbaFisica({
                 : null
             }
           />
-          <ValorCalculado label="Carência muscular" valor={carenciaMuscularKg !== null ? `${carenciaMuscularKg.toFixed(1)} kg` : null} />
+          <ValorCalculado label="Meta de recomposição muscular" valor={carenciaMuscularKg !== null ? `${carenciaMuscularKg.toFixed(1)} kg` : null}>
+            <p className="text-xs text-muted mt-1">Massa magra a ganhar para chegar ao %G ideal mantendo o peso (troca de gordura por músculo). É meta de composição, não déficit medido: com o campo de massa magra ideal vazio, coincide com a gordura excedente.</p>
+          </ValorCalculado>
+          <ValorCalculado
+            label="Carência de massa magra pelo índice (teste)"
+            valor={composicaoAtual.carenciaIndiceKg !== null ? `${composicaoAtual.carenciaIndiceKg.toFixed(1)} kg` : null}
+          >
+            <p className="text-xs text-muted mt-1">
+              {composicaoAtual.ffmi !== null && sexoNorm !== "desconhecido"
+                ? `Quanto falta para o índice de massa magra (hoje ${composicaoAtual.ffmi.toFixed(1)} kg/m²) chegar ao corte GLIM de ${CORTE_FFMI[sexoNorm]} kg/m². Zero quando já atinge. Considera a altura; é estimativa por dobras/bioimpedância.`
+                : "Precisa de peso, altura, %G e sexo."}
+            </p>
+          </ValorCalculado>
           <ValorCalculado label="Peso ideal" valor={pesoIdealKg !== null ? `${pesoIdealKg.toFixed(1)} kg` : null}>
             {imcNoPesoIdeal !== null && imcNoPesoIdeal < 18.5 && (
               <p className="text-xs text-danger mt-1">
