@@ -129,6 +129,13 @@ O Agente 6 não gera novos alertas de segurança (isso é papel dos Agentes 2-5,
 
 ---
 
+## ATUALIZAÇÃO 09 A 12/10/2026 — ABA "CONDIÇÕES DE SAÚDE" E COMPOSIÇÃO CORPORAL NO PERFIL
+
+- **Aba "Condições de saúde" (voz da Dra. Íris, assistente de IA):** lê a anamnese (doenças, outras condições, lesões, cirurgias, medicamentos, PAR-Q+ e triagem de colesterol e glicemia) e lista as condições relatadas; ao clicar, explicação em tópicos (o que é, por que importa para a avaliação e o exercício, cuidados, sinais de alerta, quando encaminhar). Catálogo de 30 condições, busca por nome ou sinônimo, lista de termos não reconhecidos e bibliografia na própria aba (24 referências conferidas no PubMed; 10 condições seguem sem fonte conferida e a tela avisa). Texto educativo, sem diagnóstico nem prescrição; **o conteúdo clínico aguarda revisão do profissional.**
+- **Domínio "composição corporal" no perfil:** passa a ser decidido pela tabela Pollock & Wilmore do %G e pela tabela de massa magra em % do peso (ver `02-Agente3-Fisica-e-Antropometrica.md`). "Abaixo da média" e "Ruim" = atenção; **"Muito ruim" = prioridade (correspondência suposta pelo sistema, a confirmar)**; massa magra "baixa" = atenção. O padrão "gordura alta com massa magra absoluta baixa" (índice em kg/m²) segue sendo prioridade.
+- **Supervisão da Dra. Nina** no perfil e no relatório técnico: confere cobertura (o que foi avaliado), cruzamentos entre áreas e pareceres ausentes, desatualizados ou não revisados.
+- **Triagem de sarcopenia:** sem mudança; continua usando o %G ideal de Gallagher na regra "massa magra < 90% da meta". Decisão sobre migrar para a tabela fica com o profissional.
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 7 — Plano de Intervenção** (Etapa 9 do prompt-mestre): como transformar as Prioridades do Perfil Integrado em uma trajetória concreta de 30, 90, 180 e 365 dias, incluindo os critérios para decidir o que entra em cada horizonte de tempo e como o plano permanece individualizado em vez de genérico.

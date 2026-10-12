@@ -240,6 +240,17 @@ Como em toda etapa do projeto (Seção 14 do prompt-mestre), separar sempre:
 - **Coxa em até 3 níveis (proximal, médio, distal):** o avaliador marca quantos níveis usar (um, dois ou os três) e preenche D e E em cada um. Para a massa magra relativa, o avatar e o histórico vale a coxa "principal" (médio, senão proximal, senão distal); como a dobra de coxa é do ponto médio, usar outro nível gera aviso de cautela. Fichas antigas (um nível só) migram sozinhas.
 - **Peso ideal** = massa magra atual ÷ (1 − %G ideal), com %G ideal igual ao ponto médio da faixa saudável por idade e sexo (Gallagher et al., 2000: homens 8-19% até 39 anos, 11-21% de 40-59 e 13-24% a partir de 60; mulheres 21-32%, 23-33% e 24-35%) ou o valor que o avaliador informar. Assume massa magra constante; o ponto médio é uma escolha do sistema, não uma diretriz.
 
+## REVISÃO 09 A 11/10/2026 — COMPOSIÇÃO CORPORAL (decisões do profissional)
+
+Esta revisão **substitui** o critério do "%G ideal" descrito acima (ponto médio de Gallagher). Detalhe completo e registro das referências em `10-Revisao-Cientifica-por-Agente.md` (partes 3, 4 e 6).
+
+- **%G (leitura principal):** classificação **Pollock & Wilmore (1993)** por idade e sexo, 18 a 65 anos, em 7 níveis (Excelente a Muito ruim). Valor entre dois níveis vai para o nível pior; sobreposição de 1 ponto resolve pelo nível melhor. A faixa saudável de Gallagher 2000 ficou como leitura secundária e como reserva fora de 18 a 65 anos. **Fonte de livro, não conferida no PubMed.**
+- **Massa magra em % do peso (planilha do profissional):** homens baixo < 81%, saudável 81 a 86%, ideal 87 a 92%; mulheres baixo < 77%, saudável 77 a 82%, ideal 83 a 88%. Massa magra % = 100 − %G: é a mesma medida do %G com cortes diferentes. A leitura independente do %G é o **índice de massa magra em kg/m²** (corte GLIM: 17 homens, 15 mulheres).
+- **%G ideal de referência:** ponto médio do nível **Excelente** da tabela para a idade e o sexo (editável; sem caixa de escolha de nível). Fora de 18 a 65 anos, ponto médio de Gallagher. **Guarda:** se manter a massa magra e chegar a esse %G daria IMC < 18,5, o app avisa que é referência de composição, não meta de peso.
+- **"Carência muscular" passou a se chamar "Meta de recomposição muscular"** (cálculo mantido: massa magra ideal − atual; com o campo de massa magra ideal vazio é igual à gordura excedente). Em teste, a **carência de massa magra pelo índice**: quanto falta para o índice chegar ao corte GLIM.
+- **Proteção contra erro de método:** se o %G por dobras e o da bioimpedância diferirem em 5 pontos ou mais, o app mostra os dois e pede conferência da técnica e do preparo (limite prático do sistema, sem corte publicado).
+- **Pollock 3 e 7 dobras:** os protocolos diferem por sexo (3 dobras: homens peitoral, abdominal e coxa; mulheres tríceps, suprailíaca e coxa; 7 dobras: mesmos 7 locais, equações por sexo) e o app já separa. Coeficientes de livro-texto: [confirmar no livro].
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 4 — Avaliação Postural e Biomecânica** (Etapa 5 do prompt-mestre): protocolo fotográfico padronizado (vistas anterior, posterior, lateral direita e esquerda), pontos anatômicos de referência, instrumentos (câmera, tripé, simetrógrafo, prumo, goniômetro, inclinômetro), e a linguagem científica obrigatória para não transformar achado postural isolado em causa de dor.

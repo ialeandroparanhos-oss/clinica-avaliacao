@@ -273,7 +273,15 @@ Cada agente atua como **especialista da sua área**, com o tratamento "Dr." ou "
 
 - A Nina coordena uma **revisão da literatura por agente** a cada **6 meses** ou quando sair diretriz nova relevante, registrada em `10-Revisao-Cientifica-por-Agente.md` com data, o que mudou e o que ficou **[confirmar]**.
 - O sistema guarda a data da última revisão (`REVISAO_LITERATURA` em `agentes.ts`) e **avisa no parecer quando passou de 180 dias**.
-- Última revisão por agente: 02/10/2026. Referências conferidas no PubMed: 08/10/2026.
+- Última revisão por agente: 02/10/2026. Referências conferidas no PubMed: 08/10/2026 e, para a aba "Condições de saúde", 09/10/2026.
+
+### 11.5 Atualizações de 09 a 12/10/2026
+
+- **Supervisão da Nina (implementada):** painel no perfil e no relatório técnico (`lib/avaliacao/supervisao.ts`): cobertura do que foi avaliado, cruzamentos entre áreas (ex.: %G alto com massa magra baixa, pressão ≥ 140/90, queda sem teste de equilíbrio, teste máximo sem liberação) e pareceres ausentes, desatualizados ou não revisados. São avisos para o avaliador conferir, não diagnóstico.
+- **Imagens dos agentes:** ilustrações fictícias (SVG) de cada assistente de IA, na página "Equipe de IA" (`/avaliador/agentes`, com download em SVG e PNG), no cabeçalho dos pareceres e da supervisão. Não representam pessoas reais.
+- **Aba "Condições de saúde" (Dra. Íris):** ver `05-Agente6-Integracao-e-Interpretacao.md`.
+- **Composição corporal pelas tabelas do profissional:** ver `02-Agente3-Fisica-e-Antropometrica.md`.
+- **Regra de trabalho:** toda mudança termina com build verde, commit, envio ao GitHub (a Vercel publica a partir dele) e documentos atualizados.
 
 ---
 
