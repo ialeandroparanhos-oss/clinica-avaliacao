@@ -22,6 +22,7 @@ import { ParecerNoPlano } from "@/components/avaliador/PainelParecer";
 import { PainelSupervisao } from "@/components/avaliador/PainelSupervisao";
 import { AbaFisica } from "@/components/avaliador/AbaFisica";
 import { AbaCondicoes } from "@/components/avaliador/AbaCondicoes";
+import { guardarSolicitacaoClinica } from "@/lib/anamnese/clinicaSessao";
 import { AbaFuncional } from "@/components/avaliador/AbaFuncional";
 import { AbaCardio } from "@/components/avaliador/AbaCardio";
 import { AbaPostural } from "@/components/avaliador/AbaPostural";
@@ -492,6 +493,36 @@ function Capitulo({ titulo, children }: { titulo: string; children: React.ReactN
   );
 }
 
+// Abre o mesmo questionário do paciente, já identificado, para fazer (ou continuar) a anamnese junto com ele
+// na clínica. As respostas vão para esta mesma ficha.
+function AnamneseNaClinica({ paciente, status }: { paciente: PacienteRow; status: string }) {
+  function abrir() {
+    guardarSolicitacaoClinica({
+      nome: paciente.nome,
+      dataNascimento: paciente.data_nascimento,
+      sexo: paciente.sexo ?? null,
+      telefone: paciente.telefone ?? null,
+      voltarPara: `/avaliador/paciente/${paciente.id}`,
+    });
+    window.location.assign("/paciente");
+  }
+  const naoConcluida = status !== "concluida";
+  return (
+    <div className={`rounded-xl border p-4 flex flex-wrap items-center justify-between gap-3 ${naoConcluida ? "border-warn bg-warn-soft" : "border-border bg-surface"}`}>
+      <p className="text-sm text-ink leading-relaxed max-w-xl">
+        {status === "nao_iniciada"
+          ? "Este paciente ainda não respondeu a anamnese. Você pode fazê-la agora, com ele, aqui na clínica."
+          : status === "em_andamento"
+            ? "A anamnese está em andamento. Você pode continuar de onde ele parou, com ele, aqui na clínica."
+            : "Anamnese concluída. Se precisar rever ou completar alguma resposta com o paciente, abra o questionário."}
+      </p>
+      <button type="button" onClick={abrir} className="rounded-lg bg-accent text-white text-sm font-medium px-4 py-2 hover:bg-accent-dark transition whitespace-nowrap">
+        {status === "nao_iniciada" ? "Fazer a anamnese agora" : status === "em_andamento" ? "Continuar a anamnese" : "Rever a anamnese"}
+      </button>
+    </div>
+  );
+}
+
 function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; status: string; paciente: PacienteRow }) {
   const pss10 = escorePSS10(anamnese.saude_mental.pss10);
   const gad7 = somaSemNulos(anamnese.saude_mental.gad7);
@@ -507,6 +538,8 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
   return (
     <div className="space-y-4">
       <p className="text-xs text-muted uppercase tracking-wide">Status: {status}</p>
+
+      <AnamneseNaClinica paciente={paciente} status={status} />
 
       <PainelModulos anamnese={anamnese} idade={idadeEfetiva(paciente)} />
 

@@ -18,6 +18,7 @@ import {
 import { MODULOS, moduloSinalizado, statusModulo } from "@/lib/anamnese/modulos";
 import { idadeDaDataNascimento } from "@/lib/avaliacao/identificacao";
 import { CHAVE_IDENTIFICACAO } from "@/lib/anamnese/identificacaoSessao";
+import { lerSolicitacaoClinica, limparSolicitacaoClinica, type SolicitacaoClinica } from "@/lib/anamnese/clinicaSessao";
 
 type Stage = "identificacao" | "wizard" | "concluido";
 
@@ -41,6 +42,8 @@ export default function PacientePage() {
   const [loading, setLoading] = useState(false);
   const [salvandoFundo, setSalvandoFundo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // Modo clínica: o avaliador abriu este questionário para fazer a anamnese junto com o paciente.
+  const [clinica, setClinica] = useState<SolicitacaoClinica | null>(null);
 
   function set<K extends keyof Anamnese>(capitulo: K, patch: Partial<Anamnese[K]>) {
     setAnamnese((prev) => ({ ...prev, [capitulo]: { ...prev[capitulo], ...patch } }));
@@ -57,13 +60,17 @@ export default function PacientePage() {
       setErro("Informe sua data de nascimento.");
       return;
     }
+    await iniciar(nome, dataNascimento, telefone, sexo);
+  }
+
+  async function iniciar(n: string, d: string, tel: string, sx: string) {
     setLoading(true);
     try {
       const { data, error } = await supabase.rpc("get_or_create_paciente", {
-        p_nome: nome.trim(),
-        p_data_nascimento: dataNascimento,
-        p_telefone: telefone || null,
-        p_sexo: sexo || null,
+        p_nome: n.trim(),
+        p_data_nascimento: d,
+        p_telefone: tel || null,
+        p_sexo: sx || null,
       });
       if (error) throw error;
       const row = Array.isArray(data) ? data[0] : data;
@@ -72,7 +79,7 @@ export default function PacientePage() {
       // Guarda a identificação nesta aba para os módulos complementares não
       // pedirem tudo de novo (some ao fechar a aba).
       try {
-        sessionStorage.setItem(CHAVE_IDENTIFICACAO, JSON.stringify({ nome: nome.trim(), dataNascimento }));
+        sessionStorage.setItem(CHAVE_IDENTIFICACAO, JSON.stringify({ nome: n.trim(), dataNascimento: d }));
       } catch {}
       setStage("wizard");
     } catch (err: any) {
@@ -81,6 +88,19 @@ export default function PacientePage() {
       setLoading(false);
     }
   }
+
+  // Aberto pela área do avaliador: entra direto, já identificado, sem pedir os dados de novo.
+  useEffect(() => {
+    const s = lerSolicitacaoClinica();
+    if (!s) return;
+    setClinica(s);
+    setNome(s.nome);
+    setDataNascimento(s.dataNascimento);
+    setSexo(s.sexo ?? "");
+    setTelefone(s.telefone ?? "");
+    iniciar(s.nome, s.dataNascimento, s.telefone ?? "", s.sexo ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Salva sem travar a navegação - Sofia (anamnese) não faz o paciente
   // esperar a rede para virar a página. Sempre envia o objeto completo da
@@ -143,6 +163,22 @@ export default function PacientePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage, step, anamnese, pacienteId]);
 
+  if (stage === "identificacao" && clinica) {
+    return (
+      <main className="min-h-screen flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-8 text-center space-y-3">
+          <p className="text-xs font-semibold tracking-widest text-accent uppercase">Anamnese na clínica</p>
+          <h1 className="font-display text-xl text-ink">{erro ?? `Abrindo a ficha de ${clinica.nome}...`}</h1>
+          {erro && (
+            <a href={clinica.voltarPara} className="inline-block text-sm font-medium text-accent hover:underline">
+              Voltar à ficha do paciente
+            </a>
+          )}
+        </div>
+      </main>
+    );
+  }
+
   if (stage === "identificacao") {
     return (
       <main className="min-h-screen flex items-center justify-center px-4 py-12">
@@ -179,6 +215,51 @@ export default function PacientePage() {
             {loading ? "Carregando..." : "Iniciar anamnese"}
           </button>
         </form>
+      </main>
+    );
+  }
+
+  if (stage === "concluido" && clinica) {
+    const idadePacienteC = idadeDaDataNascimento(dataNascimento);
+    const modulosC = MODULOS.filter((m) => statusModulo(anamnese, m.id, idadePacienteC) !== "respondido")
+      .filter((m) => m.id !== "capacidade-60" || (idadePacienteC !== null && idadePacienteC >= 60))
+      .map((m) => ({ ...m, recomendado: moduloSinalizado(anamnese, m.id, idadePacienteC) }))
+      .sort((a, b) => Number(b.recomendado) - Number(a.recomendado));
+    return (
+      <main className="min-h-screen flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-8">
+          <div className="text-center">
+            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft text-accent-dark text-2xl mb-4">✓</span>
+            <h1 className="font-display text-2xl text-ink">Anamnese de {nome.split(" ")[0]} registrada</h1>
+            <p className="text-muted text-sm mt-3 leading-relaxed">As respostas já estão na ficha do paciente, na aba Anamnese.</p>
+            <a
+              href={clinica.voltarPara}
+              onClick={() => limparSolicitacaoClinica()}
+              className="inline-block mt-5 rounded-lg bg-accent text-white font-medium px-6 py-3 hover:bg-accent-dark transition"
+            >
+              Abrir a ficha do paciente
+            </a>
+          </div>
+          {modulosC.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-border space-y-3">
+              <p className="text-sm font-medium text-ink">Questionários complementares (opcionais) para fazer agora:</p>
+              {modulosC.map((m) => (
+                <div key={m.id} className={`rounded-lg border p-4 ${m.recomendado ? "border-accent/50 bg-accent/5" : "border-border"}`}>
+                  <p className="font-medium text-ink text-sm">
+                    {m.titulo}
+                    {m.recomendado && <span className="ml-2 text-xs font-medium text-accent-dark">sugerido pelas respostas</span>}
+                  </p>
+                  <p className="text-xs text-muted mt-1 leading-relaxed">
+                    {m.descricaoPaciente} ({m.duracao})
+                  </p>
+                  <a href={`/paciente/modulo/${m.id}`} className="inline-block mt-3 text-sm font-medium text-accent hover:underline">
+                    Responder agora →
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </main>
     );
   }
@@ -241,6 +322,14 @@ export default function PacientePage() {
             </span>
             <span>{nome}</span>
           </div>
+          {clinica && (
+            <div className="mb-3 rounded-lg bg-info-soft px-3 py-2 text-xs text-info flex flex-wrap items-center justify-between gap-2">
+              <span>Anamnese na clínica: as perguntas estão escritas para o paciente. Leia com ele ou entregue o aparelho.</span>
+              <a href={clinica.voltarPara} onClick={() => limparSolicitacaoClinica()} className="font-medium underline">
+                Sair para a ficha
+              </a>
+            </div>
+          )}
           <div className="h-1.5 rounded-full bg-border overflow-hidden">
             <div
               className="h-full bg-accent transition-all"

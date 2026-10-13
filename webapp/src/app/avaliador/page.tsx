@@ -89,12 +89,17 @@ export default function DashboardAvaliador() {
           <h1 className="font-display text-2xl text-ink">Pacientes</h1>
           <p className="text-muted text-sm mt-1">{pacientes.length} registro(s) na base.</p>
         </div>
-        <input
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          placeholder="Buscar por nome..."
-          className="w-56 rounded-lg border border-border bg-surface px-3.5 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-        />
+        <div className="flex items-center gap-3">
+          <input
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar por nome..."
+            className="w-48 sm:w-56 rounded-lg border border-border bg-surface px-3.5 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+          />
+          <Link href="/avaliador/novo" className="rounded-lg bg-accent text-white text-sm font-medium px-4 py-2 hover:bg-accent-dark transition whitespace-nowrap">
+            + Novo paciente
+          </Link>
+        </div>
       </div>
 
       {loading ? (
@@ -102,7 +107,11 @@ export default function DashboardAvaliador() {
       ) : filtrados.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted text-sm">
           Nenhum paciente encontrado. Assim que um paciente se identificar e começar a anamnese
-          pelo link público, ele aparece aqui automaticamente.
+          pelo link público, ele aparece aqui automaticamente. Para quem vai direto à clínica, use{" "}
+          <Link href="/avaliador/novo" className="font-medium text-accent hover:underline">
+            + Novo paciente
+          </Link>{" "}
+          e faça a anamnese com ele.
         </div>
       ) : (
         <div className="rounded-2xl border border-border bg-surface overflow-hidden">

@@ -13,6 +13,7 @@ import { calcularAlertas } from "@/lib/anamnese/alerts";
 import { Field, TextInput, StepShell } from "@/components/forms";
 import { moduloPorId, type ModuloId } from "@/lib/anamnese/modulos";
 import { CHAVE_IDENTIFICACAO } from "@/lib/anamnese/identificacaoSessao";
+import { lerSolicitacaoClinica } from "@/lib/anamnese/clinicaSessao";
 import { ModuloBemEstar, ModuloCapacidade, ModuloDorDetalhes, ModuloEstiloDeVida, ModuloSono, type SetAnamnese } from "@/components/paciente/modulos";
 
 type Stage = "identificacao" | "modulo" | "concluido";
@@ -30,6 +31,11 @@ export default function ModuloPage() {
   const [anamnese, setAnamnese] = useState<Anamnese>(anamneseVazia);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // Quando o avaliador abriu pela clínica, o fim do questionário volta para a ficha do paciente.
+  const [voltarClinica, setVoltarClinica] = useState<string | null>(null);
+  useEffect(() => {
+    setVoltarClinica(lerSolicitacaoClinica()?.voltarPara ?? null);
+  }, []);
 
   const set: SetAnamnese = (capitulo, patch) => {
     setAnamnese((prev) => ({ ...prev, [capitulo]: { ...prev[capitulo], ...patch } }));
@@ -160,6 +166,11 @@ export default function ModuloPage() {
           <p className="text-muted text-sm mt-3 leading-relaxed">
             Suas respostas foram registradas. Só a equipe da clínica tem acesso a elas. Você pode fechar esta página.
           </p>
+          {voltarClinica && (
+            <a href={voltarClinica} className="inline-block mt-5 rounded-lg bg-accent text-white font-medium px-6 py-3 hover:bg-accent-dark transition">
+              Voltar à ficha do paciente
+            </a>
+          )}
           {modulo.id === "bem-estar" && (
             <p className="text-muted text-xs mt-4 leading-relaxed">
               Se em algum momento você sentir que precisa conversar com alguém, o CVV (Centro de Valorização da Vida) atende 24 horas, de graça, pelo telefone 188.

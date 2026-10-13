@@ -276,6 +276,8 @@ Pergunta feita a cada agente: o que você faz hoje no sistema, isso corresponde 
 - **Onde mudou:** `lib/avaliacao/composicaoCorporal.ts` (tabelas, `analisarComposicao`, `percentualGorduraIdealSugerido`), `lib/integracao/perfil.ts` (domínio), `lib/avaliacao/pareceres.ts` (parecer do Marco), `components/avaliador/AbaFisica.tsx` (três leituras lado a lado, seletor de nível, faixa ideal de massa magra, guarda de IMC), relatório técnico, slides (`resultadosApresentacao.ts`), plano (`planoCiencia.ts`: a tabela de massa magra "baixa" também dispara o item de massa magra e um único encaminhamento à Nutrição) e supervisão da Nina.
 - **Fontes:** as duas tabelas são de livro/planilha, **não conferidas no PubMed**; a tela e o parecer dizem isso.
 
+**Sétima parte (13/10/2026): novo paciente e anamnese na clínica.** Sem conteúdo científico novo; detalhe funcional em `01-Agente2-Anamnese-e-Questionarios.md` (botão "+ Novo paciente", anamnese feita na clínica com o mesmo questionário do paciente, bloco na aba Anamnese). **Incidente de teste registrado:** ao testar o fluxo, o desvio de rede de teste se perdeu numa recarga completa de página e o teste criou um paciente fictício no banco real; foi conferido e **removido** (id e condições estritas), restando os 6 pacientes reais. Passou a valer testar telas isoladas, sem fluxo com recarga, e conferir o banco depois.
+
 ## Registro de referências verificadas no PubMed (08/10/2026)
 
 Todas abaixo tiveram a existência e o título conferidos no PubMed (consulta por revista, ano, volume e primeira página). Conferir a existência **não** é o mesmo que ler o texto completo: o que cada uma sustenta no sistema está descrito em `src/lib/agentes.ts`.

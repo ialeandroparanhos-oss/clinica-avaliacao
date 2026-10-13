@@ -281,6 +281,16 @@ O questionário do paciente ficou grande demais. Ele foi dividido em um **questi
 
 **Efeito no painel integrado:** sem o módulo de bem-estar, o domínio Saúde mental e bem-estar fica "investigar" (ou "atenção" se o paciente disse "sim, bastante"); a pergunta inicial é única e **não é escala validada** — só decide se o módulo é oferecido. A triagem curta e o item de ideação do PHQ-9 só existem para quem responde o módulo.
 
+## ATUALIZAÇÃO 13/10/2026 — NOVO PACIENTE E ANAMNESE NA CLÍNICA (pedido do profissional)
+
+**Motivo:** às vezes o paciente vai direto à clínica sem ter feito a anamnese antes. O avaliador precisa cadastrá-lo e fazer a anamnese com ele ali.
+
+- **Cadastro pelo avaliador:** botão **"+ Novo paciente"** na lista (`/avaliador/novo`): nome completo, data de nascimento, **sexo (obrigatório, porque os cálculos e classificações dependem dele)** e telefone (opcional). Antes de criar, o sistema procura quem já tem o mesmo nome (sem acento) e a mesma data de nascimento e, se achar, oferece abrir a ficha ou continuar a anamnese, em vez de duplicar. Dois caminhos: "Cadastrar e fazer a anamnese agora" ou "Só cadastrar (anamnese depois)".
+- **Anamnese na clínica:** abre o **mesmo questionário do paciente** (7 etapas), já identificado, sem pedir os dados de novo, com uma faixa avisando que as perguntas estão escritas para o paciente (ler com ele ou entregar o aparelho). Salva a cada etapa pelas mesmas funções do banco, e as respostas aparecem na aba Anamnese da ficha, com os mesmos alertas. Ao concluir, a tela leva de volta à ficha e oferece os questionários complementares (opcionais) para fazer na hora; ao terminar um complementar, há botão para voltar à ficha.
+- **Em pacientes que já existem:** a aba **Anamnese** da ficha ganhou um bloco com "Fazer a anamnese agora" (não iniciada), "Continuar a anamnese" (em andamento) ou "Rever a anamnese" (concluída).
+- **Segurança:** não foi criada nenhuma permissão nova. O avaliador (logado) já podia criar e alterar pacientes; o questionário usa as mesmas funções do paciente. A passagem entre as telas guarda só nome, data de nascimento, sexo, telefone e a rota da ficha, no `sessionStorage` da aba (some ao fechar a aba).
+- **Pendente:** as perguntas continuam no texto para o paciente ("você"); se o profissional quiser uma versão em terceira pessoa para a entrevista, é uma decisão de redação.
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 3 — Avaliação Física e Antropométrica** (Etapa 4 do prompt-mestre): sinais vitais, peso, altura, IMC, circunferências, composição corporal — cada medida com objetivo, instrumento, calibração, preparação, execução passo a passo, registro, valores de referência, interpretação, erros comuns e referências, conforme o padrão da Seção 11 do prompt-mestre.
