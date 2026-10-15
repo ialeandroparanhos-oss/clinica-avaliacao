@@ -23,7 +23,7 @@ export default function Home() {
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-accent-soft text-accent-dark font-display text-lg">
               P
             </span>
-            <h2 className="font-display text-xl text-ink mt-4">Sou paciente</h2>
+            <h2 className="font-display text-xl text-ink mt-4">Sou paciente / aluno</h2>
             <p className="text-muted text-sm mt-2 leading-relaxed">
               Responda o questionário de anamnese antes ou durante a sua avaliação. Leva cerca de
               15-20 minutos e você pode continuar de onde parou.
