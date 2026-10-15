@@ -4,6 +4,8 @@
 // observação são um roteiro prático do sistema, sem corte nem validação publicada; não definem diagnóstico
 // nem causa de dor. O ângulo medido na foto é 2D e depende do enquadramento da câmera.
 
+import type { ResumoVideo } from "./videoMovimento";
+
 export type VistaMov = "sagital" | "frontal";
 export const VISTAS_MOV: VistaMov[] = ["sagital", "frontal"];
 export const ROTULO_VISTA_MOV: Record<VistaMov, string> = { sagital: "Vista sagital (de lado)", frontal: "Vista frontal" };
@@ -150,6 +152,8 @@ export type VistaMovSalva = {
   obs?: string[]; // chaves marcadas
   texto?: string; // observação livre
   angulo?: MedidaAngulo;
+  video_path?: string; // vídeo guardado no arquivo privado (opcional)
+  analise_video?: ResumoVideo; // análise inicial automática do vídeo
 };
 export type MovimentoSalvo = Partial<Record<VistaMov, VistaMovSalva>> & { medida?: string; ativo?: boolean };
 export type Movimentos = Record<string, MovimentoSalvo>;
@@ -192,7 +196,7 @@ export function temMovimento(movimentos: Movimentos | undefined): boolean {
   return MOVIMENTOS.some((def) => {
     const m = movimentos[def.id];
     if (!m) return false;
-    return !!m.medida || VISTAS_MOV.some((v) => (m[v]?.obs?.length ?? 0) > 0 || !!m[v]?.texto || !!m[v]?.foto_path || !!m[v]?.angulo);
+    return !!m.medida || VISTAS_MOV.some((v) => (m[v]?.obs?.length ?? 0) > 0 || !!m[v]?.texto || !!m[v]?.foto_path || !!m[v]?.angulo || !!m[v]?.analise_video);
   });
 }
 
@@ -212,6 +216,9 @@ export function descreverMovimentos(movimentos: Movimentos | undefined): string[
       if (obs.length > 0) itens.push(obs.join("; "));
       if (ang !== null) itens.push(`ângulo medido na foto ${f(ang)}°${sv.angulo?.tipo === "vertical" ? " em relação à vertical" : ""}`);
       if (sv.texto?.trim()) itens.push(`anotação: ${sv.texto.trim()}`);
+      if (sv.analise_video && sv.analise_video.linhas.length > 0) {
+        itens.push(`análise inicial automática do vídeo (2D, a confirmar pelo avaliador): ${sv.analise_video.linhas.join("; ")}${sv.analise_video.avisos.length > 0 ? ` [atenção: ${sv.analise_video.avisos.join(" ")}]` : ""}`);
+      }
       if (itens.length > 0) partes.push(`${ROTULO_VISTA_MOV[v].toLowerCase()}: ${itens.join(" | ")}`);
       else if (sv.foto_path) partes.push(`${ROTULO_VISTA_MOV[v].toLowerCase()}: foto registrada, sem observações marcadas`);
     }

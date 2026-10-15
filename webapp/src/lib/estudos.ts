@@ -29,6 +29,7 @@ export const TEMAS_BUSCA: Record<AgenteId, TemaBusca[]> = {
     { rotulo: "Postura e dor: revisões sistemáticas", consulta: "posture pain association systematic review" },
     { rotulo: "Avaliação da escápula", consulta: "scapular dyskinesis assessment validity reliability" },
     { rotulo: "Movimento: flexão de tronco, confiabilidade", consulta: "trunk forward flexion movement assessment reliability" },
+    { rotulo: "Estimativa de pose por vídeo 2D: validade contra goniometria", consulta: "markerless pose estimation smartphone video joint angle validity" },
   ],
   rita: [
     { rotulo: "Sarcopenia: critérios e cortes de força", consulta: "sarcopenia handgrip strength cutoff consensus" },

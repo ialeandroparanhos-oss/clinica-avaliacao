@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { TextArea } from "@/components/forms";
+import { analisarVideoNoNavegador } from "@/lib/avaliacao/videoPose";
 import {
   anguloDe,
   MOVIMENTOS,
@@ -66,6 +67,9 @@ function BlocoVista({
   const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
   const [medindo, setMedindo] = useState<MedidaAngulo["tipo"] | null>(null);
   const [pts, setPts] = useState<{ x: number; y: number }[]>([]);
+  const [analisandoVideo, setAnalisandoVideo] = useState(false);
+  const [msgVideo, setMsgVideo] = useState<string | null>(null);
+  const urlVideo = useUrlAssinada(valor.video_path);
 
   useEffect(() => {
     setDims(null);
@@ -84,6 +88,46 @@ function BlocoVista({
     if (error) setErro("Não foi possível enviar a foto agora. Tente de novo.");
     else onChange({ ...valor, foto_path: caminho, angulo: undefined });
     setEnviando(false);
+  }
+
+  // Análise inicial do vídeo, feita neste computador: o vídeo não é enviado a nenhum serviço de IA. O quadro do
+  // ponto máximo vira a foto da vista e o vídeo, se couber, fica no arquivo privado da clínica.
+  async function analisarVideo(file: File) {
+    setAnalisandoVideo(true);
+    setErro(null);
+    setMsgVideo("Preparando a análise...");
+    try {
+      const { resumo, quadroMaximo } = await analisarVideoNoNavegador(file, def.id, vista, setMsgVideo);
+      let novo: VistaMovSalva = { ...valor, analise_video: resumo };
+      if (quadroMaximo) {
+        const caminhoFoto = `${pacienteId}/mov_${def.id}_${vista}.jpg`;
+        const { error } = await supabase.storage.from(BUCKET).upload(caminhoFoto, quadroMaximo, { upsert: true, contentType: "image/jpeg" });
+        if (!error) novo = { ...novo, foto_path: caminhoFoto, angulo: undefined };
+      }
+      // Guarda o vídeo só se couber no limite do arquivo (o limite do plano costuma ser de 50 MB).
+      if (file.size <= 45 * 1024 * 1024) {
+        const extensao = (file.name.split(".").pop() || "mp4").toLowerCase();
+        const caminhoVideo = `${pacienteId}/mov_${def.id}_${vista}_video.${extensao}`;
+        const { error } = await supabase.storage.from(BUCKET).upload(caminhoVideo, file, { upsert: true, contentType: file.type || "video/mp4" });
+        if (!error) novo = { ...novo, video_path: caminhoVideo };
+        else setMsgVideo("Análise concluída. O vídeo não pôde ser guardado agora (a análise e o quadro do ponto máximo foram guardados).");
+      } else {
+        setMsgVideo("Análise concluída. O vídeo passa de 45 MB e não foi guardado; o quadro do ponto máximo foi guardado como foto.");
+      }
+      onChange(novo);
+    } catch (e: any) {
+      setErro(e?.message ? `Não foi possível analisar o vídeo: ${e.message}` : "Não foi possível analisar o vídeo. Tente um vídeo mais curto, em MP4.");
+      setMsgVideo(null);
+    } finally {
+      setAnalisandoVideo(false);
+    }
+  }
+
+  async function removerVideo() {
+    if (valor.video_path) await supabase.storage.from(BUCKET).remove([valor.video_path]);
+    const { video_path: _v, analise_video: _a, ...resto } = valor;
+    onChange(resto);
+    setMsgVideo(null);
   }
 
   async function removerFoto() {
@@ -168,6 +212,58 @@ function BlocoVista({
         )}
       </div>
       {erro && <p className="text-xs text-danger">{erro}</p>}
+
+      <div className="rounded-lg bg-bg p-3 text-sm space-y-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-xs uppercase tracking-wide text-muted font-semibold">Vídeo do movimento (análise inicial)</span>
+          <label className="font-medium text-accent hover:underline cursor-pointer">
+            {analisandoVideo ? "Analisando..." : valor.analise_video ? "Enviar outro vídeo" : "Enviar vídeo"}
+            <input
+              type="file"
+              accept="video/*"
+              className="hidden"
+              disabled={analisandoVideo}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) analisarVideo(file);
+                e.target.value = "";
+              }}
+            />
+          </label>
+          {(valor.analise_video || valor.video_path) && !analisandoVideo && (
+            <button type="button" onClick={removerVideo} className="text-xs text-muted hover:text-danger">
+              remover vídeo e análise
+            </button>
+          )}
+        </div>
+        {analisandoVideo && msgVideo && <p className="text-xs text-muted">{msgVideo}</p>}
+        {!analisandoVideo && msgVideo && <p className="text-xs text-muted">{msgVideo}</p>}
+        {!valor.analise_video && !analisandoVideo && (
+          <p className="text-xs text-muted leading-relaxed">
+            Filme com a câmera parada, corpo inteiro no quadro, {vista === "sagital" ? "de lado" : "de frente ou de costas"}, com o movimento completo (posição inicial, ponto máximo e retorno), de 5 a 30 segundos. A análise roda neste computador:
+            o vídeo não é enviado a nenhum serviço de IA.
+          </p>
+        )}
+        {valor.analise_video && (
+          <div className="space-y-1">
+            <ul className="list-disc pl-5 text-ink space-y-0.5">
+              {valor.analise_video.linhas.map((l, i) => (
+                <li key={i}>{l}</li>
+              ))}
+            </ul>
+            <p className="text-xs text-muted">Ponto máximo definido por: {valor.analise_video.referencia_max}. O quadro desse ponto foi usado como a foto desta vista.</p>
+            {valor.analise_video.avisos.map((a, i) => (
+              <p key={i} className="text-xs text-warn">
+                Atenção: {a}
+              </p>
+            ))}
+            <p className="text-xs text-muted leading-relaxed">
+              Medida 2D automática, de primeira triagem: depende do enquadramento e não é diagnóstico nem substitui a sua observação. Confira o vídeo e marque o roteiro abaixo.
+            </p>
+          </div>
+        )}
+        {urlVideo && <video src={urlVideo} controls className="w-full max-w-sm rounded-lg bg-black" />}
+      </div>
 
       {url && dims && (
         <div className="rounded-lg bg-bg p-3 text-sm space-y-2">
