@@ -1,0 +1,304 @@
+"use client";
+
+// Análise de movimento (Agente 4, Dra. Paula): o paciente executa o movimento (por exemplo, a flexão de
+// tronco) e o avaliador registra o ponto máximo nas vistas sagital e frontal: foto, roteiro de observação,
+// anotação livre e, se quiser, um ângulo medido na própria foto. É registro descritivo e aparente à
+// inspeção (sem corte nem diagnóstico); a foto fica no arquivo privado da clínica e não vai a nenhum serviço de IA.
+
+import { useEffect, useMemo, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { TextArea } from "@/components/forms";
+import {
+  anguloDe,
+  MOVIMENTOS,
+  pontosNecessarios,
+  ROTULO_VISTA_MOV,
+  VISTAS_MOV,
+  type DefMovimento,
+  type MedidaAngulo,
+  type Movimentos,
+  type MovimentoSalvo,
+  type VistaMov,
+  type VistaMovSalva,
+} from "@/lib/avaliacao/movimento";
+
+const BUCKET = "fotos-posturais";
+
+function useUrlAssinada(path: string | undefined): string | null {
+  const supabase = useMemo(() => createClient(), []);
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelado = false;
+    if (!path) {
+      setUrl(null);
+      return;
+    }
+    supabase.storage
+      .from(BUCKET)
+      .createSignedUrl(path, 3600)
+      .then(({ data }) => {
+        if (!cancelado) setUrl(data?.signedUrl ?? null);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [path, supabase]);
+  return url;
+}
+
+function BlocoVista({
+  pacienteId,
+  def,
+  vista,
+  valor,
+  onChange,
+}: {
+  pacienteId: string;
+  def: DefMovimento;
+  vista: VistaMov;
+  valor: VistaMovSalva;
+  onChange: (v: VistaMovSalva) => void;
+}) {
+  const supabase = useMemo(() => createClient(), []);
+  const url = useUrlAssinada(valor.foto_path);
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
+  const [medindo, setMedindo] = useState<MedidaAngulo["tipo"] | null>(null);
+  const [pts, setPts] = useState<{ x: number; y: number }[]>([]);
+
+  useEffect(() => {
+    setDims(null);
+    if (!url) return;
+    const img = new Image();
+    img.onload = () => setDims({ w: img.naturalWidth, h: img.naturalHeight });
+    img.src = url;
+  }, [url]);
+
+  async function enviar(file: File) {
+    setEnviando(true);
+    setErro(null);
+    const extensao = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const caminho = `${pacienteId}/mov_${def.id}_${vista}.${extensao}`;
+    const { error } = await supabase.storage.from(BUCKET).upload(caminho, file, { upsert: true, contentType: file.type });
+    if (error) setErro("Não foi possível enviar a foto agora. Tente de novo.");
+    else onChange({ ...valor, foto_path: caminho, angulo: undefined });
+    setEnviando(false);
+  }
+
+  async function removerFoto() {
+    if (!valor.foto_path) return;
+    await supabase.storage.from(BUCKET).remove([valor.foto_path]);
+    const { foto_path: _f, angulo: _a, ...resto } = valor;
+    onChange(resto);
+  }
+
+  function clicarFoto(e: React.MouseEvent<SVGSVGElement>) {
+    if (!medindo || !dims) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const ponto = { x: ((e.clientX - r.left) / r.width) * dims.w, y: ((e.clientY - r.top) / r.height) * dims.h };
+    const novos = [...pts, ponto];
+    setPts(novos);
+    if (novos.length >= pontosNecessarios(medindo)) {
+      onChange({ ...valor, angulo: { tipo: medindo, pts: novos, largura: dims.w, altura: dims.h } });
+      setMedindo(null);
+      setPts([]);
+    }
+  }
+
+  const opcoes = def.observacoes[vista];
+  const marcadas = new Set(valor.obs ?? []);
+  const angulo = anguloDe(valor.angulo);
+  const u = dims ? dims.w / 1000 : 1;
+  const exibidos = medindo ? pts : valor.angulo?.pts ?? [];
+  const tipoExibido = medindo ?? valor.angulo?.tipo;
+
+  return (
+    <div className="space-y-3 rounded-xl border border-border p-4">
+      <p className="font-medium text-ink text-sm">{ROTULO_VISTA_MOV[vista]}</p>
+
+      {url && dims ? (
+        <svg
+          viewBox={`0 0 ${dims.w} ${dims.h}`}
+          className={`w-full max-w-sm h-auto rounded-lg bg-black ${medindo ? "cursor-crosshair" : ""}`}
+          onClick={clicarFoto}
+          role="img"
+          aria-label={`${def.nome}, ${ROTULO_VISTA_MOV[vista]}`}
+        >
+          <image href={url} x={0} y={0} width={dims.w} height={dims.h} preserveAspectRatio="none" />
+          {exibidos.length >= 2 && tipoExibido === "tres_pontos" &&
+            exibidos.slice(0, -1).map((p, i) => <line key={i} x1={p.x} y1={p.y} x2={exibidos[i + 1].x} y2={exibidos[i + 1].y} stroke="#FFE600" strokeWidth={4 * u} />)}
+          {exibidos.length >= 2 && tipoExibido === "vertical" && (
+            <>
+              <line x1={exibidos[0].x} y1={exibidos[0].y} x2={exibidos[1].x} y2={exibidos[1].y} stroke="#FFE600" strokeWidth={4 * u} />
+              <line x1={exibidos[0].x} y1={exibidos[0].y} x2={exibidos[0].x} y2={exibidos[1].y} stroke="#22D3EE" strokeWidth={3 * u} strokeDasharray={`${14 * u} ${9 * u}`} />
+            </>
+          )}
+          {exibidos.map((p, i) => (
+            <circle key={i} cx={p.x} cy={p.y} r={9 * u} fill="#FF3B3B" stroke="#000" strokeWidth={2 * u} />
+          ))}
+        </svg>
+      ) : url ? (
+        <p className="text-xs text-muted">Carregando a foto...</p>
+      ) : (
+        <div className="h-32 w-full max-w-sm rounded-lg border border-dashed border-border flex items-center justify-center text-xs text-muted text-center px-3">
+          Sem foto desta vista
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-4 text-sm">
+        <label className="font-medium text-accent hover:underline cursor-pointer">
+          {enviando ? "Enviando..." : valor.foto_path ? "Substituir a foto" : "Enviar foto no ponto máximo"}
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            disabled={enviando}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) enviar(file);
+              e.target.value = "";
+            }}
+          />
+        </label>
+        {valor.foto_path && (
+          <button type="button" onClick={removerFoto} className="text-xs text-muted hover:text-danger">
+            remover foto
+          </button>
+        )}
+      </div>
+      {erro && <p className="text-xs text-danger">{erro}</p>}
+
+      {url && dims && (
+        <div className="rounded-lg bg-bg p-3 text-sm space-y-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-xs uppercase tracking-wide text-muted font-semibold">Medir ângulo na foto</span>
+            <button type="button" onClick={() => { setMedindo("tres_pontos"); setPts([]); }} className="font-medium text-accent hover:underline">
+              3 pontos
+            </button>
+            <button type="button" onClick={() => { setMedindo("vertical"); setPts([]); }} className="font-medium text-accent hover:underline">
+              linha em relação à vertical
+            </button>
+            {(valor.angulo || medindo) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMedindo(null);
+                  setPts([]);
+                  const { angulo: _a, ...resto } = valor;
+                  onChange(resto);
+                }}
+                className="text-xs text-muted hover:text-danger"
+              >
+                limpar medida
+              </button>
+            )}
+          </div>
+          {medindo && (
+            <p className="text-ink">
+              <strong>Clique na foto:</strong>{" "}
+              {medindo === "tres_pontos"
+                ? ["1º ponto (por exemplo, o ombro)", "vértice, onde o ângulo é medido (por exemplo, o quadril)", "3º ponto (por exemplo, o joelho)"][pts.length]
+                : ["início da linha (por exemplo, o quadril)", "fim da linha (por exemplo, o ombro)"][pts.length]}
+              .
+            </p>
+          )}
+          {angulo !== null && !medindo && (
+            <p className="text-ink">
+              <strong>{angulo.toFixed(0)}°</strong>
+              <span className="text-muted"> {valor.angulo?.tipo === "vertical" ? "de inclinação em relação à vertical da foto (0° = vertical)" : "no vértice marcado"}. Medida 2D, depende do enquadramento e da inclinação da câmera.</span>
+            </p>
+          )}
+        </div>
+      )}
+
+      <div>
+        <p className="text-xs uppercase tracking-wide text-muted font-semibold mb-1.5">O que se observa (marque o que se aplica)</p>
+        <ul className="space-y-1.5">
+          {opcoes.map((o) => (
+            <li key={o.chave}>
+              <label className="inline-flex items-start gap-2 text-sm text-ink cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={marcadas.has(o.chave)}
+                  onChange={(e) => {
+                    const novo = new Set(marcadas);
+                    if (e.target.checked) novo.add(o.chave);
+                    else novo.delete(o.chave);
+                    onChange({ ...valor, obs: Array.from(novo) });
+                  }}
+                />
+                <span>{o.rotulo}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <TextArea value={valor.texto ?? ""} onChange={(e) => onChange({ ...valor, texto: e.target.value })} placeholder="Anotação livre desta vista (opcional)" />
+    </div>
+  );
+}
+
+export function AnaliseMovimento({ pacienteId, movimentos, onChange }: { pacienteId: string; movimentos: Movimentos; onChange: (m: Movimentos) => void }) {
+  const [aberto, setAberto] = useState<string | null>(null);
+
+  function atualizar(id: string, patch: Partial<MovimentoSalvo>) {
+    onChange({ ...movimentos, [id]: { ...(movimentos[id] ?? {}), ...patch } });
+  }
+
+  return (
+    <div className="pt-4 border-t border-border space-y-3">
+      <div>
+        <h3 className="font-display text-lg text-ink">Análise de movimento</h3>
+        <p className="text-xs text-muted leading-relaxed mt-1">
+          O paciente executa o movimento e você registra o ponto máximo em duas vistas: a <strong>sagital</strong> (de lado) e a <strong>frontal</strong>. Para cada vista há foto, um roteiro de observação e, se quiser,
+          um ângulo medido na foto. São registros descritivos, aparentes à inspeção, sem corte nem validação publicada: não são diagnóstico nem causa de dor. A foto fica no arquivo privado da clínica.
+        </p>
+      </div>
+
+      {MOVIMENTOS.map((def) => {
+        const salvo = movimentos[def.id] ?? {};
+        const preenchidas = VISTAS_MOV.filter((v) => (salvo[v]?.obs?.length ?? 0) > 0 || salvo[v]?.foto_path || salvo[v]?.texto).length + (salvo.medida ? 1 : 0);
+        const estaAberto = aberto === def.id;
+        return (
+          <div key={def.id} className="rounded-xl border border-border bg-surface">
+            <button type="button" aria-expanded={estaAberto} onClick={() => setAberto(estaAberto ? null : def.id)} className="w-full text-left px-4 py-3 flex items-center justify-between gap-3">
+              <span className="font-medium text-ink">{def.nome}</span>
+              <span className="text-xs text-muted shrink-0">{preenchidas > 0 ? `${preenchidas} registro(s)` : "não registrado"} · {estaAberto ? "fechar" : "abrir"}</span>
+            </button>
+            {estaAberto && (
+              <div className="px-4 pb-4 space-y-4">
+                <p className="text-sm text-muted leading-relaxed">{def.como}</p>
+                {def.medida && (
+                  <label className="inline-flex flex-wrap items-center gap-2 text-sm text-ink">
+                    {def.medida.rotulo} ({def.medida.unidade})
+                    <input
+                      inputMode="decimal"
+                      value={salvo.medida ?? ""}
+                      onChange={(e) => atualizar(def.id, { medida: e.target.value.replace(",", ".") })}
+                      className="w-24 rounded-lg border border-border bg-surface px-2 py-1 text-sm"
+                    />
+                    <span className="text-xs text-muted">{def.medida.dica}</span>
+                  </label>
+                )}
+                <div className="grid lg:grid-cols-2 gap-4">
+                  {VISTAS_MOV.map((v) => (
+                    <BlocoVista
+                      key={v}
+                      pacienteId={pacienteId}
+                      def={def}
+                      vista={v}
+                      valor={salvo[v] ?? {}}
+                      onChange={(nv) => atualizar(def.id, { [v]: nv })}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}

@@ -131,7 +131,7 @@ export function referenciasDoAgente(id: AgenteId): Referencia[] {
 // ---------------------------------------------------------------------------
 export const REVISAO_LITERATURA = {
   revisaoPorAgente: "2026-10-02", // documento 10-Revisao-Cientifica-por-Agente.md
-  referenciasConferidasNoPubMed: "2026-10-08",
+  referenciasConferidasNoPubMed: "2026-10-09", // inclui as referências da aba Condições de saúde
   validadeDias: 180, // depois disso o sistema avisa que é hora de pedir nova revisão à Nina
 };
 

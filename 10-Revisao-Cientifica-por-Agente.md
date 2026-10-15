@@ -278,6 +278,11 @@ Pergunta feita a cada agente: o que você faz hoje no sistema, isso corresponde 
 
 **Sétima parte (13/10/2026): novo paciente e anamnese na clínica.** Sem conteúdo científico novo; detalhe funcional em `01-Agente2-Anamnese-e-Questionarios.md` (botão "+ Novo paciente", anamnese feita na clínica com o mesmo questionário do paciente, bloco na aba Anamnese). **Incidente de teste registrado:** ao testar o fluxo, o desvio de rede de teste se perdeu numa recarga completa de página e o teste criou um paciente fictício no banco real; foi conferido e **removido** (id e condições estritas), restando os 6 pacientes reais. Passou a valer testar telas isoladas, sem fluxo com recarga, e conferir o banco depois.
 
+**Oitava parte (15/10/2026): análise de movimento e página de estudos.**
+- **Análise de movimento (Dra. Paula):** flexão de tronco e outros 4 movimentos, em vista sagital e frontal, com foto, roteiro de observação e ângulo medido na foto. **Sem fonte conferida no PubMed para os roteiros de observação**: são registro descritivo prático do sistema. Detalhe em `03-Agente4-Postural-e-Biomecanica.md`. Pendente de revisão clínica do profissional.
+- **Página "Estudos" (`/avaliador/estudos`, menu do avaliador):** mostra a situação da revisão (data, dias e prazo de 180), a base usada por cada agente com link do PubMed e o que cada obra apoia, a bibliografia da aba Condições de saúde, **buscas prontas no PubMed por tema** (já ordenadas pelas publicações mais novas dos últimos anos) e a **lista consolidada do que ainda precisa de conferência**. Ela **não traz estudo novo nem resume artigos sozinha**: o estudo só entra depois de conferido em rodada de revisão e registrado aqui. Dados em `lib/estudos.ts`; ao conferir algo novo ou resolver uma pendência, atualizar `PENDENCIAS` e `REVISAO_LITERATURA`.
+- `REVISAO_LITERATURA.referenciasConferidasNoPubMed` passou para 09/10/2026 (inclui as referências da aba Condições de saúde).
+
 ## Registro de referências verificadas no PubMed (08/10/2026)
 
 Todas abaixo tiveram a existência e o título conferidos no PubMed (consulta por revista, ano, volume e primeira página). Conferir a existência **não** é o mesmo que ler o texto completo: o que cada uma sustenta no sistema está descrito em `src/lib/agentes.ts`.

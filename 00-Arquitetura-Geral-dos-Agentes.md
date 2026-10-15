@@ -281,6 +281,9 @@ Cada agente atua como **especialista da sua área**, com o tratamento "Dr." ou "
 - **Imagens dos agentes:** ilustrações fictícias (SVG) de cada assistente de IA, na página "Equipe de IA" (`/avaliador/agentes`, com download em SVG e PNG), no cabeçalho dos pareceres e da supervisão. Não representam pessoas reais.
 - **Aba "Condições de saúde" (Dra. Íris):** ver `05-Agente6-Integracao-e-Interpretacao.md`.
 - **Composição corporal pelas tabelas do profissional:** ver `02-Agente3-Fisica-e-Antropometrica.md`.
+- **Novo paciente e anamnese na clínica (13/10/2026):** ver `01-Agente2-Anamnese-e-Questionarios.md`.
+- **Análise de movimento (15/10/2026):** ver `03-Agente4-Postural-e-Biomecanica.md`.
+- **Página "Estudos" (15/10/2026):** `/avaliador/estudos`, para acompanhar a atualização científica (situação da revisão, base de cada agente, buscas prontas no PubMed e pendências de conferência); a revisão em si continua sendo a rodada da Dra. Nina descrita em 11.4.
 - **Regra de trabalho:** toda mudança termina com build verde, commit, envio ao GitHub (a Vercel publica a partir dele) e documentos atualizados.
 
 ---

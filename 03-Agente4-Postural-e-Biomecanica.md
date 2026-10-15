@@ -184,6 +184,18 @@ Nunca usar: "a causa da dor é...", "isso está causando...", "esse desvio é re
 
 ---
 
+## ATUALIZAÇÃO 15/10/2026 — ANÁLISE DE MOVIMENTO (pedido do profissional)
+
+**Pedido:** complementar a postura estática com a análise de um movimento, por exemplo a **flexão de tronco**, em duas vistas: **sagital** (de lado) e **frontal**.
+
+- **Onde:** aba Postural, seção "Análise de movimento" (antes do parecer). Código: `lib/avaliacao/movimento.ts` e `components/avaliador/AnaliseMovimento.tsx`.
+- **Movimentos disponíveis (5):** flexão de tronco, extensão de tronco, inclinação lateral de tronco, agachamento (sem carga) e elevação dos braços acima da cabeça. Cada um traz o texto de como executar e posicionar a câmera.
+- **Por movimento e por vista (sagital e frontal):** foto no ponto máximo (arquivo privado da clínica, mesma pasta das fotos posturais, sem envio a serviço de IA); **roteiro de observação** (caixas para marcar); anotação livre; e **ângulo medido na própria foto** (3 pontos, ou inclinação de uma linha em relação à vertical). Na flexão de tronco há também a **distância dedos-chão (cm)**.
+- **Parecer da Dra. Paula:** o parecer (sucinto e explicativo) ganhou o bloco "Análise de movimento" e se atualiza enquanto o texto não for editado. Quando o paciente nega dor mas o avaliador marcou dor ou desconforto no movimento, a Dra. Íris aponta a discrepância para conversar na devolutiva.
+- **Limites (também escritos na tela e no parecer):** é registro **descritivo e aparente à inspeção**; os roteiros de observação são um **roteiro prático do sistema, sem corte nem validação publicada**; o ângulo é 2D e depende do enquadramento e da inclinação da câmera; nada disso define diagnóstico ou causa de dor. Não entra no cálculo do domínio de mobilidade do perfil (que continua usando os testes objetivos).
+- **Dados:** gravados em `postural.movimentos` (sem mudança no banco); o autosave e o histórico já cobrem.
+- **Pendente:** o profissional pode pedir novos movimentos (ex.: rotação de tronco, ponte, apoio unipodal) ou corrigir o roteiro de observação de cada um.
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 5 — Avaliação Funcional** (Etapa 6 do prompt-mestre): critérios de seleção de testes por perfil de paciente, e o detalhamento completo (objetivo, indicação, contraindicações, materiais, execução, critérios de validade/interrupção, valores normativos, interpretação) dos testes citados no prompt-mestre — 30-Second Chair Stand, Five Times Sit-to-Stand, Timed Up and Go, apoio unipodal, velocidade da marcha, teste de caminhada de 6 minutos, dinamometria, entre outros.

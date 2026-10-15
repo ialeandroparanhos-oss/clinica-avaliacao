@@ -18,6 +18,7 @@
 import type { EstiloParecer } from "./pareceres";
 import { linhasBaseCientifica, nomeComTitulo } from "@/lib/agentes";
 import { medirEscapula, temMarcacaoEscapula, type MarcacaoEscapula } from "./escapula";
+import { descreverMovimentos, temMovimento, type Movimentos } from "./movimento";
 
 export type Vista = "anterior" | "posterior" | "lateral_d" | "lateral_e";
 
@@ -417,7 +418,7 @@ export type AnaliseVistaSalva = {
 // ---------------------------------------------------------------------------
 // Parecer descritivo (texto do Agente 4)
 // ---------------------------------------------------------------------------
-function gerarParecerSucinto(vistas: Partial<Record<Vista, AnaliseVistaSalva>>, analisadas: Vista[], escapula?: MarcacaoEscapula): string {
+function gerarParecerSucinto(vistas: Partial<Record<Vista, AnaliseVistaSalva>>, analisadas: Vista[], escapula?: MarcacaoEscapula, movimentos?: Movimentos): string {
   const linhas: string[] = [`PARECER ${nomeComTitulo("paula").toUpperCase()} (assistente de IA) - POSTURA (resumo)`, ""];
   const atencao: string[] = [];
   for (const v of analisadas) {
@@ -440,21 +441,32 @@ function gerarParecerSucinto(vistas: Partial<Record<Vista, AnaliseVistaSalva>>, 
     const m = medirEscapula(escapula!);
     if (m.medidas.length > 0) linhas.push(`Escápulas (marcação manual, só para comparar no tempo): ${m.medidas.map((x) => `${x.rotulo.toLowerCase()} - ${x.texto}`).join("; ")}.`);
   }
-  linhas.push(atencao.length > 0 ? `A confirmar clinicamente: ${Array.from(new Set(atencao)).join("; ")}.` : "Nenhuma diferença aparente acima da margem de interpretação.");
+  const movs = descreverMovimentos(movimentos);
+  if (movs.length > 0) {
+    linhas.push("Movimento (registro descritivo, sem corte):");
+    movs.forEach((x) => linhas.push(`- ${x}`));
+  }
+  linhas.push(
+    atencao.length > 0
+      ? `A confirmar clinicamente: ${Array.from(new Set(atencao)).join("; ")}.`
+      : analisadas.length > 0
+        ? "Nenhuma diferença aparente acima da margem de interpretação."
+        : "Sem análise automática de foto estática nesta avaliação: vale só o registro descritivo do avaliador."
+  );
   linhas.push("Foto 2D, achados descritivos: não são diagnóstico nem causa de dor.");
   linhas.push(...linhasBaseCientifica("paula", "sucinto"));
   return linhas.join("\n");
 }
 
-export function gerarParecer(vistas: Partial<Record<Vista, AnaliseVistaSalva>>, estilo: EstiloParecer = "explicativo", escapula?: MarcacaoEscapula): string {
+export function gerarParecer(vistas: Partial<Record<Vista, AnaliseVistaSalva>>, estilo: EstiloParecer = "explicativo", escapula?: MarcacaoEscapula, movimentos?: Movimentos): string {
   const ordem: Vista[] = ["anterior", "posterior", "lateral_d", "lateral_e"];
   const analisadas = ordem.filter((v) => vistas[v]);
-  if (analisadas.length === 0 && !temMarcacaoEscapula(escapula)) return "";
-  if (estilo === "sucinto") return gerarParecerSucinto(vistas, analisadas, escapula);
+  if (analisadas.length === 0 && !temMarcacaoEscapula(escapula) && !temMovimento(movimentos)) return "";
+  if (estilo === "sucinto") return gerarParecerSucinto(vistas, analisadas, escapula, movimentos);
 
   const linhas: string[] = [];
   linhas.push(`PARECER POSTURAL - ${nomeComTitulo("paula")} (assistente de IA; análise automática das fotos; apoio ao avaliador, não é diagnóstico)`);
-  linhas.push(analisadas.length > 0 ? `Fotos analisadas: ${analisadas.map((v) => ROTULO_VISTA[v].toLowerCase()).join(", ")}.` : "Nenhuma foto analisada automaticamente; só a marcação manual das escápulas.");
+  linhas.push(analisadas.length > 0 ? `Fotos analisadas: ${analisadas.map((v) => ROTULO_VISTA[v].toLowerCase()).join(", ")}.` : "Nenhuma foto analisada automaticamente; só os registros manuais (escápulas e movimento).");
   linhas.push("");
 
   const atencao: string[] = [];
@@ -486,11 +498,20 @@ export function gerarParecer(vistas: Partial<Record<Vista, AnaliseVistaSalva>>, 
     linhas.push("- Sem corte de normalidade: uma revisão sistemática de 2020 não encontrou instrumento clínico com evidência suficiente para avaliar a função da escápula e alerta contra concluir discinesia por essas medidas. Use só para comparar o mesmo paciente, com a mesma técnica, nas reavaliações.");
     linhas.push("");
   }
+  const movimentosTxt = descreverMovimentos(movimentos);
+  if (movimentosTxt.length > 0) {
+    linhas.push("ANÁLISE DE MOVIMENTO (vistas sagital e frontal; registro do avaliador)");
+    movimentosTxt.forEach((x) => linhas.push(`- ${x}`));
+    linhas.push("- São observações descritivas do movimento no ponto máximo, em foto 2D: dependem do enquadramento e da execução do dia; as listas de observação são um roteiro prático do sistema, sem corte nem validação publicada, e não estabelecem causa nem diagnóstico. Compare sempre o mesmo paciente, com o mesmo movimento e a mesma posição da câmera.");
+    linhas.push("");
+  }
   linhas.push("SÍNTESE");
   linhas.push(
     atencao.length > 0
       ? `Pontos com diferença aparente a confirmar clinicamente: ${Array.from(new Set(atencao)).join("; ")}.`
-      : "Não houve diferença aparente acima da margem de interpretação nas medidas calculadas."
+      : analisadas.length > 0
+        ? "Não houve diferença aparente acima da margem de interpretação nas medidas calculadas."
+        : "Sem análise automática de foto estática nesta avaliação: vale só o registro descritivo do avaliador (movimento e escápulas)."
   );
   linhas.push("");
   linhas.push("COMO USAR ESTE PARECER");

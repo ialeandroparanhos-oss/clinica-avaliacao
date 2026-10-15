@@ -13,6 +13,7 @@
 import type { PacienteRow } from "@/lib/anamnese/types";
 import { calcularPerfilIntegrado } from "./perfil";
 import { calcularTagsPerfil } from "./tagsPerfil";
+import { MOVIMENTOS, VISTAS_MOV } from "@/lib/avaliacao/movimento";
 
 export type Discrepancia = {
   titulo: string;
@@ -55,6 +56,15 @@ export function detectarDiscrepancias(paciente: PacienteRow): Discrepancia[] {
       descricao: `O paciente relata não sentir dor atualmente, mas a observação postural${
         temFoto ? " (com registro fotográfico)" : ""
       } menciona "${palavraAchada}". Vale conversar sobre isso na devolutiva.`,
+    });
+  }
+
+  // 1b. Nega dor atualmente, mas o avaliador marcou dor ou desconforto durante algum movimento.
+  const comDorNoMovimento = MOVIMENTOS.filter((def) => VISTAS_MOV.some((v) => (paciente.postural?.movimentos?.[def.id]?.[v]?.obs ?? []).includes("dor"))).map((def) => def.nome.split(" (")[0].toLowerCase());
+  if (anamnese.dor?.tem_dor === false && comDorNoMovimento.length > 0) {
+    achados.push({
+      titulo: "Nega dor, mas houve dor ou desconforto durante o movimento",
+      descricao: `O paciente relata não sentir dor atualmente, mas na análise de movimento foi registrada dor ou desconforto em: ${comDorNoMovimento.join("; ")}. Vale perguntar com calma, na devolutiva, quando e onde aparece.`,
     });
   }
 

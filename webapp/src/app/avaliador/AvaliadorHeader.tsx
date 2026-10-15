@@ -31,6 +31,9 @@ export default function AvaliadorHeader() {
           Avaliação Integrada <span className="text-accent">· Avaliador</span>
         </Link>
         <div className="flex items-center gap-4 text-sm">
+          <Link href="/avaliador/estudos" className="font-medium text-muted hover:text-ink transition">
+            Estudos
+          </Link>
           <Link href="/avaliador/agentes" className="font-medium text-muted hover:text-ink transition">
             Equipe de IA
           </Link>

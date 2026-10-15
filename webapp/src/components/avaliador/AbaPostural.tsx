@@ -15,6 +15,8 @@ import { SobreposicaoPostural } from "./SobreposicaoPostural";
 import { MarcacaoEscapula } from "./MarcacaoEscapula";
 import { temMarcacaoEscapula, type MarcacaoEscapula as DadosEscapula } from "@/lib/avaliacao/escapula";
 import { PainelParecer, estiloPreferido, lerParecer, type ParecerSalvo } from "./PainelParecer";
+import { AnaliseMovimento } from "./AnaliseMovimento";
+import type { Movimentos } from "@/lib/avaliacao/movimento";
 import { analisarVista, gerarParecer, ROTULO_VISTA, type AnaliseVistaSalva, type Vista } from "@/lib/avaliacao/analisePostural";
 import { detectarPontos, prepararImagem, type ImagemPreparada } from "@/lib/avaliacao/poseModelo";
 
@@ -22,7 +24,7 @@ const BUCKET_FOTOS_POSTURAIS = "fotos-posturais";
 const VISTAS: Vista[] = ["anterior", "posterior", "lateral_d", "lateral_e"];
 
 type Vistas = Partial<Record<Vista, AnaliseVistaSalva>>;
-type EstadoAnalise = { vistas: Vistas; parecer: ParecerSalvo | null; escapula?: DadosEscapula };
+type EstadoAnalise = { vistas: Vistas; parecer: ParecerSalvo | null; escapula?: DadosEscapula; movimentos: Movimentos };
 
 // Fichas gravadas antes do parecer ganhar estilos guardavam o texto em analise.parecer.
 function parecerInicial(dados: any): ParecerSalvo | null {
@@ -327,7 +329,7 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
     foto_lateral_d_path: dados?.foto_lateral_d_path ?? "",
     foto_lateral_e_path: dados?.foto_lateral_e_path ?? "",
   });
-  const [analise, setAnalise] = useState<EstadoAnalise>(() => ({ vistas: dados?.analise?.vistas ?? {}, parecer: parecerInicial(dados), escapula: dados?.analise?.escapula }));
+  const [analise, setAnalise] = useState<EstadoAnalise>(() => ({ vistas: dados?.analise?.vistas ?? {}, parecer: parecerInicial(dados), escapula: dados?.analise?.escapula, movimentos: (dados?.movimentos as Movimentos) ?? {} }));
   const [versaoFotos, setVersaoFotos] = useState<Record<Vista, number>>({ anterior: 0, posterior: 0, lateral_d: 0, lateral_e: 0 });
   const [sinal, setSinal] = useState(0);
   const [grade, setGrade] = useState(true);
@@ -342,7 +344,7 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
     const seguiaAuto = !p || p.texto === "" || p.texto === p.automatico;
     if (!seguiaAuto) return { ...prev, vistas };
     const estilo = p?.estilo ?? estiloPreferido();
-    const novo = gerarParecer(vistas, estilo, prev.escapula);
+    const novo = gerarParecer(vistas, estilo, prev.escapula, prev.movimentos);
     return { ...prev, vistas, parecer: novo ? { texto: novo, estilo, automatico: novo, revisado: false } : null };
   }
 
@@ -366,11 +368,15 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
     setAnalise((prev) => comVistas({ ...prev, escapula: m }, prev.vistas));
   }
 
+  function aoMovimentos(m: Movimentos) {
+    setAnalise((prev) => comVistas({ ...prev, movimentos: m }, prev.vistas));
+  }
+
   function aoResultado(vista: Vista, resultado: AnaliseVistaSalva) {
     setAnalise((prev) => comVistas(prev, { ...prev.vistas, [vista]: resultado }));
   }
 
-  const dadosAtuais = { ...d, analise: { versao: 2, vistas: analise.vistas, escapula: analise.escapula }, parecer: analise.parecer };
+  const dadosAtuais = { ...d, analise: { versao: 2, vistas: analise.vistas, escapula: analise.escapula }, movimentos: analise.movimentos, parecer: analise.parecer };
   const estadoAuto = useAutoSalvar(dadosAtuais, rascunho);
   const vistasComFoto = VISTAS.filter((v) => caminhoDe(v));
 
@@ -421,12 +427,14 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
         )}
       </div>
 
+      <AnaliseMovimento pacienteId={pacienteId} movimentos={analise.movimentos} onChange={aoMovimentos} />
+
       <PainelParecer
         agente="paula"
         valor={analise.parecer}
         onChange={(p) => setAnalise((prev) => ({ ...prev, parecer: p }))}
-        gerar={(estilo) => gerarParecer(analise.vistas, estilo, analise.escapula)}
-        mensagemVazia="Analise ao menos uma foto para o agente redigir o parecer."
+        gerar={(estilo) => gerarParecer(analise.vistas, estilo, analise.escapula, analise.movimentos)}
+        mensagemVazia="Analise ao menos uma foto ou registre um movimento para o agente redigir o parecer."
         linhas={analise.parecer?.estilo === "explicativo" ? 16 : 8}
       />
 
