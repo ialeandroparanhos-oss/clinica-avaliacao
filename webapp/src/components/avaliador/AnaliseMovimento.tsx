@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { TextArea } from "@/components/forms";
 import { analisarVideoNoNavegador } from "@/lib/avaliacao/videoPose";
+import { ROTULO_VEREDITO } from "@/lib/avaliacao/videoMovimento";
 import {
   anguloDe,
   MOVIMENTOS,
@@ -243,6 +244,37 @@ function BlocoVista({
             Filme com a câmera parada, corpo inteiro no quadro, {vista === "sagital" ? "de lado" : "de frente ou de costas"}, com o movimento completo (posição inicial, ponto máximo e retorno), de 5 a 30 segundos. A análise roda neste computador:
             o vídeo não é enviado a nenhum serviço de IA.
           </p>
+        )}
+        {valor.analise_video?.adequacao && (
+          <div
+            className={`rounded-lg border px-3 py-2 space-y-1.5 ${
+              valor.analise_video.adequacao.veredito === "adequado"
+                ? "border-accent/40 bg-accent-soft"
+                : valor.analise_video.adequacao.veredito === "com_ressalvas"
+                  ? "border-warn bg-warn-soft"
+                  : "border-danger bg-danger-soft"
+            }`}
+          >
+            <p className="font-medium text-ink">
+              {valor.analise_video.adequacao.veredito === "adequado" ? "✓ " : valor.analise_video.adequacao.veredito === "com_ressalvas" ? "! " : "✕ "}
+              {ROTULO_VEREDITO[valor.analise_video.adequacao.veredito]}
+            </p>
+            <p className="text-xs text-ink leading-relaxed">{valor.analise_video.adequacao.resumo}</p>
+            <details className="text-xs">
+              <summary className="cursor-pointer font-medium text-ink">Ver o porquê (critérios avaliados)</summary>
+              <ul className="mt-1.5 space-y-1">
+                {valor.analise_video.adequacao.criterios.map((c) => (
+                  <li key={c.chave} className="flex gap-2">
+                    <span className={`shrink-0 font-semibold ${c.estado === "ok" ? "text-accent-dark" : c.estado === "atencao" ? "text-warn" : "text-danger"}`}>{c.estado === "ok" ? "✓" : c.estado === "atencao" ? "!" : "✕"}</span>
+                    <span className="text-ink">
+                      <strong>{c.rotulo}:</strong> {c.detalhe}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-1.5 text-muted">Os limites são referências práticas do sistema, sem validação publicada: dizem se a leitura automática 2D é confiável, e não se o movimento do paciente está bom ou ruim.</p>
+            </details>
+          </div>
         )}
         {valor.analise_video && (
           <div className="space-y-1">

@@ -285,6 +285,8 @@ Pergunta feita a cada agente: o que você faz hoje no sistema, isso corresponde 
 
 **Nona parte (16/10/2026): vídeo na análise de movimento.** Análise inicial automática do vídeo (inclinação do tronco, ângulos de quadril e joelho, punhos, desvio lateral, instante do ponto máximo), feita no navegador com o mesmo motor de pose da foto; o vídeo não vai a serviço de IA. **Sem fonte conferida no PubMed**: é medida 2D de triagem do sistema, sem corte nem validação publicada (detalhe e limites em `03-Agente4-Postural-e-Biomecanica.md`). Pendente: conferir com um vídeo real do profissional e, se for o caso, buscar na literatura a confiabilidade de estimativa de pose por vídeo 2D para esse fim (tema já disponível na página Estudos).
 
+**Décima parte (17/10/2026): adequação do vídeo.** Cada análise de vídeo passa a trazer o veredito (adequado, com ressalvas ou não adequado) e o porquê, por 10 critérios práticos (detecção, duração, corpo inteiro, tamanho, estabilidade, resolução, luz, movimento presente e completo, vista). **Limites sem fonte conferida no PubMed**: referências práticas do sistema; valem para a confiabilidade da leitura automática, não para a qualidade do movimento (detalhe em `03-Agente4-Postural-e-Biomecanica.md`). Pendente: ajustar os limites com os vídeos reais do profissional.
+
 ## Registro de referências verificadas no PubMed (08/10/2026)
 
 Todas abaixo tiveram a existência e o título conferidos no PubMed (consulta por revista, ano, volume e primeira página). Conferir a existência **não** é o mesmo que ler o texto completo: o que cada uma sustenta no sistema está descrito em `src/lib/agentes.ts`.

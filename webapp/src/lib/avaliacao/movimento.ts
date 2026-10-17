@@ -216,6 +216,7 @@ export function descreverMovimentos(movimentos: Movimentos | undefined): string[
       if (obs.length > 0) itens.push(obs.join("; "));
       if (ang !== null) itens.push(`ângulo medido na foto ${f(ang)}°${sv.angulo?.tipo === "vertical" ? " em relação à vertical" : ""}`);
       if (sv.texto?.trim()) itens.push(`anotação: ${sv.texto.trim()}`);
+      if (sv.analise_video?.adequacao) itens.push(`adequação do vídeo para leitura: ${sv.analise_video.adequacao.resumo}`);
       if (sv.analise_video && sv.analise_video.linhas.length > 0) {
         itens.push(`análise inicial automática do vídeo (2D, a confirmar pelo avaliador): ${sv.analise_video.linhas.join("; ")}${sv.analise_video.avisos.length > 0 ? ` [atenção: ${sv.analise_video.avisos.join(" ")}]` : ""}`);
       }

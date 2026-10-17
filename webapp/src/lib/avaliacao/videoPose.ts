@@ -5,7 +5,7 @@
 
 import { INDICE_PONTO, type NomePonto, type Pontos } from "./analisePostural";
 import { carregarModeloPose } from "./poseModelo";
-import { resumirVideo, type Quadro, type ResumoVideo } from "./videoMovimento";
+import { resumirVideo, type InfoVideo, type Quadro, type ResumoVideo } from "./videoMovimento";
 
 const LADO_ANALISE_PX = 960;
 const LADO_FOTO_PX = 1600;
@@ -37,6 +37,22 @@ function desenhar(video: HTMLVideoElement, ladoMax: number): HTMLCanvasElement {
   return c;
 }
 
+// Brilho médio e contraste (desvio) do quadro, em escala 0 a 255, numa miniatura de 32 x 32 px.
+function luminanciaDe(canvas: HTMLCanvasElement): { media: number; desvio: number } | null {
+  const mini = document.createElement("canvas");
+  mini.width = 32;
+  mini.height = 32;
+  const ctx = mini.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return null;
+  ctx.drawImage(canvas, 0, 0, 32, 32);
+  const d = ctx.getImageData(0, 0, 32, 32).data;
+  const v: number[] = [];
+  for (let i = 0; i < d.length; i += 4) v.push(0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]);
+  const media = v.reduce((a, b) => a + b, 0) / v.length;
+  const desvio = Math.sqrt(v.reduce((a, b) => a + (b - media) ** 2, 0) / v.length);
+  return { media, desvio };
+}
+
 export type ResultadoAnaliseVideo = {
   resumo: ResumoVideo;
   quadroMaximo: Blob | null; // JPEG do ponto máximo
@@ -62,12 +78,19 @@ export async function analisarVideoNoNavegador(
 
     const n = Math.max(3, Math.min(MAXIMO_QUADROS, Math.ceil(duracao * QUADROS_POR_SEGUNDO)));
     const quadros: Quadro[] = [];
+    const luminancia: { media: number; desvio: number }[] = [];
+    let larguraAnalise = 0;
+    let alturaAnalise = 0;
     for (let i = 0; i < n; i++) {
       const t = Math.min(duracao - 0.05, (duracao * i) / (n - 1 || 1));
       aoMudar?.(`Analisando o vídeo: quadro ${i + 1} de ${n}...`);
       video.currentTime = Math.max(0, t);
       await esperar(video, "seeked");
       const canvas = desenhar(video, LADO_ANALISE_PX);
+      larguraAnalise = canvas.width;
+      alturaAnalise = canvas.height;
+      const luz = luminanciaDe(canvas);
+      if (luz) luminancia.push(luz);
       const r = modelo.detect(canvas);
       const brutos = r.landmarks?.[0];
       const pontos: Pontos = {};
@@ -80,7 +103,8 @@ export async function analisarVideoNoNavegador(
       quadros.push({ t, pontos });
     }
 
-    const { resumo, indiceMaximo } = resumirVideo(quadros, movimentoId, vista, duracao);
+    const info: InfoVideo = { largura: larguraAnalise, altura: alturaAnalise, videoLargura: video.videoWidth, videoAltura: video.videoHeight, luminancia };
+    const { resumo, indiceMaximo } = resumirVideo(quadros, movimentoId, vista, duracao, info);
     let quadroMaximo: Blob | null = null;
     if (indiceMaximo !== null) {
       video.currentTime = Math.max(0, quadros[indiceMaximo].t);
