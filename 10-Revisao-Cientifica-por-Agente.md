@@ -291,6 +291,8 @@ Pergunta feita a cada agente: o que você faz hoje no sistema, isso corresponde 
 
 **Décima segunda parte (19/10/2026): decisões da primeira revisão semanal.** S1 feita (perguntas em terceira pessoa na clínica), P1 feita (aviso de margem de erro nos vídeos; Rode et al., PLoS One 2026, PMID 42490640, entra na base da Dra. Paula, resumo lido), M1 recusada, M2 adiada, P2 a cargo do profissional, 5 propostas aguardando decisão, agora todas com a opinião do agente. Detalhe em `11-Revisao-Semanal.md`.
 
+**Décima terceira parte (19/10/2026): fórmulas de massa magra.** O profissional pediu para conferir o fundamento de massa magra em % = 100 − %G e massa magra em kg = (% × peso) ÷ 100. É o modelo de dois compartimentos (identidade); o app já calcula assim; os limites são o erro herdado do %G, a diferença entre massa livre de gordura e "lean mass" do DXA e as suposições do modelo. Detalhe em `02-Agente3-Fisica-e-Antropometrica.md`.
+
 ## Registro de referências verificadas no PubMed (08/10/2026)
 
 Todas abaixo tiveram a existência e o título conferidos no PubMed (consulta por revista, ano, volume e primeira página). Conferir a existência **não** é o mesmo que ler o texto completo: o que cada uma sustenta no sistema está descrito em `src/lib/agentes.ts`.

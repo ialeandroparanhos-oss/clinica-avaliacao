@@ -251,6 +251,14 @@ Esta revisão **substitui** o critério do "%G ideal" descrito acima (ponto méd
 - **Proteção contra erro de método:** se o %G por dobras e o da bioimpedância diferirem em 5 pontos ou mais, o app mostra os dois e pede conferência da técnica e do preparo (limite prático do sistema, sem corte publicado).
 - **Pollock 3 e 7 dobras:** os protocolos diferem por sexo (3 dobras: homens peitoral, abdominal e coxa; mulheres tríceps, suprailíaca e coxa; 7 dobras: mesmos 7 locais, equações por sexo) e o app já separa. Coeficientes de livro-texto: [confirmar no livro].
 
+## CONFERÊNCIA 19/10/2026 — FÓRMULAS DE MASSA MAGRA (referência do profissional)
+
+- **Fórmulas:** massa magra em % = 100 − %G; massa magra em kg = (massa magra em % × peso) ÷ 100 (o mesmo que peso − massa gorda, com massa gorda = peso × %G ÷ 100).
+- **Fundamento:** é o **modelo de dois compartimentos**, uma **identidade**: peso = massa gorda + massa livre de gordura. Não depende de estudo: se o %G está certo, a massa magra sai certa. A estrutura de compartimentos da composição corporal é descrita em Wang ZM, Pierson RN, Heymsfield SB. Am J Clin Nutr 1992;56:19 (PMID 1609756), mas o resumo dessa obra **não traz a equação de dois compartimentos**, então ela serve só como arcabouço, não como prova da fórmula.
+- **O app já calcula exatamente assim** (conferido por teste com 4 casos: a fórmula do profissional e o app dão o mesmo resultado, e massa magra + massa gorda fecha com o peso).
+- **Limites que valem para qualquer cálculo desse tipo:** (1) a massa magra herda todo o erro do %G: um erro de 3 pontos percentuais em quem pesa 70 kg muda a massa magra em cerca de 2 kg; (2) "massa magra" aqui é massa livre de gordura (inclui osso e gordura essencial), e não o "lean mass" do DXA, que exclui o osso, por isso os números não são intercambiáveis; (3) o modelo assume composição estável da massa livre de gordura, o que se aplica pior em quem tem muita retenção de líquido, desidratação ou idade avançada.
+- **Observação:** quando o paciente tem bioimpedância e o aparelho informa a própria massa magra em kg, o app mostra a massa magra **calculada pelo %G de referência escolhido** (por exemplo, o de dobras), e não a do aparelho; só usa a do aparelho se faltar peso ou %G. Hoje a clínica registra só dobras, então isso não aparece.
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 4 — Avaliação Postural e Biomecânica** (Etapa 5 do prompt-mestre): protocolo fotográfico padronizado (vistas anterior, posterior, lateral direita e esquerda), pontos anatômicos de referência, instrumentos (câmera, tripé, simetrógrafo, prumo, goniômetro, inclinômetro), e a linguagem científica obrigatória para não transformar achado postural isolado em causa de dor.
