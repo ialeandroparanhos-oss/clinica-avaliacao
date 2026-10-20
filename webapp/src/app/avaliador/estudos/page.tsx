@@ -85,6 +85,17 @@ export default function Estudos() {
           ))}
         </ul>
 
+        {REV.lembretes.length > 0 && (
+          <div className="rounded-lg border border-warn bg-warn-soft px-3 py-2 text-sm">
+            <p className="font-medium text-warn">Lembrete para você</p>
+            <ul className="mt-1 list-disc pl-5 space-y-1 text-ink">
+              {REV.lembretes.map((l, i) => (
+                <li key={i}>{l}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="grid sm:grid-cols-2 gap-4 text-sm">
           <div className="rounded-lg bg-bg p-3">
             <p className="text-xs uppercase tracking-wide text-muted font-semibold">Verificações</p>
@@ -147,8 +158,20 @@ export default function Estudos() {
                       <p className="text-muted text-xs">
                         <strong>Base:</strong> {s.evidencia}
                       </p>
-                      <p className="text-xs font-medium text-info">
-                        {s.status === "aguardando_decisao" ? "Aguardando sua decisão. Nada muda sem ela." : s.status === "aprovada" ? "Aprovada." : s.status === "feita" ? "Feita." : "Recusada."}
+                      <p className="rounded-lg bg-info-soft px-3 py-2 text-info">
+                        <strong>Opinião do agente:</strong> {s.opiniao}
+                      </p>
+                      <p className={`text-xs font-medium ${s.status === "aguardando_decisao" ? "text-info" : s.status === "recusada" ? "text-muted" : "text-accent-dark"}`}>
+                        {s.status === "aguardando_decisao"
+                          ? "Aguardando sua decisão. Nada muda sem ela."
+                          : s.status === "aprovada"
+                            ? "Aprovada."
+                            : s.status === "feita"
+                              ? "Feita."
+                              : s.status === "adiada"
+                                ? "Adiada."
+                                : "Recusada."}
+                        {s.decisao ? ` ${s.decisao}` : ""}
                       </p>
                     </div>
                   ))}

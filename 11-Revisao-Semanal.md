@@ -15,7 +15,8 @@ Cada rodada é feita por quem a executa em nome da Dra. Nina (assistente de IA),
 3. **Literatura por agente:** uma busca no PubMed por tema de cada agente, só de publicações novas (do ano anterior em diante, ordenadas pela data). Só entra como "candidato" o estudo cuja existência foi conferida e cujo resumo foi lido; o texto completo só se foi lido de fato. Nada entra na base dos agentes sem aprovação do profissional.
 4. **Pendências abertas:** conferir a lista da página Estudos e dos documentos 00 a 10; registrar o que continua aberto e há quanto tempo.
 5. **Por agente:** cada um dos 9 agentes (Nina, Sofia, Marco, Paula, Rita, Íris, Theo, Clara e Caio) registra: situação (sem mudança ou pontos de atenção), o que foi visto e, se houver necessidade, propostas.
-6. **Proposta de mudança** (uma por item), sempre com: **o que**, **por quê**, **risco**, **base** (dado de uso, pendência ou estudo) e **status** (aguardando decisão, aprovada, recusada ou feita). Um id estável (letra do agente + número) acompanha a proposta nas semanas seguintes.
+6. **Proposta de mudança** (uma por item), sempre com: **o que**, **por quê**, **risco**, **base** (dado de uso, pendência ou estudo), **a opinião do agente** (recomenda aprovar, recusar ou adiar, e por quê; se houver mais de um caminho, qual recomenda) e **status** (aguardando decisão, aprovada, recusada, adiada ou feita).
+   **Lembretes:** pendências que dependem do profissional (hoje, P2) ficam em `lembretes` e são repetidas pelos agentes a cada conversa até serem cumpridas. Um id estável (letra do agente + número) acompanha a proposta nas semanas seguintes.
 7. **Registro:** atualizar este documento (seção da rodada) e `revisaoSemanal.ts`, rodar `tsc` e o build, e enviar ao GitHub **somente esses arquivos**.
 
 **O que a revisão não faz:** não muda regra clínica, não aprova proposta sozinha, não apaga nem corrige dado de paciente, não cria nem altera logins e não envia nada a terceiros.
@@ -58,6 +59,19 @@ Cada rodada é feita por quem a executa em nome da Dra. Nina (assistente de IA),
 **Próxima rodada:** 26/10/2026.
 
 ---
+
+### 2.1 Decisões do profissional sobre a rodada de 19/10/2026 (mesmo dia)
+
+| Id | Decisão | Situação |
+|---|---|---|
+| S1 | Aprovada | **Feita**: anamnese na clínica em terceira pessoa |
+| M1 | **Recusada** (pela experiência dele, mesmo sendo sugerida cientificamente) | Encerrada; não volta sem fato novo |
+| M2 | **Adiada** (ele ainda não tem o livro) | Opinião da Nina e do Dr. Marco: manter as tabelas com o aviso de fonte não conferida; busca na web não achou a tabela reproduzida |
+| P1 | Aprovada | **Feita**: aviso de margem de erro nos ângulos de vídeo |
+| P2 | Aprovada, **o profissional fará** (enviar vídeos reais) | Lembrete ativo a cada conversa |
+| N1, R1, I1, I2, C1 | Perguntas respondidas com a opinião do agente | **Aguardando decisão** |
+
+**Novo pedido (19/10/2026): toda proposta traz a opinião do agente** (recomenda aprovar, recusar ou adiar, e por quê), e o profissional pode perguntar e receber a recomendação. Já valem no protocolo e na tarefa agendada.
 
 ## 3. Como registrar a decisão sobre uma proposta
 

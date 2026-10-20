@@ -6,7 +6,7 @@
 
 import type { AgenteId } from "@/lib/agentes";
 
-export type StatusSugestao = "aguardando_decisao" | "aprovada" | "recusada" | "feita";
+export type StatusSugestao = "aguardando_decisao" | "aprovada" | "recusada" | "adiada" | "feita";
 
 export type SugestaoSemanal = {
   id: string;
@@ -14,7 +14,9 @@ export type SugestaoSemanal = {
   porque: string;
   risco: string;
   evidencia: string; // de onde vem (dado do uso, pendência registrada, estudo)
+  opiniao: string; // OPINIÃO do agente: recomenda aprovar, recusar ou adiar, e por quê (pedido do profissional em 19/10/2026)
   status: StatusSugestao;
+  decisao?: string; // o que o profissional decidiu e quando
 };
 
 export type RevisaoDoAgente = {
@@ -41,6 +43,7 @@ export type RevisaoSemanal = {
   uso: string[]; // só números agregados, nunca nomes nem dados de paciente
   agentes: RevisaoDoAgente[];
   candidatos: CandidatoReferencia[];
+  lembretes: string[]; // pendências do PROFISSIONAL que os agentes devem lembrar a cada conversa
 };
 
 export const INTERVALO_REVISAO_DIAS = 7;
@@ -60,7 +63,7 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
   resumo: [
     "Primeira revisão semanal. Sem erro técnico: 12 testes de lógica passaram, o repositório está sem pendências e a revisão da literatura está em dia (18 de 180 dias).",
     "Dos pacientes na base, todos concluíram a anamnese, mas só metade tem avaliação física iniciada, e todo %G registrado veio de dobras (nenhum de bioimpedância).",
-    "A varredura de literatura (2025 em diante) achou 3 estudos úteis, sem nada que obrigue a mudar uma regra hoje. Há 10 propostas para você decidir.",
+    "A varredura de literatura (2025 em diante) achou 3 estudos úteis, sem nada que obrigue a mudar uma regra hoje. Das 10 propostas, o profissional decidiu 5 no mesmo dia: 2 feitas (S1 e P1), 1 recusada (M1), 1 adiada (M2, sem o livro) e 1 para ele fazer (P2); 5 seguem aguardando decisão, agora com a opinião de cada agente.",
   ],
   verificacoes: [
     { rotulo: "Testes de lógica (12 conjuntos)", resultado: "todos passaram", ok: true },
@@ -91,6 +94,7 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
           porque: "Hoje metade dos pacientes está nessa situação e só se percebe abrindo ficha por ficha.",
           risco: "Baixo: só acrescenta uma coluna ou etiqueta na lista, sem mudar nenhum cálculo.",
           evidencia: "Dado de uso desta semana.",
+          opiniao: "Recomendo aprovar. É só uma etiqueta na lista, não mexe em nenhum cálculo, e evita que alguém fique esperando avaliação sem ninguém perceber.",
           status: "aguardando_decisao",
         },
       ],
@@ -109,7 +113,9 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
           porque: "As perguntas estão escritas para o paciente (\"você\"); na entrevista presencial o avaliador precisa adaptar na hora.",
           risco: "Baixo, mas é decisão de redação sua.",
           evidencia: "Pendência registrada em 13/10/2026.",
-          status: "aguardando_decisao",
+          opiniao: "Recomendo aprovar (aprovada pelo profissional).",
+          status: "feita",
+          decisao: "Aprovada em 19/10/2026 e feita no mesmo dia: na anamnese feita na clínica, as perguntas aparecem em terceira pessoa (\"a pessoa\", que vale para paciente e aluno). As opções de resposta e tudo o que é gravado continuam iguais.",
         },
       ],
     },
@@ -128,7 +134,9 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
           porque: "É a prática padrão para reduzir o erro de técnica das dobras e o método é o único usado até agora. Foi oferecida em 09/10 e ficou de fora; reapresento porque o uso mostra que só há dobras.",
           risco: "Baixo para o cálculo (mesmas equações, só com a mediana); aumenta o tempo de coleta e a tela de dobras.",
           evidencia: "Dado de uso desta semana e pendência de 09/10/2026.",
-          status: "aguardando_decisao",
+          opiniao: "A literatura e a prática padrão apoiam as 3 leituras com mediana, mas respeito a sua experiência: a técnica padronizada e o mesmo avaliador nas reavaliações já cobrem boa parte do erro. Recomendava aprovar; aceito a recusa.",
+          status: "recusada",
+          decisao: "Recusada pelo profissional em 19/10/2026: pela experiência dele não precisa, embora seja sugerida cientificamente. Não volta sem fato novo.",
         },
         {
           id: "M2",
@@ -136,7 +144,9 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
           porque: "As tabelas decidem o domínio de composição corporal e não foram conferidas em fonte publicada.",
           risco: "Médio se ficarem erradas: mudam a classificação de pacientes.",
           evidencia: "Pendência registrada em 09/10/2026.",
-          status: "aguardando_decisao",
+          opiniao: "Recomendo manter as tabelas como estão, com o aviso \"fonte não conferida\", e não tratar isso como bloqueio. Tentei conferir na web e não achei a tabela reproduzida (só citações a ela); um estudo brasileiro achado na busca (não conferido no PubMed) relata que a tabela pode não se ajustar bem a frequentadores atuais de academia, sobretudo nas faixas mais velhas. Por isso o parecer mostra a faixa de Gallagher ao lado. Quando surgir um livro que reproduza a tabela (por exemplo, texto de avaliação física de biblioteca de faculdade), conferimos célula a célula. Enquanto isso, nenhuma conduta deve depender só dessa tabela.",
+          status: "adiada",
+          decisao: "Adiada em 19/10/2026: o profissional ainda não tem o livro.",
         },
       ],
     },
@@ -155,7 +165,9 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
           porque: "Dizer na tela e no parecer que diferenças pequenas (da ordem de 7° ou menos) em medidas automáticas de vídeo não devem ser interpretadas, e que isso foi estudado em outra articulação e não foi validado para tronco.",
           risco: "Baixo: é texto de cautela.",
           evidencia: "Rode et al., PLoS One 2026 (PMID 42490640); abstract lido.",
-          status: "aguardando_decisao",
+          opiniao: "Recomendo aprovar (aprovada pelo profissional).",
+          status: "feita",
+          decisao: "Aprovada em 19/10/2026 e feita no mesmo dia: o aviso de margem de erro aparece na tela e no parecer, e o estudo entrou na base científica da Dra. Paula.",
         },
         {
           id: "P2",
@@ -163,7 +175,9 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
           porque: "Os limites foram definidos sem exemplos reais; podem reprovar vídeos bons ou aprovar vídeos ruins.",
           risco: "Baixo.",
           evidencia: "Pendência registrada em 17/10/2026.",
-          status: "aguardando_decisao",
+          opiniao: "Recomendo fazer assim que possível: com 3 a 5 vídeos de movimentos diferentes (de lado e de frente), eu ajusto os limites. Sem exemplos reais, os limites podem reprovar vídeos bons ou aprovar vídeos ruins.",
+          status: "aprovada",
+          decisao: "O profissional vai enviar os vídeos (19/10/2026). Os agentes lembram a cada conversa até isso acontecer.",
         },
       ],
     },
@@ -181,6 +195,7 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
           porque: "Dá base publicada para a Rita dizer por que mede cadeira, apoio unipodal e TUG em quem tem 65 anos ou mais. Não traz cortes para adotar e não muda nenhuma regra.",
           risco: "Baixo.",
           evidencia: "Wu et al., JAMA Netw Open 2026 (PMID 42574013); abstract lido.",
+          opiniao: "Recomendo aprovar. Não muda nenhuma regra nem corte: só dá base publicada para explicar ao paciente idoso por que medimos cadeira, equilíbrio em uma perna e TUG. Limite honesto: é estudo observacional de Taiwan, mostra associação com menor mortalidade, não prova que melhorar o teste reduz a mortalidade.",
           status: "aguardando_decisao",
         },
       ],
@@ -200,6 +215,7 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
           porque: "Hoje há dois critérios diferentes de massa magra convivendo no sistema.",
           risco: "Médio: muda quem é sinalizado na triagem.",
           evidencia: "Decisão deixada em aberto em 09/10/2026.",
+          opiniao: "Recomendo trocar a regra \"massa magra menos de 90% da meta\" pelo índice de massa magra em kg/m² (cortes GLIM de 17 em homens e 15 em mulheres), o mesmo que o Dr. Marco já usa. Motivos: a tabela de massa magra em % é só 100 menos o %G, então não traria informação nova; o índice considera a altura e tem fonte conferida. A panturrilha continua valendo a partir dos 60 anos. Depois de aprovado, comparo o antes e o depois nas avaliações existentes (só contagens, sem nomes) antes de publicar.",
           status: "aguardando_decisao",
         },
         {
@@ -208,6 +224,7 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
           porque: "É conteúdo de saúde escrito por IA que o avaliador pode ler junto com o paciente.",
           risco: "Médio se não for revisado.",
           evidencia: "Pendência registrada em 09/10/2026.",
+          opiniao: "Recomendo em duas partes. Já: colocar em cada condição a etiqueta \"texto escrito por IA, ainda não revisado\", que só some quando você marcar como revisado, para ninguém tomar o texto por conferido. Depois: revisar em lotes de 5 condições, começando pelas mais comuns na clínica (hipertensão, diabetes, obesidade, dor lombar, artrose) e deixando por último as que já têm fonte.",
           status: "aguardando_decisao",
         },
       ],
@@ -235,6 +252,7 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
           porque: "Os rótulos da tabela são literais e podem soar como julgamento diante do paciente; a base de comunicação de risco do sistema pede equilíbrio entre informar e não gerar ansiedade.",
           risco: "Baixo, mas é decisão de redação sua.",
           evidencia: "Pendência registrada em 15/10/2026.",
+          opiniao: "Recomendo trocar só nos slides (a aba Física e o parecer mantêm os nomes da tabela): Ruim vira \"acima do desejável\" e Muito ruim vira \"bem acima do desejável\". Há ainda uma armadilha de leitura: \"Abaixo da média\" na tabela quer dizer mais gordura que o médio, mas o paciente pode entender como bom. Sugiro: Excelente = \"excelente\", Bom = \"bom\", Acima da média = \"melhor que a média\", Média = \"na média\", Abaixo da média = \"pior que a média\".",
           status: "aguardando_decisao",
         },
       ],
@@ -248,6 +266,9 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
       ],
       sugestoes: [],
     },
+  ],
+  lembretes: [
+    "P2: enviar os primeiros vídeos reais na análise de movimento para calibrar os limites de adequação do vídeo (é o profissional quem envia; os agentes lembram a cada conversa até isso acontecer).",
   ],
   candidatos: [
     {

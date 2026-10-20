@@ -93,6 +93,11 @@ export type InfoVideo = {
   luminancia?: { media: number; desvio: number }[]; // por quadro amostrado, escala 0 a 255
 };
 
+// Margem de erro das medidas automáticas de vídeo (proposta P1, aprovada pelo profissional em 19/10/2026).
+// Base: Rode et al., PLoS One 2026 (PMID 42490640), no cotovelo; não foi validada para tronco, quadril e joelho.
+export const AVISO_MARGEM_ERRO_VIDEO =
+  "Margem de erro: ângulos medidos automaticamente em vídeo têm erro. Num estudo de 2026 com 46 pacientes (cotovelo), o melhor método automático teve erro mínimo detectável de cerca de 7° e a avaliação visual foi melhor na extensão; para tronco, quadril e joelho essa margem não foi validada. Não interprete diferenças da ordem de 7° ou menos, entre momentos ou entre lados, e confirme com goniômetro ou inclinômetro (Rode et al., PLoS One 2026).";
+
 export const ROTULO_VEREDITO: Record<AdequacaoVideo["veredito"], string> = {
   adequado: "Vídeo adequado para leitura",
   com_ressalvas: "Vídeo adequado com ressalvas",

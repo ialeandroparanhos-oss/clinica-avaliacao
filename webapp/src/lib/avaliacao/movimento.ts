@@ -4,7 +4,7 @@
 // observação são um roteiro prático do sistema, sem corte nem validação publicada; não definem diagnóstico
 // nem causa de dor. O ângulo medido na foto é 2D e depende do enquadramento da câmera.
 
-import type { ResumoVideo } from "./videoMovimento";
+import { AVISO_MARGEM_ERRO_VIDEO, type ResumoVideo } from "./videoMovimento";
 
 export type VistaMov = "sagital" | "frontal";
 export const VISTAS_MOV: VistaMov[] = ["sagital", "frontal"];
@@ -218,7 +218,7 @@ export function descreverMovimentos(movimentos: Movimentos | undefined): string[
       if (sv.texto?.trim()) itens.push(`anotação: ${sv.texto.trim()}`);
       if (sv.analise_video?.adequacao) itens.push(`adequação do vídeo para leitura: ${sv.analise_video.adequacao.resumo}`);
       if (sv.analise_video && sv.analise_video.linhas.length > 0) {
-        itens.push(`análise inicial automática do vídeo (2D, a confirmar pelo avaliador): ${sv.analise_video.linhas.join("; ")}${sv.analise_video.avisos.length > 0 ? ` [atenção: ${sv.analise_video.avisos.join(" ")}]` : ""}`);
+        itens.push(`análise inicial automática do vídeo (2D, a confirmar pelo avaliador): ${sv.analise_video.linhas.join("; ")}${sv.analise_video.avisos.length > 0 ? ` [atenção: ${sv.analise_video.avisos.join(" ")}]` : ""} [${AVISO_MARGEM_ERRO_VIDEO}]`);
       }
       if (itens.length > 0) partes.push(`${ROTULO_VISTA_MOV[v].toLowerCase()}: ${itens.join(" | ")}`);
       else if (sv.foto_path) partes.push(`${ROTULO_VISTA_MOV[v].toLowerCase()}: foto registrada, sem observações marcadas`);

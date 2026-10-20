@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { TextArea } from "@/components/forms";
 import { analisarVideoNoNavegador } from "@/lib/avaliacao/videoPose";
-import { ROTULO_VEREDITO } from "@/lib/avaliacao/videoMovimento";
+import { AVISO_MARGEM_ERRO_VIDEO, ROTULO_VEREDITO } from "@/lib/avaliacao/videoMovimento";
 import {
   anguloDe,
   MOVIMENTOS,
@@ -289,6 +289,7 @@ function BlocoVista({
                 Atenção: {a}
               </p>
             ))}
+            <p className="rounded-lg bg-warn-soft px-3 py-2 text-xs text-warn leading-relaxed">{AVISO_MARGEM_ERRO_VIDEO}</p>
             <p className="text-xs text-muted leading-relaxed">
               Medida 2D automática, de primeira triagem: depende do enquadramento e não é diagnóstico nem substitui a sua observação. Confira o vídeo e marque o roteiro abaixo.
             </p>

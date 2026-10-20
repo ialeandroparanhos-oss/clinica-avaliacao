@@ -289,6 +289,8 @@ Pergunta feita a cada agente: o que você faz hoje no sistema, isso corresponde 
 
 **Décima primeira parte (19/10/2026): revisão semanal.** Os 9 agentes passam a fazer uma revisão por semana, coordenada pela Dra. Nina, e propõem mudanças quando houver necessidade; **nada muda sem a decisão do profissional**. Protocolo e primeira rodada (10 propostas aguardando decisão e 3 estudos candidatos, nenhum adotado) em `11-Revisao-Semanal.md`; resultado visível na página Estudos (`lib/revisaoSemanal.ts`). Repete toda segunda-feira por tarefa agendada.
 
+**Décima segunda parte (19/10/2026): decisões da primeira revisão semanal.** S1 feita (perguntas em terceira pessoa na clínica), P1 feita (aviso de margem de erro nos vídeos; Rode et al., PLoS One 2026, PMID 42490640, entra na base da Dra. Paula, resumo lido), M1 recusada, M2 adiada, P2 a cargo do profissional, 5 propostas aguardando decisão, agora todas com a opinião do agente. Detalhe em `11-Revisao-Semanal.md`.
+
 ## Registro de referências verificadas no PubMed (08/10/2026)
 
 Todas abaixo tiveram a existência e o título conferidos no PubMed (consulta por revista, ano, volume e primeira página). Conferir a existência **não** é o mesmo que ler o texto completo: o que cada uma sustenta no sistema está descrito em `src/lib/agentes.ts`.
