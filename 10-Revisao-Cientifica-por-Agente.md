@@ -287,6 +287,8 @@ Pergunta feita a cada agente: o que você faz hoje no sistema, isso corresponde 
 
 **Décima parte (17/10/2026): adequação do vídeo.** Cada análise de vídeo passa a trazer o veredito (adequado, com ressalvas ou não adequado) e o porquê, por 10 critérios práticos (detecção, duração, corpo inteiro, tamanho, estabilidade, resolução, luz, movimento presente e completo, vista). **Limites sem fonte conferida no PubMed**: referências práticas do sistema; valem para a confiabilidade da leitura automática, não para a qualidade do movimento (detalhe em `03-Agente4-Postural-e-Biomecanica.md`). Pendente: ajustar os limites com os vídeos reais do profissional.
 
+**Décima primeira parte (19/10/2026): revisão semanal.** Os 9 agentes passam a fazer uma revisão por semana, coordenada pela Dra. Nina, e propõem mudanças quando houver necessidade; **nada muda sem a decisão do profissional**. Protocolo e primeira rodada (10 propostas aguardando decisão e 3 estudos candidatos, nenhum adotado) em `11-Revisao-Semanal.md`; resultado visível na página Estudos (`lib/revisaoSemanal.ts`). Repete toda segunda-feira por tarefa agendada.
+
 ## Registro de referências verificadas no PubMed (08/10/2026)
 
 Todas abaixo tiveram a existência e o título conferidos no PubMed (consulta por revista, ano, volume e primeira página). Conferir a existência **não** é o mesmo que ler o texto completo: o que cada uma sustenta no sistema está descrito em `src/lib/agentes.ts`.
