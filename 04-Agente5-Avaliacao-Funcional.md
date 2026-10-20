@@ -250,6 +250,10 @@ Interromper imediatamente qualquer teste funcional/cardiorrespiratório diante d
 - **Dicas "como aplicar":** abrem ao clicar ou passar o mouse e fecham sozinhas ao tirar o ponteiro (em telas de toque, fecham ao tocar fora).
 - **TC6 fora do corredor de 30 m:** a ATS/ERS não recomenda esteira de ritmo externo (distâncias bem menores); esteira autoajustada dá valores em geral mais baixos que o corredor, sem referência validada aqui; corredor mais curto reduz a distância pelas viradas (em estudo, ~43 m a menos em 15 m e ~93 m a menos em 10 m). O sistema registra o formato do teste e avisa: não comparar com valores previstos (que valem para 30 m); usar só para acompanhar o próprio paciente, sempre no mesmo formato. Alternativas sem corredor longo: teste de step de 2 minutos (Senior Fitness Test) ou caminhada de 2 minutos.
 
+## ATUALIZAÇÃO 19/10/2026 — REFERÊNCIA NOVA (R1, aprovada)
+
+Entrou na base científica da Dra. Rita o estudo de **Wu MC et al., JAMA Netw Open 2026;9:e2628227 (PMID 42574013)**: coorte de 13.423 idosos de 65 anos ou mais em Taiwan, em que melhor desempenho no 8-foot up-and-go, apoio unipodal, levantar da cadeira em 30 s e degrau de 2 minutos se associou a menor mortalidade por todas as causas, de forma graduada. Serve para explicar ao paciente idoso por que esses testes são feitos. **Limites:** estudo observacional (associação, não prova que melhorar o teste reduza a mortalidade); população de Taiwan; resumo lido, texto completo não lido; **não traz cortes e não muda nenhuma regra do sistema.**
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 6 — Integração e Interpretação** (Etapa 7 do prompt-mestre): como cruzar os dados de todos os agentes anteriores para construir o Perfil Integrado de Saúde e Capacidade Funcional, identificar potencialidades/limitações/riscos/prioridades, e montar o Painel Integrado de Saúde (Seção 16) com critérios de classificação explícitos.

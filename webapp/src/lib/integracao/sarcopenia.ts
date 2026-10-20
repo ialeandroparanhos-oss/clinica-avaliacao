@@ -8,16 +8,19 @@
 //      et al., Clin Nutr ESPEN 2021;45:442 (PMID 34620352): em 56 idosos internados (média de 84
 //      anos), CC < 31 cm foi um proxy aceitável da massa muscular e se associou à mortalidade.
 //      Amostra pequena e hospitalar: não é um corte validado para idosos da comunidade;
-//   2. se não houver panturrilha (ou abaixo de 60 anos): massa magra total (dobras/bioimpedância)
-//      pelo menos 10% abaixo da meta calculada para o paciente. Regra do sistema, SEM validação
-//      publicada.
+//   2. se não houver panturrilha (ou abaixo de 60 anos): índice de massa magra (massa magra em kg ÷ altura
+//      em m²) abaixo de 17 kg/m² em homens e 15 em mulheres, o corte de massa reduzida dos critérios GLIM
+//      (Cederholm et al., Clin Nutr 2019;38:1, PMID 30181091; valores conforme Sobestiansky 2021). Foi pensado
+//      para DXA ou bioimpedância: com dobras ou bioimpedância comum é ESTIMATIVA. Decisão I1 do profissional
+//      (19/10/2026): substitui a regra anterior ("massa magra pelo menos 10% abaixo da meta"), que dependia do
+//      %G ideal e da massa magra ideal salvos e, por isso, mudava quando o %G ideal mudava.
 // Também sinaliza "possível obesidade sarcopênica" (ESPEN/EASO, Donini et al., Clin Nutr 2022;41:990,
 // PMID 35227529: excesso de adiposidade + baixa função/massa muscular), apenas como triagem.
 // É apoio, nunca diagnóstico: a confirmação exige avaliação de massa muscular apendicular validada.
 
 import type { PacienteRow } from "@/lib/anamnese/types";
 import { calcularPerfilIntegrado } from "./perfil";
-import { confirmarAdiposidade, percentualGorduraIdealGallagher, relacaoCinturaEstatura } from "@/lib/avaliacao/composicaoCorporal";
+import { analisarComposicao, confirmarAdiposidade, CORTE_FFMI, relacaoCinturaEstatura } from "@/lib/avaliacao/composicaoCorporal";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { paraNumero } from "@/lib/numeros";
 
@@ -42,11 +45,10 @@ export function triarSarcopeniaDinapenia(paciente: PacienteRow): ResultadoSarcop
 
   const pesoKg = paraNumero(paciente.fisica?.peso_kg) || null;
   const alturaCm = paraNumero(paciente.fisica?.altura_cm) || null;
-  const percentualGordura = paraNumero(paciente.fisica?.percentual_gordura) || null;
-  const massaMagraKg = pesoKg !== null && percentualGordura !== null ? pesoKg - (pesoKg * percentualGordura) / 100 : null;
-
   const idade = idadeEfetiva(paciente);
   const sexo = sexoEfetivo(paciente);
+  // Massa magra e índice: o mesmo cálculo do Dr. Marco (%G de referência, bioimpedância ou dobras).
+  const comp = analisarComposicao(paciente.fisica, idade, sexo);
 
   // Panturrilha: usa o lado de menor medida (o mais conservador para detectar redução).
   const panturrilhas = [paraNumero(paciente.fisica?.circ_panturrilha_d), paraNumero(paciente.fisica?.circ_panturrilha_e)].filter((v): v is number => v !== null && v > 0);
@@ -59,18 +61,11 @@ export function triarSarcopeniaDinapenia(paciente: PacienteRow): ResultadoSarcop
     massaMuscularReduzida = panturrilhaCm < CORTE_PANTURRILHA_CM;
     fonteMassa = "panturrilha";
     textoMassa = `panturrilha de ${String(panturrilhaCm).replace(".", ",")} cm (${massaMuscularReduzida ? "abaixo" : "igual ou acima"} do corte de ${CORTE_PANTURRILHA_CM} cm, proxy de massa muscular estudado em idosos internados)`;
-  } else {
-    const percentualIdealInformado = paraNumero(paciente.fisica?.percentual_gordura_ideal) || null;
-    // Mantém o %G ideal da versão anterior (Gallagher): a regra "massa magra < 90% da meta" da triagem foi
-    // montada sobre ele e não muda junto com a tabela do %G ideal da aba Física.
-    const percentualIdeal = percentualIdealInformado ?? percentualGorduraIdealGallagher(idade, sexo);
-    const massaMagraIdealInformada = paraNumero(paciente.fisica?.massa_magra_ideal_kg) || null;
-    const massaMagraIdealKg = massaMagraIdealInformada ?? (pesoKg !== null && percentualIdeal !== null ? pesoKg * (1 - percentualIdeal / 100) : null);
-    if (massaMagraKg !== null && massaMagraIdealKg !== null) {
-      massaMuscularReduzida = massaMagraKg < massaMagraIdealKg * 0.9;
-      fonteMassa = "massa_magra_total";
-      textoMassa = `massa magra total ${massaMuscularReduzida ? "pelo menos 10% abaixo" : "dentro de 10%"} da meta calculada (regra do sistema, sem validação publicada${idade !== null && idade >= 60 ? "; meça a panturrilha para uma estimativa melhor" : ""})`;
-    }
+  } else if (comp.ffmi !== null && sexo !== "desconhecido") {
+    const corte = CORTE_FFMI[sexo];
+    massaMuscularReduzida = comp.ffmi < corte;
+    fonteMassa = "massa_magra_total";
+    textoMassa = `índice de massa magra de ${comp.ffmi.toFixed(1).replace(".", ",")} kg/m² (${massaMuscularReduzida ? "abaixo" : "igual ou acima"} do corte de ${corte} kg/m² dos critérios GLIM; estimativa a partir de dobras ou bioimpedância${idade !== null && idade >= 60 ? "; meça a panturrilha para uma estimativa melhor" : ""})`;
   }
 
   // Possível obesidade sarcopênica: excesso de adiposidade confirmado + função/massa muscular baixa.
@@ -92,7 +87,7 @@ export function triarSarcopeniaDinapenia(paciente: PacienteRow): ResultadoSarcop
       fonteMassa,
       possivelObesidadeSarcopenica,
       classificacao: "dados_insuficientes",
-      justificativa: `Faltam dados de força (dinamometria/chair stand) e/ou de massa muscular (panturrilha a partir dos 60 anos, ou peso e %G) para esta triagem.${notaObesidade}`,
+      justificativa: `Faltam dados de força (dinamometria/chair stand) e/ou de massa muscular (panturrilha a partir dos 60 anos, ou peso, altura, sexo e %G para o índice de massa magra) para esta triagem.${notaObesidade}`,
     };
   }
 

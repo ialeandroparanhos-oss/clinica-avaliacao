@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Alerta } from "@/lib/anamnese/types";
+import { situacaoAvaliacao, type SituacaoAvaliacao } from "@/lib/avaliacao/situacaoLista";
 
 type LinhaPaciente = {
   id: string;
@@ -12,6 +13,18 @@ type LinhaPaciente = {
   anamnese_status: string;
   alertas: Alerta[];
   atualizado_em: string;
+  // Carimbos de gravação de cada área (N1): servem só para saber se a avaliação já foi iniciada.
+  fisica_em?: string | null;
+  postural_em?: string | null;
+  funcional_em?: string | null;
+  cardio_em?: string | null;
+};
+
+const TOM_SITUACAO: Record<SituacaoAvaliacao["tom"], string> = {
+  neutro: "bg-border text-muted",
+  aviso: "bg-warn-soft text-warn",
+  info: "bg-info-soft text-info",
+  ok: "bg-accent-soft text-accent-dark",
 };
 
 const statusLabel: Record<string, string> = {
@@ -48,12 +61,18 @@ export default function DashboardAvaliador() {
 
   async function carregar() {
     setLoading(true);
-    const { data } = await supabase
+    // Consulta enxuta: só o carimbo de cada área, sem trazer as avaliações inteiras. Se por algum motivo ela
+    // falhar, volta para a consulta simples e a lista continua funcionando (só sem a coluna Avaliação).
+    let { data, error } = await supabase
       .from("pacientes")
-      .select("id, nome, data_nascimento, anamnese_status, alertas, atualizado_em")
+      .select("id, nome, data_nascimento, anamnese_status, alertas, atualizado_em, fisica_em:fisica->>atualizado_em, postural_em:postural->>atualizado_em, funcional_em:funcional->>atualizado_em, cardio_em:cardio->>atualizado_em")
       .order("atualizado_em", { ascending: false })
       .limit(500);
-    setPacientes((data as LinhaPaciente[]) ?? []);
+    if (error) {
+      const simples = await supabase.from("pacientes").select("id, nome, data_nascimento, anamnese_status, alertas, atualizado_em").order("atualizado_em", { ascending: false }).limit(500);
+      data = simples.data as typeof data;
+    }
+    setPacientes((data as unknown as LinhaPaciente[]) ?? []);
     setLoading(false);
   }
 
@@ -121,6 +140,7 @@ export default function DashboardAvaliador() {
                 <th className="px-4 py-3 font-medium">Paciente</th>
                 <th className="px-4 py-3 font-medium">Idade</th>
                 <th className="px-4 py-3 font-medium">Anamnese</th>
+                <th className="px-4 py-3 font-medium">Avaliação</th>
                 <th className="px-4 py-3 font-medium">Alertas</th>
                 <th className="px-4 py-3 font-medium">Atualizado</th>
                 <th className="px-4 py-3 font-medium"></th>
@@ -141,6 +161,21 @@ export default function DashboardAvaliador() {
                       <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${statusStyle[p.anamnese_status]}`}>
                         {statusLabel[p.anamnese_status]}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {"fisica_em" in p ? (
+                        (() => {
+                          const s = situacaoAvaliacao(p);
+                          return (
+                            <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${TOM_SITUACAO[s.tom]}`} title={s.detalhe || undefined}>
+                              {s.rotulo}
+                              {s.detalhe && s.chave !== "aguarda_anamnese" ? <span className="font-normal opacity-80"> · {s.detalhe}</span> : null}
+                            </span>
+                          );
+                        })()
+                      ) : (
+                        <span className="text-muted text-xs">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       {nivelMax >= 4 ? (

@@ -293,6 +293,8 @@ Pergunta feita a cada agente: o que você faz hoje no sistema, isso corresponde 
 
 **Décima terceira parte (19/10/2026): fórmulas de massa magra.** O profissional pediu para conferir o fundamento de massa magra em % = 100 − %G e massa magra em kg = (% × peso) ÷ 100. É o modelo de dois compartimentos (identidade); o app já calcula assim; os limites são o erro herdado do %G, a diferença entre massa livre de gordura e "lean mass" do DXA e as suposições do modelo. Detalhe em `02-Agente3-Fisica-e-Antropometrica.md`.
 
+**Décima quarta parte (19/10/2026): N1, R1, C1 e I1 feitas.** Coluna "Avaliação" na lista de pacientes; Wu 2026 (PMID 42574013, resumo lido) na base da Dra. Rita; nos slides, Ruim vira "acima do desejável", Muito ruim "bem acima do desejável", Acima da média "melhor que a média" e Abaixo da média "pior que a média"; triagem de sarcopenia pelo índice de massa magra (GLIM 17/15 kg/m²) no lugar da regra de 90% da meta. Só a I2 aguarda decisão. Detalhe em `01`, `04`, `05`, `07` e `11`.
+
 ## Registro de referências verificadas no PubMed (08/10/2026)
 
 Todas abaixo tiveram a existência e o título conferidos no PubMed (consulta por revista, ano, volume e primeira página). Conferir a existência **não** é o mesmo que ler o texto completo: o que cada uma sustenta no sistema está descrito em `src/lib/agentes.ts`.

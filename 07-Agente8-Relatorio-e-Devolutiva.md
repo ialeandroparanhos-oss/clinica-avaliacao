@@ -152,6 +152,10 @@ Quando houver Risco de Nível 3/4 ainda sem desfecho no momento da devolutiva, o
 
 ---
 
+## ATUALIZAÇÃO 19/10/2026 — PALAVRAS PARA O PACIENTE NOS SLIDES (C1, aprovada)
+
+Nos **slides** (para o paciente), os níveis da tabela Pollock & Wilmore do %G aparecem com palavras mais acolhedoras e sem ambiguidade: Excelente = "excelente"; Bom = "bom"; Acima da média = "melhor que a média"; Média = "na média"; Abaixo da média = "pior que a média"; **Ruim = "acima do desejável"; Muito ruim = "bem acima do desejável"**. A razão: "abaixo da média" na tabela quer dizer mais gordura que o médio, mas o paciente pode entender como bom. Quando o valor cai entre dois níveis, o slide diz "entre X e Y; consideramos Y" com as mesmas palavras. **A aba Física, o parecer e o relatório técnico mantêm os nomes originais da tabela.** Código: `ROTULO_PACIENTE_NIVEL_PW` em `lib/avaliacao/composicaoCorporal.ts`.
+
 ## FECHAMENTO DESTA RODADA
 
 Com este documento, os oito agentes da arquitetura (Seção 21 do prompt-mestre) estão especificados em um primeiro nível de profundidade — da Coordenação (00) até o Relatório e Devolutiva (07), cobrindo o ciclo completo de uma avaliação, do primeiro contato até a entrega dos resultados ao paciente:

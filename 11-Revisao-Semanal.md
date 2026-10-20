@@ -71,6 +71,8 @@ Cada rodada é feita por quem a executa em nome da Dra. Nina (assistente de IA),
 | P2 | Aprovada, **o profissional fará** (enviar vídeos reais) | Lembrete ativo a cada conversa |
 | N1, R1, I1, I2, C1 | Perguntas respondidas com a opinião do agente | **Aguardando decisão** |
 
+**Decisões seguintes, ainda em 19/10/2026:** o profissional aprovou **N1, R1, C1 e I1**, todas **feitas no mesmo dia** (N1: coluna "Avaliação" na lista; R1: Wu 2026 na base da Dra. Rita; C1: palavras acolhedoras nos slides; I1: sarcopenia pelo índice de massa magra, com comparação antes e depois: 1 de 2 avaliações existentes deixou de ser sinalizada). **Só a I2 segue aguardando** (revisão clínica do conteúdo das condições).
+
 **Novo pedido (19/10/2026): toda proposta traz a opinião do agente** (recomenda aprovar, recusar ou adiar, e por quê), e o profissional pode perguntar e receber a recomendação. Já valem no protocolo e na tarefa agendada.
 
 ## 3. Como registrar a decisão sobre uma proposta

@@ -429,6 +429,20 @@ const TABELA_PW: Record<"masculino" | "feminino", FaixaPW[][]> = {
   ],
 };
 
+// C1 (aprovada pelo profissional em 19/10/2026): nos SLIDES, para o paciente, o nível da tabela aparece com
+// palavras mais acolhedoras e sem ambiguidade. "Abaixo da média" na tabela quer dizer MAIS gordura que o
+// médio, mas o paciente pode entender como bom; por isso aparece como "pior que a média". Os nomes originais
+// da tabela continuam na aba Física, no parecer e no relatório técnico.
+export const ROTULO_PACIENTE_NIVEL_PW: Record<NivelPollockWilmore, string> = {
+  Excelente: "excelente",
+  Bom: "bom",
+  "Acima da média": "melhor que a média",
+  Média: "na média",
+  "Abaixo da média": "pior que a média",
+  Ruim: "acima do desejável",
+  "Muito ruim": "bem acima do desejável",
+};
+
 export type ClassificacaoPW = {
   nivel: NivelPollockWilmore;
   faixa: [number, number]; // faixa da tabela para o nível, na idade e sexo do paciente

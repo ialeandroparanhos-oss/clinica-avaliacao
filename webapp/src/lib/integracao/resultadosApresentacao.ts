@@ -9,7 +9,7 @@ import type { PacienteRow } from "@/lib/anamnese/types";
 import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import { regioesEfetivas } from "@/lib/anamnese/dorPorRegiao";
 import { calcularPSQI } from "@/lib/anamnese/psqi";
-import { NIVEIS_POLLOCK_WILMORE, analisarComposicao, CORTE_FFMI } from "@/lib/avaliacao/composicaoCorporal";
+import { NIVEIS_POLLOCK_WILMORE, ROTULO_PACIENTE_NIVEL_PW, analisarComposicao, CORTE_FFMI } from "@/lib/avaliacao/composicaoCorporal";
 import { corteDinamometriaKgf, limite5stsPorIdade, limitesRikli, CORTE_5STS_SEG } from "@/lib/avaliacao/forca";
 import { avaliarVO2max, ROTULO_CLASSE_VO2, vo2maxDeRegistro } from "@/lib/avaliacao/cardiorrespiratoria";
 import { avaliarMobilidadeObjetiva, diferencaEntreLados, LIMITE_ASSIMETRIA_GRAUS, paresDeMobilidade } from "@/lib/avaliacao/mobilidade";
@@ -89,9 +89,9 @@ export function resultadosParaApresentacao(paciente: PacienteRow, perfil: Perfil
         linha(
           "Gordura corporal",
           `${f1(c.pg)}%`,
-          n ? (n.emLacuna ? `classificação para a sua idade e sexo: entre "${NIVEIS_POLLOCK_WILMORE[Math.max(0, NIVEIS_POLLOCK_WILMORE.indexOf(n.nivel) - 1)]}" e "${n.nivel}" (${n.faixa[0]} a ${n.faixa[1]}%); consideramos "${n.nivel}"` : `classificação para a sua idade e sexo: "${n.nivel}" (${n.faixa[0]} a ${n.faixa[1]}%)`) : c.faixa ? `faixa saudável para a sua idade: ${c.faixa[0]} a ${c.faixa[1]}%` : "sem faixa (faltam idade ou sexo)",
+          n ? (n.emLacuna ? `para a sua idade e sexo: entre "${ROTULO_PACIENTE_NIVEL_PW[NIVEIS_POLLOCK_WILMORE[Math.max(0, NIVEIS_POLLOCK_WILMORE.indexOf(n.nivel) - 1)]]}" e "${ROTULO_PACIENTE_NIVEL_PW[n.nivel]}" (${n.faixa[0]} a ${n.faixa[1]}% nesta última faixa); consideramos "${ROTULO_PACIENTE_NIVEL_PW[n.nivel]}"` : `para a sua idade e sexo: ${ROTULO_PACIENTE_NIVEL_PW[n.nivel]} (${n.faixa[0]} a ${n.faixa[1]}%)`) : c.faixa ? `faixa saudável para a sua idade: ${c.faixa[0]} a ${c.faixa[1]}%` : "sem faixa (faltam idade ou sexo)",
           c.pgStatus === "acima" ? "atencao" : c.pgStatus ? "ok" : "info",
-          n ? n.nivel.toLowerCase() : c.pgStatus === "acima" ? "acima da faixa" : c.pgStatus === "abaixo" ? "abaixo da faixa" : c.pgStatus === "na_faixa" ? "dentro da faixa" : undefined
+          n ? ROTULO_PACIENTE_NIVEL_PW[n.nivel] : c.pgStatus === "acima" ? "acima da faixa" : c.pgStatus === "abaixo" ? "abaixo da faixa" : c.pgStatus === "na_faixa" ? "dentro da faixa" : undefined
         )
       );
     }
