@@ -11,7 +11,8 @@ import { anamneseVazia, mesclarComPadrao } from "@/lib/anamnese/defaults";
 import type { Anamnese } from "@/lib/anamnese/types";
 import { calcularAlertas } from "@/lib/anamnese/alerts";
 import { Field, TextInput, StepShell } from "@/components/forms";
-import { moduloPorId, type ModuloId } from "@/lib/anamnese/modulos";
+import { MODULOS, moduloPorId, moduloSinalizado, statusModulo, type ModuloId } from "@/lib/anamnese/modulos";
+import { idadeDaDataNascimento } from "@/lib/avaliacao/identificacao";
 import { CHAVE_IDENTIFICACAO } from "@/lib/anamnese/identificacaoSessao";
 import { lerSolicitacaoClinica } from "@/lib/anamnese/clinicaSessao";
 import { ModuloBemEstar, ModuloCapacidade, ModuloDorDetalhes, ModuloEstiloDeVida, ModuloSono, type SetAnamnese } from "@/components/paciente/modulos";
@@ -58,6 +59,10 @@ export default function ModuloPage() {
       setStatusAnamnese(row.anamnese_status === "concluida" ? "concluida" : "em_andamento");
       setNome(n.trim());
       setDataNascimento(d);
+      // Guarda a identificação na aba para os próximos questionários não pedirem de novo.
+      try {
+        sessionStorage.setItem(CHAVE_IDENTIFICACAO, JSON.stringify({ nome: n.trim(), dataNascimento: d }));
+      } catch {}
       setStage("modulo");
     } catch {
       setErro("Não foi possível iniciar. Verifique o nome e a data de nascimento e tente novamente.");
@@ -156,6 +161,13 @@ export default function ModuloPage() {
   }
 
   if (stage === "concluido") {
+    // Os outros questionários ainda não respondidos continuam à disposição (opcionais);
+    // os recomendados pelas respostas do base vêm primeiro.
+    const idade = idadeDaDataNascimento(dataNascimento);
+    const outros = MODULOS.filter((m) => m.id !== modulo.id && statusModulo(anamnese, m.id, idade) !== "respondido")
+      .filter((m) => m.id !== "capacidade-60" || (idade !== null && idade >= 60))
+      .map((m) => ({ ...m, recomendado: moduloSinalizado(anamnese, m.id, idade) }))
+      .sort((a, b) => Number(b.recomendado) - Number(a.recomendado));
     return (
       <main className="min-h-screen flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-8 text-center">
@@ -175,6 +187,26 @@ export default function ModuloPage() {
             <p className="text-muted text-xs mt-4 leading-relaxed">
               Se em algum momento você sentir que precisa conversar com alguém, o CVV (Centro de Valorização da Vida) atende 24 horas, de graça, pelo telefone 188.
             </p>
+          )}
+          {outros.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-border text-left space-y-3">
+              <p className="text-sm font-medium text-ink">Se quiser, você pode responder outro questionário (todos são opcionais):</p>
+              {outros.map((m) => (
+                <div key={m.id} className={`rounded-lg border p-4 ${m.recomendado ? "border-accent/50 bg-accent/5" : "border-border"}`}>
+                  <p className="font-medium text-ink text-sm">
+                    {m.titulo}
+                    {m.recomendado && <span className="ml-2 text-xs font-medium text-accent-dark">sugerido para você</span>}
+                  </p>
+                  <p className="text-xs text-muted mt-1 leading-relaxed">
+                    {m.descricaoPaciente} ({m.duracao})
+                  </p>
+                  <a href={`/paciente/modulo/${m.id}`} className="inline-block mt-3 text-sm font-medium text-accent hover:underline">
+                    Responder agora (opcional) →
+                  </a>
+                </div>
+              ))}
+              <p className="text-xs text-muted">Você também pode deixar para depois: a equipe pode enviar o link quando preferir.</p>
+            </div>
           )}
         </div>
       </main>

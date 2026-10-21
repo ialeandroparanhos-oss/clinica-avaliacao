@@ -289,6 +289,30 @@ Cada agente atua como **especialista da sua área**, com o tratamento "Dr." ou "
 
 ---
 
+## ORGANOGRAMA DA AVALIAÇÃO — SEQUÊNCIA, TESTES E TEMPO MÉDIO (21/10/2026)
+
+Pedido do profissional: mostrar a sequência da avaliação, com todos os testes de cada etapa e o tempo médio. **Os tempos são estimativas, ainda não conferidas com a rotina da clínica.** Só dois vêm do próprio sistema: anamnese de 15 a 20 minutos (módulos de 2 a 5 minutos cada) e devolutiva de 15 a 20 minutos. O repouso de 5 minutos antes da pressão arterial vem do documento 02. A ordem entre postural e funcional não está fixada nos documentos; segue a ordem das abas do app.
+
+| # | Etapa (agente) | Medidas e testes | Tempo médio (estimado) |
+|---|---|---|---|
+| 1 | Pré-atendimento e agendamento | contato, link de acesso, orientações de preparo | antes da visita |
+| 2 | Recepção e consentimento | acolhimento, termo de consentimento | ≈ 5 min |
+| 3 | Anamnese (Sofia) | questionário base de 7 etapas (doenças, problemas, dificuldades, segurança para exercício, PAR-Q+); módulos opcionais: bem-estar emocional, sono (PSQI), dor, estilo de vida (IPAQ), visão, audição e memória (60+) | 15–20 min; módulos 2–5 min |
+| 4 | Triagem e liberação (Nina) | cruza PAR-Q+, condições e sinais; libera ou adapta os testes físicos | automática |
+| 5 | Sinais vitais de repouso (Marco) | pressão arterial (2 medidas), frequência cardíaca de repouso, SpO₂; repouso sentado de 5 min antes | ≈ 10 min |
+| 6 | Peso e altura (Marco) | balança calibrada, estadiômetro; IMC calculado | ≈ 3 min |
+| 7 | Circunferências (Marco) | tronco: ombro, peitoral, tórax (inspiração máxima e mínima), cintura, abdômen, quadril; membros D e E: braço, antebraço, coxa (proximal, média, distal), panturrilha; calculados: RCQ, cintura/estatura, expansibilidade do tórax, massa magra relativa por região | 5–15 min |
+| 8 | Composição corporal (Marco) | dobras cutâneas em até 9 locais (tríceps, bíceps, subescapular, suprailíaca, abdominal, peitoral, axilar média, coxa, panturrilha medial), protocolos de 3 ou 7 dobras e Faulkner de 4; ou bioimpedância (% de gordura, massa magra, massa gorda, água corporal); calculados: %G, gordura excedente, massa magra e sua meta | 3–15 min (bioimpedância 3–5; dobras 10–15) |
+| 9 | Postural e movimento (Paula) | fotos nas 4 vistas (anterior, posterior, lateral D e E), análise automática (pontos, ângulos, prumo) e parecer, marcação das escápulas; movimentos em foto ou vídeo nas vistas sagital e frontal: flexão, extensão e inclinação lateral do tronco, agachamento, elevação dos braços | 20–30 min |
+| 10 | Funcional (Rita) | força: levantar da cadeira (30 s e 5x), preensão manual D/E, flexão de braço, Arm Curl, RM submáximo e repetições até a falha; equilíbrio e marcha: TUG, apoio unipodal D/E, velocidade da marcha, caminhada de 6 min; mobilidade: goniometria (ombro, cotovelo, quadril, joelho, tornozelo, coluna cervical), rotações de quadril, torácica e cervical, Thomas modificado, dorsiflexão com carga, Y-Balance; flexibilidade: sentar e alcançar (chão e cadeira), Back Scratch; controle motor: agachamento livre e prancha | 15–30 min, conforme o perfil |
+| 11 | Cardiorrespiratória (Caio) | só com liberação da Nina: esteira (Bruce de 7 estágios ou rampa de velocidade até a exaustão) ou Cooper de 12 min; registro de FC, PA pós-teste e esforço (Borg); calculados: VO₂máx estimado, FC de reserva, MET | 15–25 min |
+| 12 | Integração e supervisão (Íris e Nina) | perfil integrado, condições de saúde, alertas | automática |
+| 13 | Plano de ação (Theo) | metas de 30, 60, 90 dias e 12 meses, serviços indicados | automático |
+| 14 | Relatórios e devolutiva (Clara) | relatório técnico, relatório do paciente, slides | 15–20 min |
+| 15 | Reavaliação | repete as medidas e compara | igual à etapa original |
+
+Soma aproximada na clínica (etapas 2 e 5 a 11, sem anamnese e sem devolutiva): de 1h15 a 2h15. O tempo do teste funcional varia muito: só o teste de caminhada de 6 minutos pede 10 minutos de repouso antes e 6 de teste (documento 04).
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Com a arquitetura fixada, a próxima etapa natural é detalhar o **Agente 2 — Anamnese e Questionários**, começando pelos capítulos 7.1 a 7.8 do prompt-mestre (identificação, motivo da procura, histórico de saúde, medicamentos, histórico familiar, atividade física, sono, estilo de vida), já mapeando cada pergunta para um campo do RIP definido na Seção 3.2 deste documento — mas isso fica para quando você der o sinal de seguir.
