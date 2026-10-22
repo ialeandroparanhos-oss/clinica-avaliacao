@@ -522,7 +522,32 @@ export function calcularPerfilIntegrado(paciente: PacienteRow): PerfilIntegrado 
   const prioridades = [...riscos, ...limitacoes];
 
   const confianca: PerfilIntegrado["confianca"] =
-    investigar.length <= 2 ? "alta" : investigar.length <= 5 ? "media" : "baixa";
+    investigar.length <= LIMITE_SEM_DADO_CONFIANCA_ALTA ? "alta" : investigar.length <= LIMITE_SEM_DADO_CONFIANCA_MEDIA ? "media" : "baixa";
 
   return { dominios, potencialidades, limitacoes, riscos, prioridades, confianca };
+}
+
+// Cortes da confiança: quantos domínios sem dado ("investigar") ainda cabem em cada nível.
+export const LIMITE_SEM_DADO_CONFIANCA_ALTA = 2;
+export const LIMITE_SEM_DADO_CONFIANCA_MEDIA = 5;
+
+// Domínios que ainda não têm dado para classificar. A justificativa de cada um
+// já diz o que falta ("Sem teste de apoio unipodal registrado ainda").
+export function dominiosSemDado(perfil: PerfilIntegrado): DomainResult[] {
+  return perfil.dominios.filter((d) => d.classificacao === "investigar");
+}
+
+// Frase curta que explica a confiança do perfil pelo número de domínios sem dado.
+export function explicarConfianca(perfil: PerfilIntegrado): string {
+  const faltam = dominiosSemDado(perfil).length;
+  const total = perfil.dominios.length;
+  if (faltam === 0) return `Todos os ${total} domínios têm dado: o perfil está completo.`;
+  const alvo = faltam > LIMITE_SEM_DADO_CONFIANCA_ALTA ? ` Com no máximo ${LIMITE_SEM_DADO_CONFIANCA_ALTA} domínios sem dado a confiança passa a alta.` : "";
+  const uso =
+    perfil.confianca === "alta"
+      ? "Quase todos os domínios têm dado."
+      : perfil.confianca === "media"
+        ? "As conclusões são parciais."
+        : "Use o perfil só como orientação inicial.";
+  return `Faltam dados em ${faltam} de ${total} domínios. ${uso}${alvo}`;
 }

@@ -12,7 +12,7 @@ import { calcularRiscoCardiovascular } from "@/lib/anamnese/riscoCardiovascular"
 import { AlertBanner, Field, TextArea, TextInput } from "@/components/forms";
 import { SerieChart } from "@/components/SerieChart";
 import { perguntasParQ } from "@/lib/anamnese/questionnaires";
-import { calcularPerfilIntegrado, type Classificacao, type DomainResult } from "@/lib/integracao/perfil";
+import { calcularPerfilIntegrado, dominiosSemDado, explicarConfianca, type Classificacao, type DomainResult } from "@/lib/integracao/perfil";
 import type { Plano } from "@/lib/integracao/plano";
 import { AbaPlano } from "@/components/avaliador/AbaPlano";
 import { INDICADORES, extrairSerie, type LinhaHistorico } from "@/lib/integracao/historico";
@@ -185,6 +185,7 @@ function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
   const discrepancias = useMemo(() => detectarDiscrepancias(paciente), [paciente]);
   const sarcopenia = useMemo(() => triarSarcopeniaDinapenia(paciente), [paciente]);
   const motivo = mesclarComPadrao(paciente.anamnese).motivo;
+  const semDado = dominiosSemDado(perfil);
   const confiancaLabel = { alta: "Alta", media: "Média", baixa: "Baixa" }[perfil.confianca];
   const confiancaClasse = {
     alta: "bg-accent-soft text-accent-dark",
@@ -197,7 +198,7 @@ function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
       <div className="rounded-2xl border border-border bg-surface p-5">
         <div className="flex items-center justify-between mb-1">
           <h3 className="font-display text-lg text-ink">Painel Integrado de Saúde</h3>
-          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${confiancaClasse}`}>
+          <span title={explicarConfianca(perfil)} className={`text-xs font-medium px-2.5 py-1 rounded-full ${confiancaClasse}`}>
             Confiança do perfil: {confiancaLabel}
           </span>
         </div>
@@ -205,6 +206,19 @@ function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
           Calculado automaticamente a partir dos dados coletados. Critérios explícitos por domínio — nunca um
           diagnóstico. Sempre cruzar com o julgamento clínico do profissional.
         </p>
+        {semDado.length > 0 && (
+          <div className="rounded-lg border border-border bg-bg px-3 py-2.5 mb-4 text-xs text-muted">
+            <p className="text-ink font-medium">{explicarConfianca(perfil)}</p>
+            <p className="mt-1">Para subir a confiança, falta registrar:</p>
+            <ul className="mt-1 space-y-0.5 list-disc pl-4">
+              {semDado.map((d) => (
+                <li key={d.chave}>
+                  <span className="text-ink">{d.titulo}:</span> {d.justificativa}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <div className="grid sm:grid-cols-2 gap-3">
           {perfil.dominios.map((d) => (
             <CartaoDominio key={d.chave} dominio={d} />
