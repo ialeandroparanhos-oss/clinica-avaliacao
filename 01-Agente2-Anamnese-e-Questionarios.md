@@ -299,6 +299,12 @@ A lista de pacientes ganhou a coluna **"Avaliação"**, para ninguém ficar espe
 
 Quem respondia um questionário complementar (sono, por exemplo) chegava a uma tela final sem opção de fazer os demais. Agora essa tela mostra, abaixo do agradecimento, **os outros complementares ainda não respondidos** ("Se quiser, você pode responder outro questionário (todos são opcionais)"), os sugeridos pelas respostas do base primeiro e destacados. O que já foi respondido não aparece, e o de visão, audição e memória só aparece a partir dos 60 anos. Para o paciente não precisar digitar nome e data de nascimento de novo a cada questionário, a identificação passa a ficar guardada na aba do navegador (`sessionStorage`, some ao fechá-la), como já acontecia depois do questionário base. Nada muda nas perguntas, nas respostas gravadas nem nos cálculos. Código: `app/paciente/modulo/[modulo]/page.tsx`. Testado no navegador com o banco bloqueado (nada foi gravado).
 
+## ATUALIZAÇÃO 24/10/2026 — ALERTA DO PAR-Q+ DIZ QUAL ITEM FOI POSITIVO
+
+O alerta "PAR-Q+: resposta positiva em N item(ns) de prontidão para exercício" (Nível 2, ou Nível 3 quando há dor no peito ou condição cardíaca) não dizia quais itens. Agora o texto lista cada item em nome curto: condição cardíaca ou pressão alta diagnosticada por médico, dor no peito, tontura ou perda de equilíbrio ou de consciência, problema ósseo ou articular que pode piorar com o esforço, remédio para pressão ou para o coração, e outro motivo para não fazer atividade física (com o detalhe que a pessoa escreveu). Aparece nos mesmos dois lugares de antes: o aviso no alto da ficha do paciente e "Alertas emitidos" do relatório técnico. O texto completo de cada pergunta continua na aba Anamnese, em "Prontidão e segurança".
+
+Fichas já gravadas guardavam o alerta sem os itens; na exibição o texto é refeito com as respostas atuais da anamnese, sem regravar nada no banco (data e nível do alerta ficam como estavam). Nenhum critério mudou: quais respostas geram alerta e em que nível continua igual. Código: `lib/anamnese/alerts.ts` (`itensParqPositivos`, `descricaoAlertaParq`, `alertasComItensParq`), testado com 9 verificações.
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 3 — Avaliação Física e Antropométrica** (Etapa 4 do prompt-mestre): sinais vitais, peso, altura, IMC, circunferências, composição corporal — cada medida com objetivo, instrumento, calibração, preparação, execução passo a passo, registro, valores de referência, interpretação, erros comuns e referências, conforme o padrão da Seção 11 do prompt-mestre.

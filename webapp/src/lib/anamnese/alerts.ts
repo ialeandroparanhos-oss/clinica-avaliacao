@@ -44,6 +44,44 @@ export function precisaInstrumentoCompleto(itens: (number | null)[], corte: numb
   return curto !== null && curto >= corte;
 }
 
+// Nome curto de cada item do PAR-Q+ para os alertas (o texto completo da pergunta está na
+// aba Anamnese, em "Prontidão e segurança").
+export const ROTULO_CURTO_PARQ: Record<string, string> = {
+  heart_condition: "condição cardíaca ou pressão alta (diagnosticada por médico)",
+  chest_pain: "dor no peito",
+  dizziness: "tontura, perda de equilíbrio ou de consciência",
+  bone_joint: "problema ósseo ou articular que pode piorar com o esforço",
+  bp_or_heart_med: "remédio para pressão ou para o coração",
+  other_reason: "outro motivo para não fazer atividade física agora",
+};
+
+// Itens do PAR-Q+ com resposta positiva, em nome curto (com o detalhe de "outro motivo", se houver).
+export function itensParqPositivos(a: Anamnese): string[] {
+  const parq = a.prontidao.parq as Record<string, boolean | null>;
+  return Object.keys(ROTULO_CURTO_PARQ)
+    .filter((k) => parq[k] === true)
+    .map((k) => {
+      const detalhe = k === "other_reason" ? (a.prontidao.other_reason_detalhe || "").trim() : "";
+      return detalhe ? `${ROTULO_CURTO_PARQ[k]} (“${detalhe}”)` : ROTULO_CURTO_PARQ[k];
+    });
+}
+
+export function descricaoAlertaParq(a: Anamnese): string {
+  const itens = itensParqPositivos(a);
+  return `PAR-Q+: resposta positiva em ${itens.length} item(ns) de prontidão para exercício: ${itens.join("; ")}.`;
+}
+
+// Fichas gravadas antes desta mudança guardam o alerta do PAR-Q+ sem dizer quais itens; na exibição o
+// texto é refeito com as respostas atuais da anamnese (nada é regravado no banco).
+export function alertasComItensParq(alertas: Alerta[], a: Anamnese): Alerta[] {
+  if (itensParqPositivos(a).length === 0) return alertas;
+  return alertas.map((al) =>
+    al.origem === "Prontidão e segurança" && al.descricao.startsWith("PAR-Q+: resposta positiva em")
+      ? { ...al, descricao: descricaoAlertaParq(a) }
+      : al
+  );
+}
+
 // Gera a lista de alertas (Nível 1-4) a partir das respostas da anamnese,
 // seguindo exatamente os critérios definidos em
 // 00-Arquitetura-Geral-dos-Agentes.md (Seção 7) e
@@ -62,11 +100,7 @@ export function calcularAlertas(a: Anamnese): Alerta[] {
   const parqPositivos = Object.entries(parq).filter(([, v]) => v === true);
   if (parqPositivos.length > 0) {
     const graves = parqPositivos.some(([k]) => k === "chest_pain" || k === "heart_condition");
-    add(
-      graves ? 3 : 2,
-      `PAR-Q+: resposta positiva em ${parqPositivos.length} item(ns) de prontidão para exercício.`,
-      "Prontidão e segurança"
-    );
+    add(graves ? 3 : 2, descricaoAlertaParq(a), "Prontidão e segurança");
   }
 
   if (a.dor.tem_dor && a.dor.bandeiras_vermelhas.length > 0) {

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import type { Anamnese, PacienteRow } from "@/lib/anamnese/types";
-import { escorePSS10, escoreTSK11, somaSemNulos, escoreCurto, rotuloNivel } from "@/lib/anamnese/alerts";
+import { alertasComItensParq, escorePSS10, escoreTSK11, somaSemNulos, escoreCurto, rotuloNivel } from "@/lib/anamnese/alerts";
 import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { calcularRiscoCardiovascular } from "@/lib/anamnese/riscoCardiovascular";
 import { AlertBanner, Field, TextArea, TextInput } from "@/components/forms";
@@ -102,7 +102,7 @@ export default function DetalhePaciente() {
 
       {paciente.alertas?.length > 0 && (
         <div className="space-y-2 mb-6">
-          {paciente.alertas
+          {alertasComItensParq(paciente.alertas, anamnese)
             .slice()
             .sort((a, b) => b.nivel - a.nivel)
             .map((a, i) => (

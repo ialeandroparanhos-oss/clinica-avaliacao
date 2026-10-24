@@ -12,7 +12,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import type { PacienteRow } from "@/lib/anamnese/types";
-import { escorePSS10, escoreTSK11, somaSemNulos, escoreCurto, rotuloNivel } from "@/lib/anamnese/alerts";
+import { alertasComItensParq, escorePSS10, escoreTSK11, somaSemNulos, escoreCurto, rotuloNivel } from "@/lib/anamnese/alerts";
 import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { calcularRiscoCardiovascular } from "@/lib/anamnese/riscoCardiovascular";
 import { linhasDorPorRegiao } from "@/lib/anamnese/dorPorRegiao";
@@ -257,7 +257,7 @@ export default function RelatorioTecnico() {
         {paciente.alertas?.length > 0 && (
           <Secao titulo="Alertas emitidos">
             <ul className="space-y-1 text-sm">
-              {paciente.alertas
+              {alertasComItensParq(paciente.alertas, anamnese)
                 .slice()
                 .sort((a, b) => b.nivel - a.nivel)
                 .map((a, i) => (
