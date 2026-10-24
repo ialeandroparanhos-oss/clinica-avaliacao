@@ -19,7 +19,7 @@ import { calcularPerfilIntegrado, type Classificacao } from "@/lib/integracao/pe
 import { itemAprovado, type Plano } from "@/lib/integracao/plano";
 import { INDICADORES, extrairSerie, type LinhaHistorico } from "@/lib/integracao/historico";
 import { COMBINADOS, FONTE_PORQUE, PORQUE_VALE_A_PENA, servicosParaPaciente, ROTULO_SITUACAO, TEXTO_DOMINIO, fasesDoPlano, frentesPrioritarias, nomeFrenteDoItem, objetivoDoPaciente, primeiroNome } from "@/lib/integracao/devolutiva";
-import { NOME_PROFISSIONAL } from "@/lib/marca";
+import { ASSINATURA_PROFISSIONAL } from "@/lib/marca";
 import { resultadosParaApresentacao } from "@/lib/integracao/resultadosApresentacao";
 import { NOME_SERVICO } from "@/lib/integracao/servicos";
 import { SerieChart } from "@/components/SerieChart";
@@ -109,7 +109,7 @@ export default function Apresentacao() {
             <p className="text-[24px] tracking-[0.25em] uppercase text-accent font-semibold">Seu plano de cuidado</p>
             <h1 className="font-display text-[84px] leading-[1.05] text-ink mt-5">{paciente.nome}</h1>
             <p className="text-[28px] text-muted mt-6">Avaliação integrada de saúde, física e funcional</p>
-            <p className="text-[26px] text-ink mt-10">{NOME_PROFISSIONAL}</p>
+            <p className="text-[26px] text-ink mt-10">{ASSINATURA_PROFISSIONAL}</p>
             <p className="text-[22px] text-muted">{new Date().toLocaleDateString("pt-BR")}</p>
           </div>
           <div className="w-[380px] bg-accent-soft flex items-center justify-center">
@@ -385,7 +385,7 @@ export default function Apresentacao() {
           <div className="w-[520px] bg-accent px-14 flex flex-col justify-center text-white">
             <h2 className="font-display text-[60px] leading-tight">Vamos começar?</h2>
             <p className="text-[28px] leading-snug mt-5 opacity-95">O primeiro passo é combinar a data do nosso próximo encontro, no dia e horário melhores para você.</p>
-            <p className="text-[26px] mt-10 font-medium">{NOME_PROFISSIONAL}</p>
+            <p className="text-[26px] mt-10 font-medium">{ASSINATURA_PROFISSIONAL}</p>
           </div>
         </div>
       ),
@@ -568,7 +568,12 @@ export default function Apresentacao() {
               style={{ width: LARGURA, height: ALTURA, transform: `scale(${escala})`, breakAfter: i < total - 1 ? "page" : "auto" }}
             >
               <div className="h-full">{s.conteudo}</div>
-              {i > 0 && i < total - 1 && <div className="absolute bottom-4 left-20 text-[16px] text-muted">{NOME_PROFISSIONAL}</div>}
+              {i > 0 && i < total - 1 && (
+                <div className="absolute bottom-3 left-20 flex items-center gap-3 text-[16px] text-muted">
+                  <img src="/logo-sceh.png" alt="" className="h-9 w-auto" />
+                  {ASSINATURA_PROFISSIONAL}
+                </div>
+              )}
               <div className="absolute bottom-4 right-8 text-[16px] text-muted">{i + 1} / {total}</div>
             </div>
           ))}

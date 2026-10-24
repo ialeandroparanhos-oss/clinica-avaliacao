@@ -27,6 +27,7 @@ import { avaliarMobilidadeObjetiva, paresDeMobilidade } from "@/lib/avaliacao/mo
 import { percentualDoPrevisto, tc6Previsto } from "@/lib/avaliacao/tc6";
 import { nomeComTitulo, textoRevisao, type AgenteId } from "@/lib/agentes";
 import { NOME_PROFISSIONAL } from "@/lib/marca";
+import { LogoEAssinatura } from "@/components/LogoEAssinatura";
 import { EnvioWhatsApp } from "@/components/avaliador/EnvioWhatsApp";
 import { triarSarcopeniaDinapenia } from "@/lib/integracao/sarcopenia";
 import { vo2maxDeRegistro, vo2maxDeTeste, testePrincipalDoRegistro, avaliarVO2max, ROTULO_CLASSE_VO2, descreverPSE, metDeVo2, fcMaxTanaka, fcMaxFox } from "@/lib/avaliacao/cardiorrespiratoria";
@@ -237,6 +238,7 @@ export default function RelatorioTecnico() {
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 pb-16 print:px-0">
         <header className="mb-8 border-b-2 border-ink pb-4">
+          <LogoEAssinatura />
           <p className="text-xs uppercase tracking-widest text-accent font-semibold mb-1">
             Relatório Técnico de Avaliação Integrada — uso do profissional
           </p>

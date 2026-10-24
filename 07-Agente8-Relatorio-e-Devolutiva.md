@@ -156,6 +156,16 @@ Quando houver Risco de Nível 3/4 ainda sem desfecho no momento da devolutiva, o
 
 Nos **slides** (para o paciente), os níveis da tabela Pollock & Wilmore do %G aparecem com palavras mais acolhedoras e sem ambiguidade: Excelente = "excelente"; Bom = "bom"; Acima da média = "melhor que a média"; Média = "na média"; Abaixo da média = "pior que a média"; **Ruim = "acima do desejável"; Muito ruim = "bem acima do desejável"**. A razão: "abaixo da média" na tabela quer dizer mais gordura que o médio, mas o paciente pode entender como bom. Quando o valor cai entre dois níveis, o slide diz "entre X e Y; consideramos Y" com as mesmas palavras. **A aba Física, o parecer e o relatório técnico mantêm os nomes originais da tabela.** Código: `ROTULO_PACIENTE_NIVEL_PW` em `lib/avaliacao/composicaoCorporal.ts`.
 
+## ATUALIZAÇÃO 24/10/2026 — LOGO E ASSINATURA NOS PDFs E NO WHATSAPP
+
+Pedido do profissional: os documentos e mensagens que saem para o paciente, aluno ou outro profissional levam a logo e a assinatura **"Leandro Lopes - Doutorado em Ciências da Saúde"** (constante `ASSINATURA_PROFISSIONAL` em `lib/marca.ts`; o nome "Dr. Leandro Lopes", `NOME_PROFISSIONAL`, segue nos textos corridos).
+
+- **Relatório do paciente e relatório técnico (PDF):** a logo (`/logo-sceh.png`) no canto esquerdo do cabeçalho e a assinatura no direito, pelo componente `components/LogoEAssinatura.tsx`. No relatório do paciente a assinatura também substitui o nome em "Preparado em ... por" e no bloco "Vamos começar?".
+- **Slides da devolutiva (PDF):** a capa e o slide final trazem a assinatura; cada slide interno ganhou, no rodapé, a logo pequena com a assinatura.
+- **WhatsApp:** a mensagem ao paciente e o resumo técnico terminam com a assinatura em negrito. O link do WhatsApp (wa.me) só leva texto, não imagem nem arquivo: **a logo vai no PDF, que continua sendo anexado por quem envia** (Imprimir / Salvar PDF).
+
+Nada de cálculo, classificação ou texto clínico mudou. Testado: assinatura nas duas mensagens e no link do WhatsApp (5 verificações) e o cabeçalho conferido no navegador numa página de teste (removida). As telas reais dos relatórios exigem login e não foram abertas no teste.
+
 ## FECHAMENTO DESTA RODADA
 
 Com este documento, os oito agentes da arquitetura (Seção 21 do prompt-mestre) estão especificados em um primeiro nível de profundidade — da Coordenação (00) até o Relatório e Devolutiva (07), cobrindo o ciclo completo de uma avaliação, do primeiro contato até a entrega dos resultados ao paciente:

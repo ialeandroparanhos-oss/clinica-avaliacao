@@ -1,12 +1,12 @@
 // Envio por WhatsApp: o sistema monta a mensagem e abre o WhatsApp com ela pronta
 // (link wa.me). Quem confere e aperta "enviar" é o profissional - nada sai sozinho.
-// O link não anexa arquivo: o PDF completo (Imprimir / Salvar PDF) é anexado
-// por quem envia.
+// O link não anexa arquivo nem imagem: o PDF completo (Imprimir / Salvar PDF), que leva a logo,
+// é anexado por quem envia. A mensagem de texto termina com a assinatura do profissional.
 
 import type { Alerta, PacienteRow } from "@/lib/anamnese/types";
 import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import { rotuloNivel } from "@/lib/anamnese/alerts";
-import { NOME_PROFISSIONAL } from "@/lib/marca";
+import { ASSINATURA_PROFISSIONAL, NOME_PROFISSIONAL } from "@/lib/marca";
 import { frentesPrioritarias, objetivoDoPaciente, primeiroNome, servicosParaPaciente, TEXTO_DOMINIO, TEXTO_FASE } from "@/lib/integracao/devolutiva";
 import { calcularPerfilIntegrado } from "@/lib/integracao/perfil";
 import { HORIZONTES, itemAprovado, type Plano } from "@/lib/integracao/plano";
@@ -79,6 +79,7 @@ export function mensagemPaciente(paciente: PacienteRow): string {
   const t90 = TEXTO_FASE["90"].texto;
   linhas.push(`📅 ${TEXTO_FASE["90"].titulo}: ${t90.charAt(0).toLowerCase()}${t90.slice(1)}`);
   linhas.push("", "Qualquer movimento já faz bem, e com acompanhamento o caminho é mais seguro e mais fácil de manter.", "Vamos combinar a data para começar? 😊");
+  linhas.push("", `*${ASSINATURA_PROFISSIONAL}*`);
   return linhas.join("\n");
 }
 
@@ -118,5 +119,6 @@ export function mensagemTecnica(paciente: PacienteRow, idade: number | null): st
   }
   if (enc.length > 0) linhas.push("", `*Encaminhamentos:* ${enc.map((e) => e.especialidade).join(", ")}`);
   linhas.push("", `_Triagem e apoio à decisão, não é diagnóstico. Pareceres redigidos por assistentes de IA, com responsabilidade de ${NOME_PROFISSIONAL}. Informação de saúde confidencial: não encaminhar a terceiros. O relatório completo segue em PDF._`);
+  linhas.push("", `*${ASSINATURA_PROFISSIONAL}*`);
   return linhas.join("\n");
 }

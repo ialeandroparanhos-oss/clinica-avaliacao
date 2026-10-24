@@ -20,7 +20,8 @@ import { HORIZONTES, HORIZONTE_LEGADO, itemAprovado, type ItemPlano, type Plano 
 import { INDICADORES, extrairSerie, type LinhaHistorico } from "@/lib/integracao/historico";
 import { COMBINADOS, FONTE_PORQUE, PORQUE_VALE_A_PENA, servicosParaPaciente, ROTULO_SITUACAO, TEXTO_DOMINIO, TEXTO_FASE, frentesPrioritarias, objetivoDoPaciente, primeiroNome } from "@/lib/integracao/devolutiva";
 import { mensagemPaciente } from "@/lib/avaliacao/whatsapp";
-import { NOME_PROFISSIONAL } from "@/lib/marca";
+import { ASSINATURA_PROFISSIONAL } from "@/lib/marca";
+import { LogoEAssinatura } from "@/components/LogoEAssinatura";
 import { SerieChart } from "@/components/SerieChart";
 import { EnvioWhatsApp } from "@/components/avaliador/EnvioWhatsApp";
 
@@ -113,9 +114,10 @@ export default function RelatorioPaciente() {
 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 pb-16 print:px-0">
         <header className="mb-8 border-b-2 border-ink pb-4">
+          <LogoEAssinatura />
           <p className="text-xs uppercase tracking-widest text-accent font-semibold mb-1">Seu plano de cuidado</p>
           <h1 className="font-display text-2xl text-ink">{paciente.nome}</h1>
-          <p className="text-sm text-muted mt-1">Preparado em {new Date().toLocaleDateString("pt-BR")} por {NOME_PROFISSIONAL}</p>
+          <p className="text-sm text-muted mt-1">Preparado em {new Date().toLocaleDateString("pt-BR")} por {ASSINATURA_PROFISSIONAL}</p>
         </header>
 
         <Secao titulo={`Olá, ${primeiroNome(paciente.nome)}!`}>
@@ -278,7 +280,7 @@ export default function RelatorioPaciente() {
           <p className="text-[15px] text-ink mt-1.5 leading-relaxed">
             O primeiro passo é combinar a data do nosso próximo encontro. Fale conosco para agendar no dia e horário que forem melhores para você. Estamos aqui para caminhar ao seu lado, no seu ritmo.
           </p>
-          <p className="text-sm text-ink mt-3 font-medium">{NOME_PROFISSIONAL}</p>
+          <p className="text-sm text-ink mt-3 font-medium">{ASSINATURA_PROFISSIONAL}</p>
         </section>
 
         <p className="text-xs text-muted border-t border-border pt-4 mt-8">
