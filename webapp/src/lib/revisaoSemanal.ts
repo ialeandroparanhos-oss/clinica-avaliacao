@@ -178,7 +178,7 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
           evidencia: "Pendência registrada em 17/10/2026.",
           opiniao: "Recomendo fazer assim que possível: com 3 a 5 vídeos de movimentos diferentes (de lado e de frente), eu ajusto os limites. Sem exemplos reais, os limites podem reprovar vídeos bons ou aprovar vídeos ruins.",
           status: "aprovada",
-          decisao: "O profissional vai enviar os vídeos (19/10/2026). Os agentes lembram a cada conversa até isso acontecer.",
+          decisao: "O profissional vai enviar os vídeos (19/10/2026). Em 24/10/2026 pediu para fazer a P2 com o que já existe: havia 2 vídeos reais de 1 paciente (flexão de tronco, de lado e de frente). Corrigidos dois defeitos que eles mostraram (desvio lateral de 176° na flexão de frente; conselho de afastar a câmera quando os pés estavam dentro da imagem, só sem leitura). Os limites de tolerância não foram mexidos: com 2 vídeos de 1 movimento não há base. Falta o profissional dizer se o veredito do vídeo de frente (reprovado) bateu com o que viu, e mais vídeos de outros movimentos.",
         },
       ],
     },
@@ -272,7 +272,7 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
     },
   ],
   lembretes: [
-    "P2: enviar os primeiros vídeos reais na análise de movimento para calibrar os limites de adequação do vídeo (é o profissional quem envia; os agentes lembram a cada conversa até isso acontecer).",
+    "P2 (em andamento): já corrigidos dois defeitos com os 2 primeiros vídeos reais. Para calibrar os limites faltam: dizer se o veredito do vídeo de frente (reprovado) bateu com o que você viu, e enviar vídeos de outros movimentos (agachamento, elevação dos braços, extensão e inclinação lateral), de lado e de frente.",
   ],
   candidatos: [
     {

@@ -68,7 +68,7 @@ Cada rodada é feita por quem a executa em nome da Dra. Nina (assistente de IA),
 | M1 | **Recusada** (pela experiência dele, mesmo sendo sugerida cientificamente) | Encerrada; não volta sem fato novo |
 | M2 | **Adiada** (ele ainda não tem o livro) | Opinião da Nina e do Dr. Marco: manter as tabelas com o aviso de fonte não conferida; busca na web não achou a tabela reproduzida |
 | P1 | Aprovada | **Feita**: aviso de margem de erro nos ângulos de vídeo |
-| P2 | Aprovada, **o profissional fará** (enviar vídeos reais) | Lembrete ativo a cada conversa |
+| P2 | Aprovada, **em andamento** (24/10/2026): dois defeitos corrigidos com os 2 primeiros vídeos reais; limites de tolerância mantidos | Lembrete ativo: falta confirmar o veredito do vídeo de frente e enviar vídeos de outros movimentos |
 | N1, R1, I1, I2, C1 | Perguntas respondidas com a opinião do agente | **Aguardando decisão** |
 
 **Decisões seguintes, ainda em 19/10/2026:** o profissional aprovou **N1, R1, C1 e I1**, todas **feitas no mesmo dia** (N1: coluna "Avaliação" na lista; R1: Wu 2026 na base da Dra. Rita; C1: palavras acolhedoras nos slides; I1: sarcopenia pelo índice de massa magra, com comparação antes e depois: 1 de 2 avaliações existentes deixou de ser sinalizada). **Só a I2 segue aguardando** (revisão clínica do conteúdo das condições).

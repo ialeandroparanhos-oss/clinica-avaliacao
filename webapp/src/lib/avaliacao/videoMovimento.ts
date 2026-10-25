@@ -11,6 +11,7 @@ export type Quadro = { t: number; pontos: Pontos };
 export type MetricasQuadro = {
   tronco: number | null; // inclinação do tronco em relação à vertical, 0° = ereto, 90° = horizontal
   lateral: number | null; // desvio do tronco em relação à vertical na imagem (com sinal: + = ombros à direita da imagem)
+  lateralPlano: number | null; // desvio lateral no plano da imagem, de -90° a 90°: não muda quando o tronco se inclina à frente (ombros abaixo do quadril)
   quadril: number | null; // ângulo ombro-quadril-joelho do lado mais visível (180° = estendido)
   joelho: number | null; // ângulo quadril-joelho-tornozelo do lado mais visível (180° = estendido)
   punhoAcima: number | null; // altura média dos punhos acima dos ombros, em comprimentos de tronco (> 0 = acima)
@@ -45,7 +46,7 @@ function mediaVis(...ps: (Ponto | undefined)[]): number {
 export function metricasQuadro(p: Pontos): MetricasQuadro {
   const ombros = ponto(p.ombro_e, p.ombro_d);
   const quadris = ponto(p.quadril_e, p.quadril_d);
-  const vazio: MetricasQuadro = { tronco: null, lateral: null, quadril: null, joelho: null, punhoAcima: null, largOmbros: null, compTronco: null };
+  const vazio: MetricasQuadro = { tronco: null, lateral: null, lateralPlano: null, quadril: null, joelho: null, punhoAcima: null, largOmbros: null, compTronco: null };
   if (!ombros || !quadris) return vazio;
   const dx = ombros.x - quadris.x;
   const dy = ombros.y - quadris.y;
@@ -53,6 +54,7 @@ export function metricasQuadro(p: Pontos): MetricasQuadro {
   if (comprimento < 1) return vazio;
   const tronco = grau(Math.atan2(Math.abs(dx), -dy));
   const lateral = grau(Math.atan2(dx, -dy));
+  const lateralPlano = grau(Math.atan2(dx, Math.abs(dy)));
 
   // Lado mais visível para os ângulos de quadril e joelho.
   const ladoE = mediaVis(p.ombro_e, p.quadril_e, p.joelho_e, p.tornozelo_e);
@@ -68,7 +70,7 @@ export function metricasQuadro(p: Pontos): MetricasQuadro {
   const punhos = ponto(p.punho_e, p.punho_d);
   const punhoAcima = punhos ? (ombros.y - punhos.y) / comprimento : null;
   const largOmbros = vis(p.ombro_e) && vis(p.ombro_d) ? Math.abs(p.ombro_e!.x - p.ombro_d!.x) / comprimento : null;
-  return { tronco, lateral, quadril, joelho, punhoAcima, largOmbros, compTronco: comprimento };
+  return { tronco, lateral, lateralPlano, quadril, joelho, punhoAcima, largOmbros, compTronco: comprimento };
 }
 
 // ---------------------------------------------------------------------------
@@ -112,7 +114,8 @@ export type ResumoVideo = {
   t_max_s: number | null;
   referencia_max: string; // o que definiu o "ponto máximo"
   tronco_max: number | null;
-  lateral_max: number | null; // com sinal
+  lateral_max: number | null; // desvio lateral no plano da imagem, com sinal (análises antes de 24/10/2026 guardavam aqui o ângulo do tronco com a vertical, que na flexão de frente chegava a 176°)
+  tronco_comprimento_min_pct?: number | null; // menor comprimento do tronco na imagem, em % do maior (a flexão de frente aparece como encurtamento)
   quadril_min: number | null;
   joelho_min: number | null;
   punho_max: number | null;
@@ -186,16 +189,27 @@ export function avaliarAdequacao(e: EntradaAdequacao): AdequacaoVideo {
 
   if (info && comTronco.length > 0) {
     // 3) Corpo inteiro dentro do quadro (tornozelos visíveis e dentro da imagem).
+    // Um quadro só conta como "inteiro" se algum tornozelo foi lido e está dentro da imagem. Quando não conta,
+    // distingue-se o motivo: tornozelo com a posição fora da imagem (pés cortados: afastar a câmera resolve) ou
+    // tornozelo dentro da imagem mas sem leitura confiável (luz, contraste, pés cobertos: afastar não resolve).
     let inteiros = 0;
+    let cortados = 0;
     for (const o of comTronco) {
       const p = e.quadros[o.i].pontos;
       const dentro = (q?: Ponto) => !!q && q.v >= VIS && q.x >= 0 && q.x <= info.largura && q.y >= 0 && q.y <= info.altura * 0.99;
+      const fora = (q?: Ponto) => !!q && (q.x < 0 || q.x > info.largura || q.y < 0 || q.y > info.altura * 0.99);
       if (dentro(p.tornozelo_e) || dentro(p.tornozelo_d)) inteiros++;
+      else if (fora(p.tornozelo_e) || fora(p.tornozelo_d)) cortados++;
     }
     const rI = inteiros / comTronco.length;
+    const rCortados = cortados / comTronco.length;
+    const semLeitura = Math.max(0, 1 - rI - rCortados);
+    const motivoFalta = rCortados >= semLeitura
+      ? "tornozelos fora do quadro: afaste a câmera para pegar a pessoa dos pés à cabeça."
+      : "tornozelos dentro da imagem, mas sem leitura confiável: confira a luz e o contraste ao redor dos pés e se algo cobre os pés. Afastar a câmera só ajuda se os pés estiverem cortados.";
     if (rI >= 0.8) add("corpo_inteiro", "Corpo inteiro no quadro", "ok", `tornozelos visíveis em ${f(rI * 100)}% dos quadros com corpo detectado.`);
-    else if (rI >= 0.5) add("corpo_inteiro", "Corpo inteiro no quadro", "atencao", `tornozelos visíveis em só ${f(rI * 100)}% dos quadros: parte do corpo sai do enquadramento.`);
-    else add("corpo_inteiro", "Corpo inteiro no quadro", "falha", `tornozelos fora do quadro ou sem leitura em ${f((1 - rI) * 100)}% dos quadros: afaste a câmera para pegar a pessoa dos pés à cabeça.`);
+    else if (rI >= 0.5) add("corpo_inteiro", "Corpo inteiro no quadro", "atencao", `tornozelos lidos em só ${f(rI * 100)}% dos quadros: ${motivoFalta}`);
+    else add("corpo_inteiro", "Corpo inteiro no quadro", "falha", `tornozelos lidos em só ${f(rI * 100)}% dos quadros: ${motivoFalta}`);
 
     // 4) Tamanho da pessoa na imagem.
     const med = mediana(comTronco.map((o) => o.x.compTronco as number));
@@ -293,7 +307,11 @@ export type ResultadoVideo = { resumo: ResumoVideo; indiceMaximo: number | null 
 export function resumirVideo(quadros: Quadro[], movimentoId: string, vista: "sagital" | "frontal", duracaoS: number, info?: InfoVideo, agora = new Date()): ResultadoVideo {
   const m = quadros.map((q) => metricasQuadro(q.pontos));
   const troncoS = removerPicos(m.map((x) => x.tronco), 60);
-  const lateralS = removerPicos(m.map((x) => x.lateral), 60);
+  // Desvio lateral só nos quadros em que o tronco não está muito encurtado na imagem (encurtado, o ângulo vira ruído).
+  const compsValidos = m.map((x) => x.compTronco).filter((n): n is number => n !== null);
+  const compMax = compsValidos.length > 0 ? [...compsValidos].sort((a, b) => a - b)[Math.floor((compsValidos.length - 1) * 0.9)] : null;
+  const lateralS = removerPicos(m.map((x) => (x.lateralPlano !== null && x.compTronco !== null && compMax !== null && x.compTronco >= 0.6 * compMax ? x.lateralPlano : null)), 60);
+  const encurtamento = compMax !== null && compsValidos.length >= 3 ? Math.min(...compsValidos) / compMax : null;
   const quadrilS = removerPicos(m.map((x) => x.quadril), 60);
   const joelhoS = removerPicos(m.map((x) => x.joelho), 60);
   const punhoS = removerPicos(m.map((x) => x.punhoAcima), 1);
@@ -366,7 +384,8 @@ export function resumirVideo(quadros: Quadro[], movimentoId: string, vista: "sag
     if (joelhoMin !== null) linhas.push(`menor ângulo do joelho (lado mais visível): ${f(joelhoMin)}°`);
     if (movimentoId === "elevacao_bracos" && punhoMax !== null) linhas.push(`punhos até ${f(punhoMax, 2)} comprimentos de tronco acima dos ombros`);
   } else {
-    if (lateralMax !== null) linhas.push(`maior desvio do tronco em relação à vertical: ${f(Math.abs(lateralMax))}° para a ${lateralMax >= 0 ? "direita" : "esquerda"} da imagem${tMax !== null ? ` (ponto máximo em ${f(tMax, 1)} s)` : ""}`);
+    if (lateralMax !== null) linhas.push(`maior desvio lateral do tronco (no plano da imagem): ${f(Math.abs(lateralMax))}° para a ${lateralMax >= 0 ? "direita" : "esquerda"} da imagem, medido nos quadros em que o tronco não está muito encurtado`);
+    if (encurtamento !== null && encurtamento <= 0.75) linhas.push(`o tronco ficou mais curto na imagem (chegou a ${f(encurtamento * 100)}% do maior comprimento): sinal de flexão do tronco. Na vista de frente isso não vira ângulo confiável; leia o ângulo de flexão na vista de lado${tMax !== null ? ` (ponto máximo em ${f(tMax, 1)} s)` : ""}`);
     if (movimentoId === "elevacao_bracos" && punhoMax !== null) linhas.push(`punhos até ${f(punhoMax, 2)} comprimentos de tronco acima dos ombros`);
     if (movimentoId === "agachamento" && joelhoMin !== null) linhas.push(`menor ângulo do joelho (lado mais visível): ${f(joelhoMin)}°`);
   }
@@ -385,6 +404,7 @@ export function resumirVideo(quadros: Quadro[], movimentoId: string, vista: "sag
       referencia_max: referencia,
       tronco_max: troncoMax === null ? null : Math.round(troncoMax * 10) / 10,
       lateral_max: lateralMax === null ? null : Math.round(lateralMax * 10) / 10,
+      tronco_comprimento_min_pct: encurtamento === null ? null : Math.round(encurtamento * 100),
       quadril_min: quadrilMin === null ? null : Math.round(quadrilMin * 10) / 10,
       joelho_min: joelhoMin === null ? null : Math.round(joelhoMin * 10) / 10,
       punho_max: punhoMax === null ? null : Math.round(punhoMax * 100) / 100,
