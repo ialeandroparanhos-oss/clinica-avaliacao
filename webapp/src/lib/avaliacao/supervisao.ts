@@ -23,6 +23,8 @@ import { testePrincipalDoRegistro } from "@/lib/avaliacao/cardiorrespiratoria";
 import { gerarParecerAgente, nomeAgente, type AgenteParecer, type EstiloParecer } from "@/lib/avaliacao/pareceres";
 import { CAMPOS_CIRCUNFERENCIA } from "@/lib/avaliacao/medidasRegionais";
 import { paraNumero } from "@/lib/numeros";
+import { temGuiada } from "@/lib/avaliacao/posturaSimples";
+import { temMovimento } from "@/lib/avaliacao/movimento";
 
 export type NivelSupervisao = "ok" | "atencao" | "alerta";
 export type ItemSupervisao = { nivel: NivelSupervisao; area: string; texto: string };
@@ -60,7 +62,9 @@ export function supervisionar(paciente: PacienteRow): ResultadoSupervisao {
   cob("Testes funcionais", testesFuncionais > 0, `${testesFuncionais} teste(s)`);
   cob("Mobilidade", dom("mobilidade")?.classificacao !== "investigar", dom("mobilidade")?.classificacao !== "investigar" ? "avaliada por teste objetivo" : "sem teste objetivo");
   const fotos = ["foto_anterior_path", "foto_posterior_path", "foto_lateral_d_path", "foto_lateral_e_path"].filter((k) => !!paciente.postural?.[k]).length;
-  cob("Postura (fotos)", fotos > 0, `${fotos} foto(s)`);
+  const guiadaMarcada = temGuiada(paciente.postural?.obs_guiada);
+  const movimentoPostural = temMovimento(paciente.postural?.movimentos);
+  cob("Postura e movimento", fotos > 0 || guiadaMarcada || movimentoPostural, [fotos > 0 ? `${fotos} foto(s)` : "", guiadaMarcada ? "achados marcados" : "", movimentoPostural ? "movimento registrado" : ""].filter(Boolean).join(", ") || "sem registro");
   const principal = testePrincipalDoRegistro(paciente.cardio);
   cob("Cardiorrespiratório", !!principal || paraNumero(paciente.cardio?.vo2max_manual) !== null, principal ? "teste registrado" : "sem teste");
   const itensAprovados = (plano?.itens ?? []).filter(itemAprovado).length;

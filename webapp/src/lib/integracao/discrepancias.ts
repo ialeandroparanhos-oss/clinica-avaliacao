@@ -14,6 +14,7 @@ import type { PacienteRow } from "@/lib/anamnese/types";
 import { calcularPerfilIntegrado } from "./perfil";
 import { calcularTagsPerfil } from "./tagsPerfil";
 import { MOVIMENTOS, VISTAS_MOV } from "@/lib/avaliacao/movimento";
+import { textoObsPostural } from "@/lib/avaliacao/posturaSimples";
 
 export type Discrepancia = {
   titulo: string;
@@ -33,13 +34,8 @@ export function detectarDiscrepancias(paciente: PacienteRow): Discrepancia[] {
 
   // 1. Nega dor atualmente, mas a observação postural (apoiada ou não por
   //    foto) menciona termos de atenção/compensação.
-  const textoPostural = [
-    paciente.postural?.obs_anterior,
-    paciente.postural?.obs_posterior,
-    paciente.postural?.obs_lateral_d,
-    paciente.postural?.obs_lateral_e,
-    paciente.postural?.obs_movimento,
-  ]
+  const textoPostural = ["obs_anterior", "obs_posterior", "obs_lateral_d", "obs_lateral_e", "obs_movimento"]
+    .map((campo) => textoObsPostural(paciente.postural, campo))
     .filter(Boolean)
     .join(" ")
     .toLowerCase();

@@ -274,7 +274,7 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
   ],
   lembretes: [
     "I2 (em andamento): a etiqueta já está nas 30 condições; a revisão clínica dos textos é sua. Diga quais condições você revisou (sugestão: hipertensão, diabetes, obesidade, dor lombar e artrose) e a etiqueta sai dessas, com seu nome e a data.",
-    "P2 (em andamento): já corrigidos dois defeitos com os 2 primeiros vídeos reais. Você já confirmou que o veredito do vídeo de frente (reprovado) bateu com o que viu. Para calibrar os limites faltam vídeos de outros movimentos (agachamento, elevação dos braços, extensão e inclinação lateral), de lado e de frente, filmados como no guia de desenhos (POP, etapa 9).",
+    "P2 (em pausa, opcional): em 26/10/2026 o vídeo de movimento passou para o modo avançado da aba Postural, e o modo simples não usa vídeo. Só se você for usar vídeo é que faltam exemplos de outros movimentos (guia de desenhos no POP, etapa 9) para calibrar os limites; caso contrário, nada a fazer.",
   ],
   candidatos: [
     {

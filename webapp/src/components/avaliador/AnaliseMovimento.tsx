@@ -54,12 +54,14 @@ function BlocoVista({
   vista,
   valor,
   onChange,
+  simples = false,
 }: {
   pacienteId: string;
   def: DefMovimento;
   vista: VistaMov;
   valor: VistaMovSalva;
   onChange: (v: VistaMovSalva) => void;
+  simples?: boolean;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const url = useUrlAssinada(valor.foto_path);
@@ -214,6 +216,7 @@ function BlocoVista({
       </div>
       {erro && <p className="text-xs text-danger">{erro}</p>}
 
+      {!simples && (
       <div className="rounded-lg bg-bg p-3 text-sm space-y-2">
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-xs uppercase tracking-wide text-muted font-semibold">Vídeo do movimento (análise inicial)</span>
@@ -297,8 +300,9 @@ function BlocoVista({
         )}
         {urlVideo && <video src={urlVideo} controls className="w-full max-w-sm rounded-lg bg-black" />}
       </div>
+      )}
 
-      {url && dims && (
+      {!simples && url && dims && (
         <div className="rounded-lg bg-bg p-3 text-sm space-y-2">
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-xs uppercase tracking-wide text-muted font-semibold">Medir ângulo na foto</span>
@@ -369,7 +373,19 @@ function BlocoVista({
   );
 }
 
-export function AnaliseMovimento({ pacienteId, movimentos, onChange }: { pacienteId: string; movimentos: Movimentos; onChange: (m: Movimentos) => void }) {
+export function AnaliseMovimento({
+  pacienteId,
+  movimentos,
+  onChange,
+  ids,
+  simples = false,
+}: {
+  pacienteId: string;
+  movimentos: Movimentos;
+  onChange: (m: Movimentos) => void;
+  ids?: string[]; // quais movimentos mostrar (sem isso, todos)
+  simples?: boolean; // sem vídeo e sem medida de ângulo
+}) {
   const [aberto, setAberto] = useState<string | null>(null);
 
   function atualizar(id: string, patch: Partial<MovimentoSalvo>) {
@@ -379,14 +395,23 @@ export function AnaliseMovimento({ pacienteId, movimentos, onChange }: { pacient
   return (
     <div className="pt-4 border-t border-border space-y-3">
       <div>
-        <h3 className="font-display text-lg text-ink">Análise de movimento</h3>
+        <h3 className="font-display text-lg text-ink">{simples ? "Movimentos: agachamento e flexão de tronco" : "Análise de movimento"}</h3>
         <p className="text-xs text-muted leading-relaxed mt-1">
-          O paciente executa o movimento e você registra o ponto máximo em duas vistas: a <strong>sagital</strong> (de lado) e a <strong>frontal</strong>. Para cada vista há foto, um roteiro de observação e, se quiser,
-          um ângulo medido na foto. São registros descritivos, aparentes à inspeção, sem corte nem validação publicada: não são diagnóstico nem causa de dor. A foto fica no arquivo privado da clínica.
+          {simples ? (
+            <>
+              Peça o movimento e registre o ponto máximo de lado (<strong>sagital</strong>) e de frente ou de costas (<strong>frontal</strong>): uma foto e o roteiro de marcar. É o que mais ajuda a prescrever. São registros descritivos, sem corte
+              nem validação publicada: não são diagnóstico nem causa de dor. A foto fica no arquivo privado da clínica.
+            </>
+          ) : (
+            <>
+              O paciente executa o movimento e você registra o ponto máximo em duas vistas: a <strong>sagital</strong> (de lado) e a <strong>frontal</strong>. Para cada vista há foto, um roteiro de observação e, se quiser,
+              um ângulo medido na foto. São registros descritivos, aparentes à inspeção, sem corte nem validação publicada: não são diagnóstico nem causa de dor. A foto fica no arquivo privado da clínica.
+            </>
+          )}
         </p>
       </div>
 
-      {MOVIMENTOS.map((def) => {
+      {MOVIMENTOS.filter((m) => !ids || ids.includes(m.id)).map((def) => {
         const salvo = movimentos[def.id] ?? {};
         const preenchidas = VISTAS_MOV.filter((v) => (salvo[v]?.obs?.length ?? 0) > 0 || salvo[v]?.foto_path || salvo[v]?.texto).length + (salvo.medida ? 1 : 0);
         const estaAberto = aberto === def.id;
@@ -420,6 +445,7 @@ export function AnaliseMovimento({ pacienteId, movimentos, onChange }: { pacient
                       vista={v}
                       valor={salvo[v] ?? {}}
                       onChange={(nv) => atualizar(def.id, { [v]: nv })}
+                      simples={simples}
                     />
                   ))}
                 </div>

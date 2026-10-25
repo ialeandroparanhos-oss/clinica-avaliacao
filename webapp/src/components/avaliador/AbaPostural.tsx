@@ -19,12 +19,26 @@ import { AnaliseMovimento } from "./AnaliseMovimento";
 import type { Movimentos } from "@/lib/avaliacao/movimento";
 import { analisarVista, gerarParecer, ROTULO_VISTA, type AnaliseVistaSalva, type Vista } from "@/lib/avaliacao/analisePostural";
 import { detectarPontos, prepararImagem, type ImagemPreparada } from "@/lib/avaliacao/poseModelo";
+import type { EstiloParecer } from "@/lib/avaliacao/pareceres";
+import {
+  ACHADOS,
+  CHAVE_NADA,
+  MOVIMENTOS_SIMPLES,
+  ROTULO_NADA,
+  ROTULO_VISTA_GUIADA,
+  alternarAchado,
+  gerarParecerSimples,
+  juntarGuiadaAoParecer,
+  temDadosAvancados,
+  type ObsGuiada,
+  type VistaGuiada,
+} from "@/lib/avaliacao/posturaSimples";
 
 const BUCKET_FOTOS_POSTURAIS = "fotos-posturais";
 const VISTAS: Vista[] = ["anterior", "posterior", "lateral_d", "lateral_e"];
 
 type Vistas = Partial<Record<Vista, AnaliseVistaSalva>>;
-type EstadoAnalise = { vistas: Vistas; parecer: ParecerSalvo | null; escapula?: DadosEscapula; movimentos: Movimentos };
+type EstadoAnalise = { vistas: Vistas; parecer: ParecerSalvo | null; escapula?: DadosEscapula; movimentos: Movimentos; guiada: ObsGuiada };
 
 // Fichas gravadas antes do parecer ganhar estilos guardavam o texto em analise.parecer.
 function parecerInicial(dados: any): ParecerSalvo | null {
@@ -315,6 +329,57 @@ function AnaliseVista({
 }
 
 // ---------------------------------------------------------------------------
+// Lista curta de achados visuais de uma vista (modo simples e avançado)
+// ---------------------------------------------------------------------------
+function ChecklistVista({
+  vista,
+  marcadas,
+  onChange,
+  texto,
+  onTexto,
+}: {
+  vista: VistaGuiada;
+  marcadas: string[];
+  onChange: (chave: string, marcado: boolean) => void;
+  texto?: string;
+  onTexto?: (t: string) => void;
+}) {
+  const nada = marcadas.includes(CHAVE_NADA);
+  const caixa = "inline-flex items-start gap-2 text-sm text-ink cursor-pointer";
+  return (
+    <div className="rounded-xl border border-border p-4 space-y-2">
+      <h4 className="font-display text-base text-ink">{ROTULO_VISTA_GUIADA[vista]}</h4>
+      <ul className="space-y-1.5">
+        {ACHADOS[vista].map((a) => (
+          <li key={a.chave}>
+            <label className={caixa}>
+              <input type="checkbox" className="mt-1" checked={marcadas.includes(a.chave)} onChange={(e) => onChange(a.chave, e.target.checked)} />
+              <span>{a.rotulo}</span>
+            </label>
+          </li>
+        ))}
+        <li className="pt-1 border-t border-border">
+          <label className={`${caixa} text-muted`}>
+            <input type="checkbox" className="mt-1" checked={nada} onChange={(e) => onChange(CHAVE_NADA, e.target.checked)} />
+            <span>{ROTULO_NADA}</span>
+          </label>
+        </li>
+      </ul>
+      {onTexto && <TextArea value={texto ?? ""} onChange={(e) => onTexto(e.target.value)} placeholder="Outras observações desta vista (opcional)" rows={2} />}
+    </div>
+  );
+}
+
+type Modo = "simples" | "avancado";
+
+// O parecer do modo simples é curto (o que foi visto, os movimentos e o que observar no treino); o do avançado é o
+// de sempre, com a lista curta no começo.
+function gerarTexto(estilo: EstiloParecer, est: EstadoAnalise, modo: Modo): string {
+  if (modo === "simples") return gerarParecerSimples(est.guiada, est.movimentos, estilo);
+  return juntarGuiadaAoParecer(gerarParecer(est.vistas, estilo, est.escapula, est.movimentos), est.guiada, estilo);
+}
+
+// ---------------------------------------------------------------------------
 // Aba
 // ---------------------------------------------------------------------------
 export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string; dados: any; onSalvo: () => void }) {
@@ -329,23 +394,38 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
     foto_lateral_d_path: dados?.foto_lateral_d_path ?? "",
     foto_lateral_e_path: dados?.foto_lateral_e_path ?? "",
   });
-  const [analise, setAnalise] = useState<EstadoAnalise>(() => ({ vistas: dados?.analise?.vistas ?? {}, parecer: parecerInicial(dados), escapula: dados?.analise?.escapula, movimentos: (dados?.movimentos as Movimentos) ?? {} }));
+  const [analise, setAnalise] = useState<EstadoAnalise>(() => ({
+    vistas: dados?.analise?.vistas ?? {},
+    parecer: parecerInicial(dados),
+    escapula: dados?.analise?.escapula,
+    movimentos: (dados?.movimentos as Movimentos) ?? {},
+    guiada: (dados?.obs_guiada as ObsGuiada) ?? {},
+  }));
+  // Modo simples por padrão; a ficha que já tem registros do modo avançado abre nele, para nada ficar escondido.
+  const [modo, setModo] = useState<Modo>(() => (dados?.modo_postural === "avancado" || dados?.modo_postural === "simples" ? dados.modo_postural : temDadosAvancados(dados) ? "avancado" : "simples"));
   const [versaoFotos, setVersaoFotos] = useState<Record<Vista, number>>({ anterior: 0, posterior: 0, lateral_d: 0, lateral_e: 0 });
   const [sinal, setSinal] = useState(0);
   const [grade, setGrade] = useState(true);
   const { salvar, salvando, ok, rascunho } = useSalvarSecao(pacienteId, "postural");
   const set = (k: string, v: string) => setD((prev) => ({ ...prev, [k]: v }));
   const caminhoDe = (v: Vista) => d[`foto_${v}_path`];
+  const avancado = modo === "avancado";
+  const vistasFoto: Vista[] = avancado ? VISTAS : VISTAS.filter((v) => v !== "lateral_e");
 
   // O parecer acompanha as análises enquanto o avaliador não o edita; depois de
   // editado, o texto dele nunca é sobrescrito (aparece o aviso de "dados mudaram").
-  function comVistas(prev: EstadoAnalise, vistas: Vistas): EstadoAnalise {
+  function comVistas(prev: EstadoAnalise, vistas: Vistas, m: Modo = modo): EstadoAnalise {
     const p = prev.parecer;
     const seguiaAuto = !p || p.texto === "" || p.texto === p.automatico;
     if (!seguiaAuto) return { ...prev, vistas };
     const estilo = p?.estilo ?? estiloPreferido();
-    const novo = gerarParecer(vistas, estilo, prev.escapula, prev.movimentos);
+    const novo = gerarTexto(estilo, { ...prev, vistas }, m);
     return { ...prev, vistas, parecer: novo ? { texto: novo, estilo, automatico: novo, revisado: false } : null };
+  }
+
+  function trocarModo(novo: Modo) {
+    setModo(novo);
+    setAnalise((prev) => comVistas(prev, prev.vistas, novo));
   }
 
   function aoMudarFoto(vista: Vista, caminho: string) {
@@ -372,89 +452,142 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
     setAnalise((prev) => comVistas({ ...prev, movimentos: m }, prev.vistas));
   }
 
+  function aoGuiada(vista: VistaGuiada, chave: string, marcado: boolean) {
+    setAnalise((prev) => comVistas({ ...prev, guiada: alternarAchado(prev.guiada, vista, chave, marcado) }, prev.vistas));
+  }
+
   function aoResultado(vista: Vista, resultado: AnaliseVistaSalva) {
     setAnalise((prev) => comVistas(prev, { ...prev.vistas, [vista]: resultado }));
   }
 
-  const dadosAtuais = { ...d, analise: { versao: 2, vistas: analise.vistas, escapula: analise.escapula }, movimentos: analise.movimentos, parecer: analise.parecer };
+  const dadosAtuais = {
+    ...d,
+    modo_postural: modo,
+    obs_guiada: analise.guiada,
+    analise: { versao: 2, vistas: analise.vistas, escapula: analise.escapula },
+    movimentos: analise.movimentos,
+    parecer: analise.parecer,
+  };
   const estadoAuto = useAutoSalvar(dadosAtuais, rascunho);
   const vistasComFoto = VISTAS.filter((v) => caminhoDe(v));
+  const campoTexto = { anterior: "obs_anterior", posterior: "obs_posterior", lateral: "obs_lateral_d" } as const;
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-5 space-y-5">
-      <p className="text-sm text-muted">
-        Registre as fotos nas 4 vistas padronizadas (ver protocolo fotográfico no documento do Agente 4: mesma distância, altura da câmera e posição do paciente em todas as reavaliações). As fotos ficam em um arquivo
-        privado, visível apenas para avaliadores autenticados da clínica.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="max-w-2xl">
+          <h3 className="font-display text-lg text-ink">
+            Postura e movimento <span className="align-middle ml-1 rounded-full bg-gold-soft px-2.5 py-0.5 text-xs font-medium text-gold-dark">{avancado ? "modo avançado" : "modo simples"}</span>
+          </h3>
+          <p className="mt-1 text-sm text-muted leading-relaxed">
+            {avancado
+              ? "Modo avançado: as 4 vistas, a análise automática das fotos, a marcação das escápulas, o vídeo e todos os movimentos, além da lista curta."
+              : "Três fotos, uma lista curta do que você viu e dois testes de movimento (agachamento e flexão de tronco). É o que mais ajuda a prescrever. Mesma distância, altura da câmera e posição do aluno em todas as reavaliações."}{" "}
+            As fotos ficam em um arquivo privado, visível só para avaliadores da clínica.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => trocarModo(avancado ? "simples" : "avancado")}
+          className="rounded-full border border-border bg-surface px-4 py-1.5 text-sm font-medium text-accent hover:border-gold hover:text-accent-dark transition"
+        >
+          {avancado ? "Voltar ao modo simples" : "Mostrar modo avançado"}
+        </button>
+      </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {VISTAS.map((v) => (
+      <div className={`grid gap-4 ${avancado ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3"}`}>
+        {vistasFoto.map((v) => (
           <FotoVista key={v} pacienteId={pacienteId} vista={v} label={ROTULO_VISTA[v]} path={caminhoDe(v)} versao={versaoFotos[v]} onChange={(p) => aoMudarFoto(v, p)} />
         ))}
       </div>
 
-      <div className="pt-4 border-t border-border space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="font-display text-lg text-ink">Análise automática das fotos</h3>
-          <div className="flex flex-wrap items-center gap-4 text-sm">
-            <label className="inline-flex items-center gap-1.5 text-muted cursor-pointer">
-              <input type="checkbox" checked={grade} onChange={(e) => setGrade(e.target.checked)} /> mostrar grade
-            </label>
-            <button
-              type="button"
-              onClick={() => setSinal((n) => n + 1)}
-              disabled={vistasComFoto.length === 0}
-              className="font-medium text-accent hover:underline disabled:opacity-50"
-            >
-              Analisar todas as fotos
-            </button>
-          </div>
+      <div className="pt-4 border-t border-border space-y-3">
+        <div>
+          <h3 className="font-display text-lg text-ink">O que você viu nas fotos</h3>
+          <p className="text-xs text-muted leading-relaxed mt-1">Marque só o que estiver claro. Assimetrias leves são comuns e, sozinhas, não indicam problema.</p>
         </div>
-        <p className="text-xs text-muted leading-relaxed">
-          O agente localiza os pontos do corpo na foto, mede ombros, quadris, cabeça, tronco, joelhos e o alinhamento com a linha de prumo, e desenha o resultado sobre a foto. A análise roda neste computador: <strong>a foto não é
-          enviada a nenhum serviço de IA</strong> (só o modelo é baixado, uma vez). São medidas em foto 2D, sujeitas a erro de enquadramento e de marcação - os cortes (3° discreta, 6° evidente) são referências práticas do
-          sistema, sem validação publicada.
-        </p>
-
-        {vistasComFoto.length === 0 ? (
-          <p className="text-sm text-muted">Envie ao menos uma foto para habilitar a análise.</p>
-        ) : (
-          <div className="grid lg:grid-cols-2 gap-4">
-            {VISTAS.map((v) => (
-              <AnaliseVista key={v} vista={v} caminho={caminhoDe(v)} versao={versaoFotos[v]} salva={analise.vistas[v]} sinal={sinal} grade={grade} onResultado={(r) => aoResultado(v, r)} escapula={v === "posterior" ? analise.escapula : undefined} onEscapula={v === "posterior" ? aoEscapula : undefined} />
-            ))}
-          </div>
-        )}
+        <div className="grid gap-4 lg:grid-cols-3">
+          {(["anterior", "posterior", "lateral"] as VistaGuiada[]).map((v) => (
+            <ChecklistVista
+              key={v}
+              vista={v}
+              marcadas={analise.guiada[v] ?? []}
+              onChange={(chave, marcado) => aoGuiada(v, chave, marcado)}
+              texto={avancado ? undefined : d[campoTexto[v]]}
+              onTexto={avancado ? undefined : (t) => set(campoTexto[v], t)}
+            />
+          ))}
+        </div>
       </div>
 
-      <AnaliseMovimento pacienteId={pacienteId} movimentos={analise.movimentos} onChange={aoMovimentos} />
+      {avancado && (
+        <div className="pt-4 border-t border-border space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h3 className="font-display text-lg text-ink">Análise automática das fotos</h3>
+            <div className="flex flex-wrap items-center gap-4 text-sm">
+              <label className="inline-flex items-center gap-1.5 text-muted cursor-pointer">
+                <input type="checkbox" checked={grade} onChange={(e) => setGrade(e.target.checked)} /> mostrar grade
+              </label>
+              <button
+                type="button"
+                onClick={() => setSinal((n) => n + 1)}
+                disabled={vistasComFoto.length === 0}
+                className="font-medium text-accent hover:underline disabled:opacity-50"
+              >
+                Analisar todas as fotos
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-muted leading-relaxed">
+            O agente localiza os pontos do corpo na foto, mede ombros, quadris, cabeça, tronco, joelhos e o alinhamento com a linha de prumo, e desenha o resultado sobre a foto. A análise roda neste computador: <strong>a foto não é
+            enviada a nenhum serviço de IA</strong> (só o modelo é baixado, uma vez). São medidas em foto 2D, sujeitas a erro de enquadramento e de marcação - os cortes (3° discreta, 6° evidente) são referências práticas do
+            sistema, sem validação publicada.
+          </p>
+
+          {vistasComFoto.length === 0 ? (
+            <p className="text-sm text-muted">Envie ao menos uma foto para habilitar a análise.</p>
+          ) : (
+            <div className="grid lg:grid-cols-2 gap-4">
+              {VISTAS.map((v) => (
+                <AnaliseVista key={v} vista={v} caminho={caminhoDe(v)} versao={versaoFotos[v]} salva={analise.vistas[v]} sinal={sinal} grade={grade} onResultado={(r) => aoResultado(v, r)} escapula={v === "posterior" ? analise.escapula : undefined} onEscapula={v === "posterior" ? aoEscapula : undefined} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <AnaliseMovimento pacienteId={pacienteId} movimentos={analise.movimentos} onChange={aoMovimentos} ids={avancado ? undefined : MOVIMENTOS_SIMPLES} simples={!avancado} />
 
       <PainelParecer
         agente="paula"
         valor={analise.parecer}
         onChange={(p) => setAnalise((prev) => ({ ...prev, parecer: p }))}
-        gerar={(estilo) => gerarParecer(analise.vistas, estilo, analise.escapula, analise.movimentos)}
-        mensagemVazia="Analise ao menos uma foto ou registre um movimento para o agente redigir o parecer."
+        gerar={(estilo) => gerarTexto(estilo, analise, modo)}
+        mensagemVazia={avancado ? "Marque o que viu, analise ao menos uma foto ou registre um movimento para o agente redigir o parecer." : "Marque o que viu nas fotos ou registre um movimento para o agente redigir o parecer."}
         linhas={analise.parecer?.estilo === "explicativo" ? 16 : 8}
       />
 
       <div className="pt-4 border-t border-border space-y-4">
         <h3 className="font-display text-lg text-ink">Suas observações</h3>
-        <Field label="Vista anterior">
-          <TextArea value={d.obs_anterior} onChange={(e) => set("obs_anterior", e.target.value)} />
-        </Field>
-        <Field label="Vista posterior">
-          <TextArea value={d.obs_posterior} onChange={(e) => set("obs_posterior", e.target.value)} />
-        </Field>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Vista lateral direita">
-            <TextArea value={d.obs_lateral_d} onChange={(e) => set("obs_lateral_d", e.target.value)} />
-          </Field>
-          <Field label="Vista lateral esquerda">
-            <TextArea value={d.obs_lateral_e} onChange={(e) => set("obs_lateral_e", e.target.value)} />
-          </Field>
-        </div>
-        <Field label="Padrões de movimento observados (agachamento, alcance, etc.)">
+        {avancado && (
+          <>
+            <Field label="Vista anterior">
+              <TextArea value={d.obs_anterior} onChange={(e) => set("obs_anterior", e.target.value)} />
+            </Field>
+            <Field label="Vista posterior">
+              <TextArea value={d.obs_posterior} onChange={(e) => set("obs_posterior", e.target.value)} />
+            </Field>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field label="Vista lateral direita">
+                <TextArea value={d.obs_lateral_d} onChange={(e) => set("obs_lateral_d", e.target.value)} />
+              </Field>
+              <Field label="Vista lateral esquerda">
+                <TextArea value={d.obs_lateral_e} onChange={(e) => set("obs_lateral_e", e.target.value)} />
+              </Field>
+            </div>
+          </>
+        )}
+        <Field label="Padrões de movimento observados (agachamento, flexão de tronco, outros)">
           <TextArea value={d.obs_movimento} onChange={(e) => set("obs_movimento", e.target.value)} />
         </Field>
       </div>

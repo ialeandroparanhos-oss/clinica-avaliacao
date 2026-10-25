@@ -18,6 +18,7 @@ import { calcularRiscoCardiovascular } from "@/lib/anamnese/riscoCardiovascular"
 import { linhasDorPorRegiao } from "@/lib/anamnese/dorPorRegiao";
 import { analisarComposicao, classificarRCEst, nivelAlvoValido, percentualGorduraIdealSugerido, relacaoCinturaEstatura } from "@/lib/avaliacao/composicaoCorporal";
 import { dataNascimentoBR, idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
+import { textoObsPostural } from "@/lib/avaliacao/posturaSimples";
 import { CAMPOS_CIRCUNFERENCIA, calcularMassaMagraRelativa, expansibilidadeToracica } from "@/lib/avaliacao/medidasRegionais";
 import { paraNumero } from "@/lib/numeros";
 import { mensagemTecnica } from "@/lib/avaliacao/whatsapp";
@@ -362,14 +363,14 @@ export default function RelatorioTecnico() {
             <FotoRelatorio label="Vista anterior" path={paciente.postural?.foto_anterior_path} />
             <FotoRelatorio label="Vista posterior" path={paciente.postural?.foto_posterior_path} />
             <FotoRelatorio label="Vista lateral direita" path={paciente.postural?.foto_lateral_d_path} />
-            <FotoRelatorio label="Vista lateral esquerda" path={paciente.postural?.foto_lateral_e_path} />
+            {paciente.postural?.foto_lateral_e_path && <FotoRelatorio label="Vista lateral esquerda" path={paciente.postural?.foto_lateral_e_path} />}
           </div>
           <dl>
-            <L label="Vista anterior" value={paciente.postural?.obs_anterior} />
-            <L label="Vista posterior" value={paciente.postural?.obs_posterior} />
-            <L label="Vista lateral direita" value={paciente.postural?.obs_lateral_d} />
-            <L label="Vista lateral esquerda" value={paciente.postural?.obs_lateral_e} />
-            <L label="Padrões de movimento" value={paciente.postural?.obs_movimento} />
+            <L label="De frente (anterior)" value={textoObsPostural(paciente.postural, "obs_anterior")} />
+            <L label="De costas (posterior)" value={textoObsPostural(paciente.postural, "obs_posterior")} />
+            <L label="De lado (lateral direita)" value={textoObsPostural(paciente.postural, "obs_lateral_d")} />
+            <L label="Vista lateral esquerda" value={textoObsPostural(paciente.postural, "obs_lateral_e")} />
+            <L label="Padrões de movimento" value={textoObsPostural(paciente.postural, "obs_movimento")} />
           </dl>
           <ParecerRelatorio
             agente="paula"
