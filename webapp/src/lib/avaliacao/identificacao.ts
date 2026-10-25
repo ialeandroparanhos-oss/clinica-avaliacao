@@ -22,6 +22,13 @@ export function idadeDaDataNascimento(dataNascimento?: string | null, hoje: Date
   return anos >= 0 && anos < 130 ? anos : null;
 }
 
+// Data de nascimento no formato dia/mês/ano. A data vem do banco como texto AAAA-MM-DD: ler com new Date() a trata
+// como meia-noite UTC e, no horário do Brasil, mostra o dia anterior. Aqui só se reordena o texto.
+export function dataNascimentoBR(dataNascimento?: string | null): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dataNascimento ?? "");
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : "";
+}
+
 export function idadeAutomatica(p: PacienteRow): number | null {
   return idadeDaDataNascimento(p.data_nascimento);
 }

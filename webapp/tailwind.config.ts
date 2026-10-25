@@ -5,22 +5,25 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: "#F6F7F5",
+        bg: "#F2F7F7",
         surface: "#FFFFFF",
-        ink: "#182420",
-        muted: "#5B6B63",
-        border: "#DFE6E1",
+        ink: "#10242B",
+        muted: "#5A6F77",
+        border: "#D8E4E6",
         accent: {
-          DEFAULT: "#2F6F5E",
-          soft: "#E4EFEA",
-          dark: "#1F4E41",
+          DEFAULT: "#0E7C7F",
+          soft: "#E1F3F2",
+          dark: "#0A5559",
         },
-        warn: "#9A6B14",
-        "warn-soft": "#FBF0DD",
-        danger: "#B3261E",
-        "danger-soft": "#FBE7E5",
-        info: "#3A5F8A",
-        "info-soft": "#E8EEF6",
+        warn: "#955A00",
+        "warn-soft": "#FFF1D4",
+        danger: "#BE2F29",
+        "danger-soft": "#FDE5E2",
+        info: "#2A5CA8",
+        "info-soft": "#E4EDFA",
+      },
+      boxShadow: {
+        card: "0 1px 2px rgba(16, 36, 43, 0.05), 0 6px 18px rgba(16, 36, 43, 0.05)",
       },
       fontFamily: {
         display: ["var(--font-fraunces)", "Georgia", "serif"],

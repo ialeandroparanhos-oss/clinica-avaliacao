@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Alerta } from "@/lib/anamnese/types";
 import { situacaoAvaliacao, type SituacaoAvaliacao } from "@/lib/avaliacao/situacaoLista";
+import { idadeDaDataNascimento } from "@/lib/avaliacao/identificacao";
 
 type LinhaPaciente = {
   id: string;
@@ -40,12 +41,7 @@ const statusStyle: Record<string, string> = {
 };
 
 function idade(dataNascimento: string) {
-  const nasc = new Date(dataNascimento);
-  const hoje = new Date();
-  let anos = hoje.getFullYear() - nasc.getFullYear();
-  const m = hoje.getMonth() - nasc.getMonth();
-  if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) anos--;
-  return anos;
+  return idadeDaDataNascimento(dataNascimento) ?? "";
 }
 
 export default function DashboardAvaliador() {

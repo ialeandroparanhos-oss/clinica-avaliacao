@@ -315,6 +315,16 @@ Soma aproximada na clínica (etapas 2 e 5 a 11, sem anamnese e sem devolutiva): 
 
 **POP em Word (24/10/2026):** o procedimento operacional padrão para o uso do sistema, com as responsabilidades, regras de segurança, passo a passo das 15 etapas, situações especiais e, no anexo, o organograma de leitura rápida, está em `POP-Uso-da-Avaliacao-Integrada.docx` (código POP-AVI-001, versão 1.0). Os tempos continuam estimativas; ao confirmá-los, atualizar o POP e este quadro juntos.
 
+## PADRÃO DE TELA — INFORMAÇÃO RECOLHIDA E NOVA PALETA (25/10/2026)
+
+Pedido do profissional: esconder mais as informações grandes e deixar as cores mais bonitas.
+
+- **Blocos que abrem e fecham** (`components/avaliador/Recolhivel.tsx`): o título e um selo curto ficam sempre à vista; o detalhe só aparece ao clicar. O bloco "Abrir tudo / Recolher tudo" (`GrupoRecolhiveis`) vale para todos os blocos do grupo. **Regra de segurança:** o que pede atenção nasce aberto — domínio em prioridade, risco cardiovascular moderado ou alto, PAR-Q+ com resposta positiva, item de ideação do PHQ-9 com pontuação, supervisão da Nina com "para conferir já", sarcopenia ou dinapenia provável, questionários complementares recomendados. Os alertas no alto da ficha continuam sempre visíveis.
+- **Onde foi aplicado:** aba Perfil Integrado (selos de contagem por classificação; cartões de domínio com o porquê escondido; explicações e "faltam dados" recolhidos; sarcopenia, discrepâncias, limitações e prioridades em blocos), aba Anamnese (cada capítulo é um bloco; só "Motivo da procura" abre sozinho), painel de questionários complementares e supervisão da Nina. **Relatórios, slides e PDFs não usam blocos recolhidos**, para não sair informação escondida na impressão.
+- **Paleta nova** (`tailwind.config.ts`): verde-azulado (teal) no lugar do verde-musgo, fundo azul-acinzentado claro, cores de aviso, perigo e informação mais nítidas, e sombra suave nos cartões brancos (`globals.css`). A troca é só nas cores-base, então qualquer ajuste de tom é feito num único arquivo.
+- **Correção junto:** a data de nascimento aparecia um dia antes (10/04/1962 mostrava 09/04/1962) no cabeçalho da ficha e no relatório técnico, e a idade na lista de pacientes trocava um dia antes do aniversário. Causa: a data guardada como texto AAAA-MM-DD era lida como meia-noite UTC, que no horário do Brasil é o dia anterior. Agora a data é reordenada como texto (`dataNascimentoBR` em `lib/avaliacao/identificacao.ts`) e a idade da lista usa o mesmo cálculo da ficha. Testado (6 verificações), incluindo o dia exato do aniversário.
+- **Texto atualizado:** a nota de sarcopenia no Perfil Integrado ainda falava da regra antiga de massa magra; agora diz que, sem a panturrilha, usa o índice de massa magra com os cortes GLIM (17 kg/m² homens, 15 kg/m² mulheres), como a I1 já fazia no cálculo.
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Com a arquitetura fixada, a próxima etapa natural é detalhar o **Agente 2 — Anamnese e Questionários**, começando pelos capítulos 7.1 a 7.8 do prompt-mestre (identificação, motivo da procura, histórico de saúde, medicamentos, histórico familiar, atividade física, sono, estilo de vida), já mapeando cada pergunta para um campo do RIP definido na Seção 3.2 deste documento — mas isso fica para quando você der o sinal de seguir.

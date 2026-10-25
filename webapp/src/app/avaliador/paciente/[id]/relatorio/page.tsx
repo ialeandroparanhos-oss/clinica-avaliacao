@@ -17,7 +17,7 @@ import { calcularPSQI } from "@/lib/anamnese/psqi";
 import { calcularRiscoCardiovascular } from "@/lib/anamnese/riscoCardiovascular";
 import { linhasDorPorRegiao } from "@/lib/anamnese/dorPorRegiao";
 import { analisarComposicao, classificarRCEst, nivelAlvoValido, percentualGorduraIdealSugerido, relacaoCinturaEstatura } from "@/lib/avaliacao/composicaoCorporal";
-import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
+import { dataNascimentoBR, idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { CAMPOS_CIRCUNFERENCIA, calcularMassaMagraRelativa, expansibilidadeToracica } from "@/lib/avaliacao/medidasRegionais";
 import { paraNumero } from "@/lib/numeros";
 import { mensagemTecnica } from "@/lib/avaliacao/whatsapp";
@@ -244,7 +244,7 @@ export default function RelatorioTecnico() {
           </p>
           <h1 className="font-display text-2xl text-ink">{paciente.nome}</h1>
           <p className="text-sm text-muted mt-1">
-            Nascimento: {new Date(paciente.data_nascimento).toLocaleDateString("pt-BR")} · Sexo: {sexoNorm === "masculino" ? "masculino" : sexoNorm === "feminino" ? "feminino" : "não informado"}{idadeNum !== null ? ` · Idade: ${idadeNum} anos` : ""}
+            Nascimento: {dataNascimentoBR(paciente.data_nascimento)} · Sexo: {sexoNorm === "masculino" ? "masculino" : sexoNorm === "feminino" ? "feminino" : "não informado"}{idadeNum !== null ? ` · Idade: ${idadeNum} anos` : ""}
           </p>
           <p className="text-xs text-muted mt-2">
             Gerado em {new Date().toLocaleString("pt-BR")} · Confiança do Perfil Integrado:{" "}

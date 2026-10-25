@@ -8,6 +8,7 @@ import { useState } from "react";
 import type { Anamnese } from "@/lib/anamnese/types";
 import { MODULOS, ROTULO_STATUS_MODULO, linkDoModulo, statusModulo, type ModuloId, type StatusModulo } from "@/lib/anamnese/modulos";
 import { Selo, type TomSelo } from "./campos";
+import { Recolhivel } from "./Recolhivel";
 
 const TOM_STATUS: Record<StatusModulo, TomSelo> = {
   respondido: "ok",
@@ -30,9 +31,14 @@ export function PainelModulos({ anamnese, idade }: { anamnese: Anamnese; idade?:
     }
   }
 
+  const respondidos = MODULOS.filter((m) => statusModulo(anamnese, m.id, idade) === "respondido").length;
+  const recomendados = MODULOS.filter((m) => statusModulo(anamnese, m.id, idade) === "sinalizado").length;
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5">
-      <h3 className="font-display text-lg text-ink mb-1">Questionários complementares</h3>
+    <Recolhivel
+      titulo="Questionários complementares"
+      resumo={`${respondidos} de ${MODULOS.length} respondidos${recomendados > 0 ? ` · ${recomendados} recomendado${recomendados > 1 ? "s" : ""}` : ""}`}
+      aberto={recomendados > 0}
+    >
       <p className="text-xs text-muted mb-3">
         O questionário base é curto. Os questionários abaixo são separados e opcionais: o paciente é convidado a respondê-los quando as respostas do base indicam, ou você
         pode enviar o link quando quiser (ele se identifica com nome e data de nascimento).
@@ -63,6 +69,6 @@ export function PainelModulos({ anamnese, idade }: { anamnese: Anamnese; idade?:
           );
         })}
       </ul>
-    </div>
+    </Recolhivel>
   );
 }

@@ -12,7 +12,8 @@ import { calcularRiscoCardiovascular } from "@/lib/anamnese/riscoCardiovascular"
 import { AlertBanner, Field, TextArea, TextInput } from "@/components/forms";
 import { SerieChart } from "@/components/SerieChart";
 import { perguntasParQ } from "@/lib/anamnese/questionnaires";
-import { calcularPerfilIntegrado, dominiosSemDado, explicarConfianca, type Classificacao, type DomainResult } from "@/lib/integracao/perfil";
+import { calcularPerfilIntegrado, dominiosSemDado, explicarConfianca } from "@/lib/integracao/perfil";
+import { CartaoDominio, GrupoRecolhiveis, Recolhivel } from "@/components/avaliador/Recolhivel";
 import type { Plano } from "@/lib/integracao/plano";
 import { AbaPlano } from "@/components/avaliador/AbaPlano";
 import { INDICADORES, extrairSerie, type LinhaHistorico } from "@/lib/integracao/historico";
@@ -29,7 +30,7 @@ import { AbaPostural } from "@/components/avaliador/AbaPostural";
 import { PainelModulos } from "@/components/avaliador/PainelModulos";
 import { statusModulo } from "@/lib/anamnese/modulos";
 import { linhasDorPorRegiao } from "@/lib/anamnese/dorPorRegiao";
-import { idadeEfetiva } from "@/lib/avaliacao/identificacao";
+import { dataNascimentoBR, idadeEfetiva } from "@/lib/avaliacao/identificacao";
 import { conectarObjetivo } from "@/lib/integracao/objetivo";
 import { triarSarcopeniaDinapenia } from "@/lib/integracao/sarcopenia";
 
@@ -75,7 +76,7 @@ export default function DetalhePaciente() {
         <div>
           <h1 className="font-display text-2xl text-ink">{paciente.nome}</h1>
           <p className="text-muted text-sm mt-1">
-            {new Date(paciente.data_nascimento).toLocaleDateString("pt-BR")} · {paciente.telefone || "sem telefone"}
+            {dataNascimentoBR(paciente.data_nascimento)} · {paciente.telefone || "sem telefone"}
           </p>
         </div>
         <div className="flex flex-col items-end gap-1 pt-1">
@@ -160,26 +161,6 @@ export default function DetalhePaciente() {
 // Aba Perfil Integrado (Agente 6) - cruza anamnese + física + postural +
 // funcional em potencialidades/limitações/riscos/prioridades
 // ---------------------------------------------------------------------------
-const ESTILO_CLASSIFICACAO: Record<Classificacao, { rotulo: string; classe: string }> = {
-  adequado: { rotulo: "Adequado", classe: "bg-accent-soft text-accent-dark border-accent/30" },
-  atencao: { rotulo: "Atenção", classe: "bg-warn-soft text-warn border-warn/30" },
-  prioridade: { rotulo: "Prioridade de intervenção", classe: "bg-danger-soft text-danger border-danger/30" },
-  investigar: { rotulo: "Necessita investigação", classe: "bg-info-soft text-info border-info/30" },
-};
-
-function CartaoDominio({ dominio }: { dominio: DomainResult }) {
-  const estilo = ESTILO_CLASSIFICACAO[dominio.classificacao];
-  return (
-    <div className={`rounded-xl border p-4 ${estilo.classe}`}>
-      <div className="flex items-center justify-between mb-1">
-        <span className="font-medium text-sm">{dominio.titulo}</span>
-        <span className="text-xs font-semibold uppercase tracking-wide">{estilo.rotulo}</span>
-      </div>
-      <p className="text-xs opacity-90 leading-relaxed">{dominio.justificativa}</p>
-    </div>
-  );
-}
-
 function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
   const perfil = useMemo(() => calcularPerfilIntegrado(paciente), [paciente]);
   const discrepancias = useMemo(() => detectarDiscrepancias(paciente), [paciente]);
@@ -192,113 +173,120 @@ function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
     media: "bg-warn-soft text-warn",
     baixa: "bg-danger-soft text-danger",
   }[perfil.confianca];
+  const contagens = [
+    { n: perfil.riscos.length, rotulo: "prioridade", plural: "prioridades", classe: "bg-danger-soft text-danger" },
+    { n: perfil.limitacoes.length, rotulo: "atenção", plural: "atenção", classe: "bg-warn-soft text-warn" },
+    { n: perfil.potencialidades.length, rotulo: "adequado", plural: "adequados", classe: "bg-accent-soft text-accent-dark" },
+    { n: semDado.length, rotulo: "a investigar", plural: "a investigar", classe: "bg-info-soft text-info" },
+  ];
+  const rotuloSarcopenia = {
+    sarcopenia_provavel: "Sarcopenia provável",
+    dinapenia_provavel: "Dinapenia provável",
+    sem_sinais: "Sem sinais nesta triagem",
+    dados_insuficientes: "Dados insuficientes",
+  }[sarcopenia.classificacao];
+  const tomSarcopenia = (
+    { sarcopenia_provavel: "danger", dinapenia_provavel: "warn", sem_sinais: "accent", dados_insuficientes: "neutro" } as const
+  )[sarcopenia.classificacao];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="rounded-2xl border border-border bg-surface p-5">
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="font-display text-lg text-ink">Painel Integrado de Saúde</h3>
           <span title={explicarConfianca(perfil)} className={`text-xs font-medium px-2.5 py-1 rounded-full ${confiancaClasse}`}>
             Confiança do perfil: {confiancaLabel}
           </span>
         </div>
-        <p className="text-xs text-muted mb-4">
-          Calculado automaticamente a partir dos dados coletados. Critérios explícitos por domínio — nunca um
-          diagnóstico. Sempre cruzar com o julgamento clínico do profissional.
-        </p>
-        {semDado.length > 0 && (
-          <div className="rounded-lg border border-border bg-bg px-3 py-2.5 mb-4 text-xs text-muted">
-            <p className="text-ink font-medium">{explicarConfianca(perfil)}</p>
-            <p className="mt-1">Para subir a confiança, falta registrar:</p>
-            <ul className="mt-1 space-y-0.5 list-disc pl-4">
-              {semDado.map((d) => (
-                <li key={d.chave}>
-                  <span className="text-ink">{d.titulo}:</span> {d.justificativa}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        <div className="grid sm:grid-cols-2 gap-3">
-          {perfil.dominios.map((d) => (
-            <CartaoDominio key={d.chave} dominio={d} />
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          {contagens.map((c) => (
+            <span key={c.rotulo} className={`rounded-full px-3 py-1 text-xs font-semibold ${c.classe} ${c.n === 0 ? "opacity-50" : ""}`}>
+              {c.n} {c.n === 1 ? c.rotulo : c.plural}
+            </span>
           ))}
         </div>
+
+        <div className="mt-4 space-y-2">
+          <Recolhivel pequeno titulo="Como ler este painel">
+            <p className="text-xs leading-relaxed">
+              Calculado automaticamente a partir dos dados coletados, com critérios explícitos por domínio. Nunca é um diagnóstico: sempre cruze com o seu julgamento clínico. Clique num domínio para ver o porquê da classificação.
+            </p>
+          </Recolhivel>
+          {semDado.length > 0 && (
+            <Recolhivel pequeno tom="info" titulo={`Faltam dados em ${semDado.length} de ${perfil.dominios.length} domínios`} resumo="ver o que falta">
+              <p className="text-xs font-medium">{explicarConfianca(perfil)}</p>
+              <p className="mt-1 text-xs">Para subir a confiança, falta registrar:</p>
+              <ul className="mt-1 space-y-0.5 list-disc pl-4 text-xs">
+                {semDado.map((d) => (
+                  <li key={d.chave}>
+                    <span className="font-medium">{d.titulo}:</span> {d.justificativa}
+                  </li>
+                ))}
+              </ul>
+            </Recolhivel>
+          )}
+        </div>
+
+        <GrupoRecolhiveis className="mt-5">
+          <div className="grid sm:grid-cols-2 gap-3 items-start">
+            {perfil.dominios.map((d) => (
+              <CartaoDominio key={d.chave} dominio={d} />
+            ))}
+          </div>
+        </GrupoRecolhiveis>
       </div>
 
       <PainelSupervisao paciente={paciente} />
 
       <ParecerNoPlano paciente={paciente} agente="perfil" />
 
-      <div
-        className={`rounded-2xl border p-5 ${
-          sarcopenia.classificacao === "sarcopenia_provavel"
-            ? "border-danger/30 bg-danger-soft"
-            : sarcopenia.classificacao === "dinapenia_provavel"
-              ? "border-warn/30 bg-warn-soft"
-              : sarcopenia.classificacao === "sem_sinais"
-                ? "border-accent/30 bg-accent-soft"
-                : "border-border bg-surface"
-        }`}
+      <Recolhivel
+        tom={tomSarcopenia}
+        aberto={sarcopenia.classificacao === "sarcopenia_provavel" || sarcopenia.classificacao === "dinapenia_provavel"}
+        titulo="Sarcopenia / dinapenia (triagem aproximada)"
+        resumo={rotuloSarcopenia}
       >
-        <h4 className="font-display text-base text-ink mb-1">
-          Sarcopenia / dinapenia (triagem aproximada) —{" "}
-          {
-            {
-              sarcopenia_provavel: "Sarcopenia provável",
-              dinapenia_provavel: "Dinapenia provável",
-              sem_sinais: "Sem sinais nesta triagem",
-              dados_insuficientes: "Dados insuficientes",
-            }[sarcopenia.classificacao]
-          }
-        </h4>
-        <p className="text-sm text-muted mb-1">{sarcopenia.justificativa}</p>
-        <p className="text-xs text-muted">
-          Usa força (dinamometria, 5x Sit-to-Stand ou Rikli &amp; Jones, critério EWGSOP2) e, para a massa muscular, a circunferência
-          da panturrilha (&lt; 31 cm, a partir dos 60 anos) ou, sem ela, a massa magra total comparada à meta do paciente (regra do
-          sistema, sem validação publicada). Não é o padrão-ouro (massa muscular apendicular por DXA). Nunca é diagnóstico;
-          confirmação requer avaliação validada.
+        <p className="text-sm">{sarcopenia.justificativa}</p>
+        <p className="mt-2 text-xs">
+          Usa força (dinamometria, 5x Sit-to-Stand ou Rikli &amp; Jones, critério EWGSOP2) e, para a massa muscular, a circunferência da panturrilha (&lt; 31 cm, a partir dos 60 anos) ou, sem ela, o índice de massa magra (corte GLIM de 17 kg/m² para homens e 15 kg/m² para mulheres). Não é o padrão-ouro (massa muscular apendicular por DXA). Nunca é diagnóstico; a confirmação exige avaliação validada.
         </p>
-      </div>
+      </Recolhivel>
 
       {discrepancias.length > 0 && (
-        <div className="rounded-2xl border border-info/30 bg-info-soft p-5">
-          <h4 className="font-display text-base text-info mb-2">Discrepâncias a investigar</h4>
-          <p className="text-xs text-info/80 mb-3">
-            Pontos onde o autorrelato do paciente e os achados objetivos (fotos, observações, testes) parecem não
-            bater — não é acusação de que o paciente "errou", é um convite a conversar sobre isso na devolutiva.
+        <Recolhivel tom="info" titulo="Discrepâncias a investigar" resumo={`${discrepancias.length}`}>
+          <p className="text-xs mb-3">
+            Pontos onde o autorrelato do paciente e os achados objetivos (fotos, observações, testes) parecem não bater. Não é acusação de que o paciente "errou": é um convite a conversar sobre isso na devolutiva.
           </p>
-          <ul className="space-y-2 text-sm text-info">
+          <ul className="space-y-2 text-sm">
             {discrepancias.map((disc, i) => (
               <li key={i}>
                 <strong>{disc.titulo}</strong>
-                <p className="text-info/80">{disc.descricao}</p>
+                <p className="opacity-85">{disc.descricao}</p>
               </li>
             ))}
           </ul>
-        </div>
+        </Recolhivel>
       )}
 
       {perfil.riscos.length > 0 && (
-        <div className="rounded-2xl border border-danger/30 bg-danger-soft p-5">
-          <h4 className="font-display text-base text-danger mb-2">Riscos / Prioridade de intervenção</h4>
-          <ul className="space-y-1 text-sm text-danger">
+        <Recolhivel tom="danger" aberto titulo="Riscos / Prioridade de intervenção" resumo={`${perfil.riscos.length}`}>
+          <ul className="space-y-1 text-sm">
             {perfil.riscos.map((d) => (
               <li key={d.chave}>
                 <strong>{d.titulo}:</strong> {d.justificativa}
               </li>
             ))}
           </ul>
-        </div>
+        </Recolhivel>
       )}
 
-      <div className="grid sm:grid-cols-2 gap-5">
-        <div className="rounded-2xl border border-accent/30 bg-accent-soft p-5">
-          <h4 className="font-display text-base text-accent-dark mb-2">Potencialidades</h4>
+      <div className="grid sm:grid-cols-2 gap-5 items-start">
+        <Recolhivel tom="accent" aberto titulo="Potencialidades" resumo={`${perfil.potencialidades.length}`}>
           {perfil.potencialidades.length === 0 ? (
-            <p className="text-sm text-accent-dark/70">Nenhum domínio classificado como adequado ainda.</p>
+            <p className="text-sm">Nenhum domínio classificado como adequado ainda.</p>
           ) : (
-            <ul className="space-y-1 text-sm text-accent-dark">
+            <ul className="space-y-1 text-sm">
               {perfil.potencialidades.map((d) => (
                 <li key={d.chave}>
                   <strong>{d.titulo}</strong>
@@ -306,14 +294,13 @@ function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
               ))}
             </ul>
           )}
-        </div>
+        </Recolhivel>
 
-        <div className="rounded-2xl border border-warn/30 bg-warn-soft p-5">
-          <h4 className="font-display text-base text-warn mb-2">Limitações</h4>
+        <Recolhivel tom="warn" titulo="Limitações" resumo={`${perfil.limitacoes.length}`}>
           {perfil.limitacoes.length === 0 ? (
-            <p className="text-sm text-warn/70">Nenhum domínio classificado como atenção no momento.</p>
+            <p className="text-sm">Nenhum domínio classificado como atenção no momento.</p>
           ) : (
-            <ul className="space-y-1 text-sm text-warn">
+            <ul className="space-y-1 text-sm">
               {perfil.limitacoes.map((d) => (
                 <li key={d.chave}>
                   <strong>{d.titulo}:</strong> {d.justificativa}
@@ -321,13 +308,12 @@ function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
               ))}
             </ul>
           )}
-        </div>
+        </Recolhivel>
       </div>
 
-      <div className="rounded-2xl border border-border bg-surface p-5">
-        <h4 className="font-display text-base text-ink mb-2">Prioridades sugeridas (ordem)</h4>
+      <Recolhivel aberto titulo="Prioridades sugeridas (ordem)" resumo={`${perfil.prioridades.length}`}>
         {perfil.prioridades.length === 0 ? (
-          <p className="text-sm text-muted">Nenhuma prioridade identificada com os dados atuais.</p>
+          <p className="text-sm">Nenhuma prioridade identificada com os dados atuais.</p>
         ) : (
           <ol className="space-y-2 text-sm text-ink list-decimal list-inside">
             {perfil.prioridades.map((d) => {
@@ -345,12 +331,14 @@ function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
             })}
           </ol>
         )}
-        <p className="text-xs text-muted mt-3">
-          Quando há uma palavra-chave em comum com o que o paciente escreveu no capítulo "Motivo da procura", a
-          conexão aparece acima — é um apoio heurístico para começar a conversa, não uma ligação garantida. O
-          profissional sempre confirma e refina essa conexão ao montar o plano.
-        </p>
-      </div>
+        <div className="mt-3">
+          <Recolhivel pequeno titulo="Como a conexão com o objetivo é feita">
+            <p className="text-xs leading-relaxed">
+              Quando há uma palavra-chave em comum com o que o paciente escreveu no capítulo "Motivo da procura", a conexão aparece acima. É um apoio para começar a conversa, não uma ligação garantida: o profissional sempre confirma e refina ao montar o plano.
+            </p>
+          </Recolhivel>
+        </div>
+      </Recolhivel>
     </div>
   );
 }
@@ -498,12 +486,11 @@ function Linha({ label, value }: { label: string; value: any }) {
   );
 }
 
-function Capitulo({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+function Capitulo({ titulo, children, aberto = false }: { titulo: string; children: React.ReactNode; aberto?: boolean }) {
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5">
-      <h3 className="font-display text-lg text-ink mb-2">{titulo}</h3>
-      <dl>{children}</dl>
-    </div>
+    <Recolhivel titulo={titulo} aberto={aberto}>
+      <dl className="text-ink">{children}</dl>
+    </Recolhivel>
   );
 }
 
@@ -550,7 +537,7 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
   const riscoCV = calcularRiscoCardiovascular(paciente);
 
   return (
-    <div className="space-y-4">
+    <GrupoRecolhiveis className="space-y-4">
       <p className="text-xs text-muted uppercase tracking-wide">Status: {status}</p>
 
       <AnamneseNaClinica paciente={paciente} status={status} />
@@ -569,7 +556,7 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
         <Linha label="Atividades diárias" value={anamnese.contexto.atividades_diarias} />
       </Capitulo>
 
-      <Capitulo titulo="Motivo da procura">
+      <Capitulo titulo="Motivo da procura" aberto>
         <Linha label="Motivo" value={anamnese.motivo.motivo_procura} />
         <Linha label="Queixa principal" value={anamnese.motivo.queixa_principal} />
         <Linha label="Dificuldades no dia a dia" value={anamnese.motivo.dificuldades} />
@@ -591,33 +578,24 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
       </Capitulo>
 
       {riscoCV && (
-        <div
-          className={`rounded-2xl border p-5 ${
-            riscoCV.classificacao === "alto"
-              ? "border-danger/30 bg-danger-soft"
-              : riscoCV.classificacao === "moderado"
-                ? "border-warn/30 bg-warn-soft"
-                : "border-accent/30 bg-accent-soft"
-          }`}
+        <Recolhivel
+          tom={riscoCV.classificacao === "alto" ? "danger" : riscoCV.classificacao === "moderado" ? "warn" : "accent"}
+          aberto={riscoCV.classificacao !== "baixo"}
+          titulo="Risco cardiovascular (triagem rápida)"
+          resumo={{ baixo: "Baixo", moderado: "Moderado", alto: "Alto" }[riscoCV.classificacao]}
         >
-          <h3 className="font-display text-lg text-ink mb-1">
-            Risco cardiovascular (triagem rápida) —{" "}
-            {{ baixo: "Baixo", moderado: "Moderado", alto: "Alto" }[riscoCV.classificacao]}
-          </h3>
-          <p className="text-sm text-muted mb-2">{riscoCV.justificativa}</p>
+          <p className="text-sm mb-2">{riscoCV.justificativa}</p>
           {riscoCV.fatores.length > 0 && (
-            <p className="text-sm text-ink">
+            <p className="text-sm">
               <strong>Fatores presentes:</strong> {riscoCV.fatores.map((f) => f.rotulo).join(", ")}
             </p>
           )}
-          {riscoCV.fatorProtetor && <p className="text-sm text-ink">HDL alto conhecido - descontado 1 fator de risco.</p>}
-          <p className="text-xs text-muted mt-2">
-            Baseado na estratificação de fatores de risco do ACSM - triagem para apoiar a decisão de liberação
-            médica antes de testes de esforço, nunca um diagnóstico.
+          {riscoCV.fatorProtetor && <p className="text-sm">HDL alto conhecido - descontado 1 fator de risco.</p>}
+          <p className="text-xs mt-2">
+            Baseado na estratificação de fatores de risco do ACSM: triagem para apoiar a decisão de liberação médica antes de testes de esforço, nunca um diagnóstico.
           </p>
-        </div>
+        </Recolhivel>
       )}
-
       {anamnese.medicamentos.usa_medicamentos && (
         <Capitulo titulo="Medicamentos">
           {anamnese.medicamentos.lista.map((m, i) => (
@@ -719,7 +697,7 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
         </Capitulo>
       )}
 
-      <Capitulo titulo="Saúde mental e bem-estar (triagem)">
+      <Capitulo titulo="Saúde mental e bem-estar (triagem)" aberto={anamnese.saude_mental.phq9[8] !== null && anamnese.saude_mental.phq9[8] > 0}>
         <Linha
           label="Pergunta inicial: estresse/ansiedade/humor atrapalham o dia a dia?"
           value={
@@ -746,12 +724,12 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
         />
       </Capitulo>
 
-      <Capitulo titulo="Prontidão para exercício (PAR-Q+)">
+      <Capitulo titulo="Prontidão para exercício (PAR-Q+)" aberto={parqPositivos.length > 0}>
         <Linha label="Itens positivos" value={parqPositivos.map((p) => p.texto)} />
         <Linha label="Outro motivo (detalhe)" value={anamnese.prontidao.other_reason_detalhe} />
         {parqPositivos.length === 0 && <p className="text-sm text-muted py-2">Nenhuma resposta positiva.</p>}
       </Capitulo>
-    </div>
+    </GrupoRecolhiveis>
   );
 }
 

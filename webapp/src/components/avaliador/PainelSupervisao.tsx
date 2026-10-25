@@ -8,6 +8,7 @@ import type { PacienteRow } from "@/lib/anamnese/types";
 import { supervisionar, type NivelSupervisao } from "@/lib/avaliacao/supervisao";
 import { Selo, type TomSelo } from "./campos";
 import AgenteAvatar from "./AgenteAvatar";
+import { Recolhivel } from "./Recolhivel";
 
 const TOM: Record<NivelSupervisao, TomSelo> = { alerta: "alerta", atencao: "atencao", ok: "ok" };
 const ROTULO: Record<NivelSupervisao, string> = { alerta: "Conferir já", atencao: "Atenção", ok: "Ok" };
@@ -15,19 +16,15 @@ const ROTULO: Record<NivelSupervisao, string> = { alerta: "Conferir já", atenca
 export function PainelSupervisao({ paciente, compacto = false }: { paciente: PacienteRow; compacto?: boolean }) {
   const r = useMemo(() => supervisionar(paciente), [paciente]);
   const faltam = r.cobertura.filter((c) => !c.registrado);
-  return (
-    <div className="rounded-2xl border border-border bg-surface p-5 space-y-3 break-inside-avoid">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-3">
-          <AgenteAvatar id="nina" tamanho={44} titulo="Ilustração da Dra. Nina" />
-          <h3 className="font-display text-lg text-ink">Supervisão da Dra. Nina</h3>
-        </div>
-        <div className="flex flex-wrap gap-2 text-xs">
-          <Selo tom={r.alertas > 0 ? "alerta" : "ok"}>{r.alertas} para conferir já</Selo>
-          <Selo tom={r.atencoes > 0 ? "atencao" : "ok"}>{r.atencoes} de atenção</Selo>
-          <Selo tom={faltam.length > 0 ? "neutro" : "ok"}>{r.cobertura.length - faltam.length} de {r.cobertura.length} áreas com dado</Selo>
-        </div>
-      </div>
+  const selos = (
+    <div className="flex flex-wrap gap-2 text-xs">
+      <Selo tom={r.alertas > 0 ? "alerta" : "ok"}>{r.alertas} para conferir já</Selo>
+      <Selo tom={r.atencoes > 0 ? "atencao" : "ok"}>{r.atencoes} de atenção</Selo>
+      <Selo tom={faltam.length > 0 ? "neutro" : "ok"}>{r.cobertura.length - faltam.length} de {r.cobertura.length} áreas com dado</Selo>
+    </div>
+  );
+  const detalhe = (
+    <div className="space-y-3">
       {!compacto && (
         <p className="text-xs text-muted leading-relaxed">
           Confere, antes de emitir os relatórios, se tudo o que foi avaliado está refletido, se os achados de uma área não contradizem os de outra e se os pareceres estão completos, atualizados e revisados. São avisos para você conferir, não diagnóstico.
@@ -59,6 +56,30 @@ export function PainelSupervisao({ paciente, compacto = false }: { paciente: Pac
           ))}
         </div>
       </div>
+    </div>
+  );
+  const titulo = (
+    <span className="flex items-center gap-3">
+      <AgenteAvatar id="nina" tamanho={40} titulo="Ilustração da Dra. Nina" />
+      <span className="font-display text-lg text-ink">Supervisão da Dra. Nina</span>
+    </span>
+  );
+
+  // Na tela, o detalhe fica recolhido (abre sozinho se algo pede conferência já). No relatório, tudo aparece.
+  if (!compacto) {
+    return (
+      <Recolhivel titulo={titulo} resumo={selos} aberto={r.alertas > 0}>
+        {detalhe}
+      </Recolhivel>
+    );
+  }
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-5 space-y-3 break-inside-avoid">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {titulo}
+        {selos}
+      </div>
+      {detalhe}
     </div>
   );
 }
