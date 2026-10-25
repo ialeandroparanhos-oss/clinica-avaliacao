@@ -295,6 +295,8 @@ Pergunta feita a cada agente: o que você faz hoje no sistema, isso corresponde 
 
 **Décima quarta parte (19/10/2026): N1, R1, C1 e I1 feitas.** Coluna "Avaliação" na lista de pacientes; Wu 2026 (PMID 42574013, resumo lido) na base da Dra. Rita; nos slides, Ruim vira "acima do desejável", Muito ruim "bem acima do desejável", Acima da média "melhor que a média" e Abaixo da média "pior que a média"; triagem de sarcopenia pelo índice de massa magra (GLIM 17/15 kg/m²) no lugar da regra de 90% da meta. Só a I2 aguarda decisão. Detalhe em `01`, `04`, `05`, `07` e `11`.
 
+**Décima quinta parte (24/10/2026): I2 feita em parte e P2 em andamento.** A etiqueta "Texto escrito por IA, ainda não revisado" está nas 30 condições da aba Condições de saúde, com contagem e primeiro lote de revisão (hipertensão, diabetes, obesidade, dor lombar e artrose) na página Estudos; a revisão clínica é do profissional. Com os 2 primeiros vídeos reais, a P2 corrigiu o desvio lateral de 176° na flexão de frente e o conselho de afastar a câmera quando os pés estavam dentro da imagem; os limites de tolerância não mudaram. Detalhe em `03`, `05` e `11`.
+
 ## Registro de referências verificadas no PubMed (08/10/2026)
 
 Todas abaixo tiveram a existência e o título conferidos no PubMed (consulta por revista, ano, volume e primeira página). Conferir a existência **não** é o mesmo que ler o texto completo: o que cada uma sustenta no sistema está descrito em `src/lib/agentes.ts`.

@@ -63,7 +63,7 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
   resumo: [
     "Primeira revisão semanal. Sem erro técnico: 12 testes de lógica passaram, o repositório está sem pendências e a revisão da literatura está em dia (18 de 180 dias).",
     "Dos pacientes na base, todos concluíram a anamnese, mas só metade tem avaliação física iniciada, e todo %G registrado veio de dobras (nenhum de bioimpedância).",
-    "A varredura de literatura (2025 em diante) achou 3 estudos úteis, sem nada que obrigue a mudar uma regra hoje. Das 10 propostas, o profissional decidiu 9 no mesmo dia: 6 feitas (S1, P1, N1, R1, C1 e I1), 1 recusada (M1), 1 adiada (M2, sem o livro) e 1 para ele fazer (P2); só a I2 segue aguardando decisão, com a opinião do agente.",
+    "A varredura de literatura (2025 em diante) achou 3 estudos úteis, sem nada que obrigue a mudar uma regra hoje. Das 10 propostas, o profissional decidiu 9 no mesmo dia: 6 feitas (S1, P1, N1, R1, C1 e I1), 1 recusada (M1), 1 adiada (M2, sem o livro) e 1 para ele fazer (P2); em 24/10/2026 o profissional também aprovou a I2 (etiqueta \"texto escrito por IA, ainda não revisado\" nas condições), e agora todas as propostas estão decididas.",
   ],
   verificacoes: [
     { rotulo: "Testes de lógica (12 conjuntos)", resultado: "todos passaram", ok: true },
@@ -178,7 +178,7 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
           evidencia: "Pendência registrada em 17/10/2026.",
           opiniao: "Recomendo fazer assim que possível: com 3 a 5 vídeos de movimentos diferentes (de lado e de frente), eu ajusto os limites. Sem exemplos reais, os limites podem reprovar vídeos bons ou aprovar vídeos ruins.",
           status: "aprovada",
-          decisao: "O profissional vai enviar os vídeos (19/10/2026). Em 24/10/2026 pediu para fazer a P2 com o que já existe: havia 2 vídeos reais de 1 paciente (flexão de tronco, de lado e de frente). Corrigidos dois defeitos que eles mostraram (desvio lateral de 176° na flexão de frente; conselho de afastar a câmera quando os pés estavam dentro da imagem, só sem leitura). Os limites de tolerância não foram mexidos: com 2 vídeos de 1 movimento não há base. Falta o profissional dizer se o veredito do vídeo de frente (reprovado) bateu com o que viu, e mais vídeos de outros movimentos.",
+          decisao: "O profissional vai enviar os vídeos (19/10/2026). Em 24/10/2026 pediu para fazer a P2 com o que já existe: havia 2 vídeos reais de 1 paciente (flexão de tronco, de lado e de frente). Corrigidos dois defeitos que eles mostraram (desvio lateral de 176° na flexão de frente; conselho de afastar a câmera quando os pés estavam dentro da imagem, só sem leitura). Os limites de tolerância não foram mexidos: com 2 vídeos de 1 movimento não há base. O profissional confirmou (24/10/2026) que o veredito de reprovado do vídeo de frente bateu com o que ele viu. Falta enviar vídeos de outros movimentos; o profissional pediu os desenhos de como filmar cada um, que estão no POP (etapa 9) e no arquivo Guia-de-filmagem-dos-movimentos.png.",
         },
       ],
     },
@@ -228,7 +228,8 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
           risco: "Médio se não for revisado.",
           evidencia: "Pendência registrada em 09/10/2026.",
           opiniao: "Recomendo em duas partes. Já: colocar em cada condição a etiqueta \"texto escrito por IA, ainda não revisado\", que só some quando você marcar como revisado, para ninguém tomar o texto por conferido. Depois: revisar em lotes de 5 condições, começando pelas mais comuns na clínica (hipertensão, diabetes, obesidade, dor lombar, artrose) e deixando por último as que já têm fonte.",
-          status: "aguardando_decisao",
+          status: "aprovada",
+          decisao: "Aprovada em 24/10/2026. A etiqueta \"Texto escrito por IA, ainda não revisado\" já está em todas as 30 condições (no item da lista e no painel), com contagem no topo da aba e na página Estudos. Ela só some quando o profissional disser quais condições revisou; aí entram autor e data. Primeiro lote sugerido: hipertensão, diabetes, obesidade, dor lombar e artrose.",
         },
       ],
     },
@@ -272,7 +273,8 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
     },
   ],
   lembretes: [
-    "P2 (em andamento): já corrigidos dois defeitos com os 2 primeiros vídeos reais. Para calibrar os limites faltam: dizer se o veredito do vídeo de frente (reprovado) bateu com o que você viu, e enviar vídeos de outros movimentos (agachamento, elevação dos braços, extensão e inclinação lateral), de lado e de frente.",
+    "I2 (em andamento): a etiqueta já está nas 30 condições; a revisão clínica dos textos é sua. Diga quais condições você revisou (sugestão: hipertensão, diabetes, obesidade, dor lombar e artrose) e a etiqueta sai dessas, com seu nome e a data.",
+    "P2 (em andamento): já corrigidos dois defeitos com os 2 primeiros vídeos reais. Você já confirmou que o veredito do vídeo de frente (reprovado) bateu com o que viu. Para calibrar os limites faltam vídeos de outros movimentos (agachamento, elevação dos braços, extensão e inclinação lateral), de lado e de frente, filmados como no guia de desenhos (POP, etapa 9).",
   ],
   candidatos: [
     {

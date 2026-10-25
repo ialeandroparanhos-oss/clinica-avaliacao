@@ -6,7 +6,7 @@
 
 import { useMemo, useState } from "react";
 import type { PacienteRow } from "@/lib/anamnese/types";
-import { CATALOGO, buscarCondicoes, condicaoPorId, condicoesSemFonte, referenciasUsadas, type Condicao, type GrupoCondicao } from "@/lib/condicoes/catalogo";
+import { CATALOGO, ROTULO_NAO_REVISADO, buscarCondicoes, condicaoPorId, condicaoRevisada, condicoesNaoRevisadas, condicoesSemFonte, referenciasUsadas, type Condicao, type GrupoCondicao } from "@/lib/condicoes/catalogo";
 import { condicoesDoPaciente } from "@/lib/condicoes/deteccao";
 import { referenciaPorId } from "@/lib/agentes";
 import { paraNumero } from "@/lib/numeros";
@@ -37,6 +37,13 @@ function Painel({ c, paciente }: { c: Condicao; paciente: PacienteRow }) {
   const fontes = (c.fontes ?? []).map((id) => referenciaPorId(id)).filter(Boolean) as NonNullable<ReturnType<typeof referenciaPorId>>[];
   return (
     <div className="mt-2 rounded-xl border border-border bg-bg p-4 space-y-3 text-sm">
+      {condicaoRevisada(c) ? (
+        <p className="rounded-lg bg-accent-soft text-accent-dark px-3 py-2 text-xs">Texto revisado clinicamente por {c.revisao!.por} em {c.revisao!.em.split("-").reverse().join("/")}.</p>
+      ) : (
+        <p className="rounded-lg bg-warn-soft text-warn px-3 py-2 text-xs font-medium">
+          {ROTULO_NAO_REVISADO}. Confira com a sua avaliação e com o médico do paciente antes de usar este texto numa conduta ou numa conversa com o paciente.
+        </p>
+      )}
       {dado && <p className="rounded-lg bg-info-soft text-info px-3 py-2">{dado}</p>}
       <div>
         <p className="text-xs uppercase tracking-wide text-muted font-semibold">O que é</p>
@@ -104,6 +111,7 @@ function Item({ c, aberto, onToggle, origens, paciente }: { c: Condicao; aberto:
       >
         <span>
           <span className="font-medium text-ink">{c.nome}</span>
+          {!condicaoRevisada(c) && <span className="ml-2 align-middle text-[11px] font-medium rounded-full bg-warn-soft text-warn px-2 py-0.5">{ROTULO_NAO_REVISADO}</span>}
           {origens && origens.length > 0 && <span className="block text-xs text-muted mt-0.5">Citada em: {origens.join("; ")}</span>}
         </span>
         <span className="text-muted text-sm shrink-0">{aberto ? "Fechar" : "Ver explicação"}</span>
@@ -127,6 +135,7 @@ export function AbaCondicoes({ paciente }: { paciente: PacienteRow }) {
 
   const referencias = useMemo(() => referenciasUsadas(), []);
   const semFonte = useMemo(() => condicoesSemFonte(), []);
+  const naoRevisadas = useMemo(() => condicoesNaoRevisadas(), []);
   const idsDetectados = new Set(det.condicoes.map((d) => d.id));
   // Sem busca, as condições já citadas ficam só na lista de cima (evita o mesmo item duas vezes na tela).
   const resultado = useMemo(() => buscarCondicoes(busca).filter((c) => busca.trim() !== "" || !idsDetectados.has(c.id)), [busca, det]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -143,6 +152,9 @@ export function AbaCondicoes({ paciente }: { paciente: PacienteRow }) {
             <p className="text-xs text-muted">Dra. Íris: integração e interpretação clínica</p>
           </div>
         </div>
+        <p className="text-xs text-warn font-medium">
+          {naoRevisadas.length === 0 ? "Todos os textos do catálogo foram revisados clinicamente." : `${naoRevisadas.length} de ${CATALOGO.length} condições ainda têm texto escrito por IA sem revisão clínica (etiqueta amarela em cada uma).`}
+        </p>
         <p className="text-sm text-muted leading-relaxed">
           Para tirar dúvidas sobre o que o paciente relatou. Clique numa condição para ver, em tópicos, o que é, por que importa para a avaliação e o exercício, os cuidados, os sinais de alerta e quando encaminhar. É texto educativo do sistema: não faz diagnóstico, não prescreve e não substitui o médico do paciente.
         </p>

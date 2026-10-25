@@ -24,7 +24,13 @@ export type Condicao = {
   encaminhar: string;
   noApp?: string;
   fontes?: string[]; // ids em lib/agentes.ts (referenciaPorId)
+  // Preenchido só quando o profissional revisou o texto clinicamente (I2, 24/10/2026). Enquanto não houver,
+  // a tela mostra a etiqueta "texto escrito por IA, ainda não revisado". Quem preenche é o profissional,
+  // dizendo quais condições revisou: nunca por conta própria do sistema.
+  revisao?: { por: string; em: string }; // em = data ISO (AAAA-MM-DD)
 };
+
+export const ROTULO_NAO_REVISADO = "Texto escrito por IA, ainda não revisado";
 
 export const CATALOGO: Condicao[] = [
   // ------------------------------------------------------------------ Cardiovascular
@@ -581,6 +587,18 @@ export function referenciasUsadas(): { referencia: Referencia; condicoes: string
   }
   return Array.from(mapa.values()).sort((a, b) => a.referencia.citacao.localeCompare(b.referencia.citacao, "pt"));
 }
+
+export function condicaoRevisada(c: Condicao): boolean {
+  return !!c.revisao && c.revisao.por.trim() !== "" && c.revisao.em.trim() !== "";
+}
+
+export function condicoesNaoRevisadas(): Condicao[] {
+  return CATALOGO.filter((c) => !condicaoRevisada(c));
+}
+
+// Primeiro lote da revisão clínica (I2): as condições mais comuns na clínica. Os lotes seguintes seguem a ordem do
+// catálogo, deixando por último as que já têm fonte conferida.
+export const LOTE_REVISAO_1: string[] = ["hipertensao", "diabetes", "obesidade", "lombalgia", "osteoartrite"];
 
 export function condicoesSemFonte(): Condicao[] {
   return CATALOGO.filter((c) => !c.fontes || c.fontes.length === 0);

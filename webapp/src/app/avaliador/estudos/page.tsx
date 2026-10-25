@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import AgenteAvatar from "@/components/avaliador/AgenteAvatar";
 import { AGENTES_SISTEMA, REVISAO_LITERATURA, diasDesdeRevisao, referenciasDoAgente, revisaoVencida, type AgenteId } from "@/lib/agentes";
-import { condicoesSemFonte, referenciasUsadas } from "@/lib/condicoes/catalogo";
+import { CATALOGO, LOTE_REVISAO_1, condicaoPorId, condicoesNaoRevisadas, condicoesSemFonte, referenciasUsadas } from "@/lib/condicoes/catalogo";
 import { PENDENCIAS, TEMAS_BUSCA, linkPmid, linkPubMed } from "@/lib/estudos";
 import { INTERVALO_REVISAO_DIAS, ULTIMA_REVISAO_SEMANAL as REV, diasDesdeRevisaoSemanal, revisaoSemanalAtrasada } from "@/lib/revisaoSemanal";
 
@@ -28,6 +28,7 @@ export default function Estudos() {
   const totalSugestoes = REV.agentes.reduce((n, a) => n + a.sugestoes.filter((s) => s.status === "aguardando_decisao").length, 0);
   const refsCondicoes = useMemo(() => referenciasUsadas(), []);
   const semFonte = useMemo(() => condicoesSemFonte(), []);
+  const naoRevisadas = useMemo(() => condicoesNaoRevisadas(), []);
 
   return (
     <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
@@ -270,6 +271,9 @@ export default function Estudos() {
         <h2 className="font-display text-lg text-ink">Aba Condições de saúde</h2>
         <p className="text-sm text-muted">
           {refsCondicoes.length} referências conferidas no PubMed; {semFonte.length} condições seguem sem fonte conferida (texto educativo geral do sistema): {semFonte.map((c) => c.nome).join("; ")}.
+        </p>
+        <p className="text-sm text-muted">
+          <strong className="text-ink">Revisão clínica dos textos (I2):</strong> {CATALOGO.length - naoRevisadas.length} de {CATALOGO.length} revisadas. Cada texto não revisado mostra a etiqueta "texto escrito por IA, ainda não revisado" na aba do paciente; ela só some quando o profissional informa que revisou. Primeiro lote sugerido: {LOTE_REVISAO_1.map((id) => condicaoPorId(id)?.nome.split(" (")[0] ?? id).join("; ")}.
         </p>
         <ul className="text-sm space-y-1">
           {["Hipertensão, doença do coração e AVC", "Diabetes e obesidade", "Asma, DPOC e apneia", "Dor lombar, artrose, osteoporose e fibromialgia", "Depressão e câncer"].map((rotulo, i) => {
