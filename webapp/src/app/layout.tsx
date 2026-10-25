@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Manrope, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -23,6 +23,12 @@ const mono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "Avaliação Integrada",
   description: "Avaliação integrada de saúde, física e funcional",
+  // Ícone ao adicionar à tela inicial: vem de app/apple-icon.png e app/icon.png; o manifesto está em app/manifest.ts.
+  appleWebApp: { capable: true, title: "Avaliação Integrada", statusBarStyle: "default" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0B1F40",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
