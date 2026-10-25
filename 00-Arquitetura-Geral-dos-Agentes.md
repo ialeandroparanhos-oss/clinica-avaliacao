@@ -313,6 +313,8 @@ Pedido do profissional: mostrar a sequência da avaliação, com todos os testes
 
 Soma aproximada na clínica (etapas 2 e 5 a 11, sem anamnese e sem devolutiva): de 1h15 a 2h15. O tempo do teste funcional varia muito: só o teste de caminhada de 6 minutos pede 10 minutos de repouso antes e 6 de teste (documento 04).
 
+**POP em Word (24/10/2026):** o procedimento operacional padrão para o uso do sistema, com as responsabilidades, regras de segurança, passo a passo das 15 etapas, situações especiais e, no anexo, o organograma de leitura rápida, está em `POP-Uso-da-Avaliacao-Integrada.docx` (código POP-AVI-001, versão 1.0). Os tempos continuam estimativas; ao confirmá-los, atualizar o POP e este quadro juntos.
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Com a arquitetura fixada, a próxima etapa natural é detalhar o **Agente 2 — Anamnese e Questionários**, começando pelos capítulos 7.1 a 7.8 do prompt-mestre (identificação, motivo da procura, histórico de saúde, medicamentos, histórico familiar, atividade física, sono, estilo de vida), já mapeando cada pergunta para um campo do RIP definido na Seção 3.2 deste documento — mas isso fica para quando você der o sinal de seguir.
