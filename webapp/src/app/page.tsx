@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { Marca } from "@/components/Marca";
+import { Abertura } from "@/components/Abertura";
 
 export default function Home() {
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-12">
+      <Abertura />
       <div className="w-full max-w-3xl">
         <div className="text-center mb-10">
           <Marca />
