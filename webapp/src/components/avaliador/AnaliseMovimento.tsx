@@ -249,7 +249,7 @@ function BlocoVista({
           <div
             className={`rounded-lg border px-3 py-2 space-y-1.5 ${
               valor.analise_video.adequacao.veredito === "adequado"
-                ? "border-accent/40 bg-accent-soft"
+                ? "border-ok/40 bg-ok-soft"
                 : valor.analise_video.adequacao.veredito === "com_ressalvas"
                   ? "border-warn bg-warn-soft"
                   : "border-danger bg-danger-soft"
@@ -265,7 +265,7 @@ function BlocoVista({
               <ul className="mt-1.5 space-y-1">
                 {valor.analise_video.adequacao.criterios.map((c) => (
                   <li key={c.chave} className="flex gap-2">
-                    <span className={`shrink-0 font-semibold ${c.estado === "ok" ? "text-accent-dark" : c.estado === "atencao" ? "text-warn" : "text-danger"}`}>{c.estado === "ok" ? "✓" : c.estado === "atencao" ? "!" : "✕"}</span>
+                    <span className={`shrink-0 font-semibold ${c.estado === "ok" ? "text-ok-dark" : c.estado === "atencao" ? "text-warn" : "text-danger"}`}>{c.estado === "ok" ? "✓" : c.estado === "atencao" ? "!" : "✕"}</span>
                     <span className="text-ink">
                       <strong>{c.rotulo}:</strong> {c.detalhe}
                     </span>

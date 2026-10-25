@@ -178,7 +178,7 @@ export function SalvarBar({ salvando, ok, onSalvar, auto }: { salvando: boolean;
         >
           {salvando ? "Salvando..." : "Salvar"}
         </button>
-        {ok && <span className="text-sm text-accent-dark">Salvo ✓</span>}
+        {ok && <span className="text-sm text-ok-dark">Salvo ✓</span>}
         {auto && <TextoAuto estado={auto} />}
       </div>
       {auto && <p className="text-xs text-muted">O que você digita é guardado sozinho como rascunho. Use Salvar para registrar esta avaliação no histórico (comparação na reavaliação).</p>}
@@ -262,7 +262,7 @@ export type TomSelo = "info" | "ok" | "atencao" | "alerta" | "perigo" | "critico
 
 const CLASSES_SELO: Record<TomSelo, string> = {
   info: "bg-info-soft text-info border-info/30",
-  ok: "bg-accent-soft text-accent-dark border-accent/30",
+  ok: "bg-ok-soft text-ok-dark border-ok/30",
   atencao: "bg-warn-soft text-warn border-warn/30",
   alerta: "bg-danger-soft text-danger border-danger/30",
   perigo: "bg-danger/20 text-danger border-danger/50",

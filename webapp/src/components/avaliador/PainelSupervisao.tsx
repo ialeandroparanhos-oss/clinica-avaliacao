@@ -32,7 +32,7 @@ export function PainelSupervisao({ paciente, compacto = false }: { paciente: Pac
       )}
 
       {r.itens.length === 0 ? (
-        <p className="text-sm text-accent-dark">Nada a apontar: pareceres atualizados, sem conflito entre áreas.</p>
+        <p className="text-sm text-ok-dark">Nada a apontar: pareceres atualizados, sem conflito entre áreas.</p>
       ) : (
         <ul className="space-y-2">
           {r.itens.map((i, k) => (
@@ -50,7 +50,7 @@ export function PainelSupervisao({ paciente, compacto = false }: { paciente: Pac
         <p className="text-xs uppercase tracking-wide text-muted font-semibold mb-1.5">O que foi avaliado</p>
         <div className="flex flex-wrap gap-1.5 text-xs">
           {r.cobertura.map((c) => (
-            <span key={c.area} title={c.detalhe} className={`rounded-full border px-2.5 py-1 ${c.registrado ? "border-accent/40 bg-accent-soft text-accent-dark" : "border-border text-muted"}`}>
+            <span key={c.area} title={c.detalhe} className={`rounded-full border px-2.5 py-1 ${c.registrado ? "border-ok/40 bg-ok-soft text-ok-dark" : "border-border text-muted"}`}>
               {c.registrado ? "✓" : "–"} {c.area}
             </span>
           ))}

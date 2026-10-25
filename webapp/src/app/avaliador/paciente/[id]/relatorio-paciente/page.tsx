@@ -28,7 +28,7 @@ import { EnvioWhatsApp } from "@/components/avaliador/EnvioWhatsApp";
 const INDICADORES_PACIENTE = ["peso_kg", "imc", "chair_stand_reps", "tug_seg", "velocidade_marcha_ms"];
 
 const ESTILO_SITUACAO: Record<Classificacao, string> = {
-  adequado: "bg-accent-soft text-accent-dark",
+  adequado: "bg-ok-soft text-ok-dark",
   atencao: "bg-warn-soft text-warn",
   prioridade: "bg-info-soft text-info",
   investigar: "bg-surface text-muted border border-border",
@@ -255,7 +255,7 @@ export default function RelatorioPaciente() {
           <ul className="space-y-2">
             {PORQUE_VALE_A_PENA.map((t) => (
               <li key={t} className="flex items-start gap-2 text-[15px] text-ink leading-relaxed">
-                <span className="text-accent-dark mt-0.5">✓</span>
+                <span className="text-ok-dark mt-0.5">✓</span>
                 {t}
               </li>
             ))}

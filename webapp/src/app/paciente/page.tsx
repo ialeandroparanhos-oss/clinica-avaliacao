@@ -232,7 +232,7 @@ export default function PacientePage() {
       <main className="min-h-screen flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-8">
           <div className="text-center">
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft text-accent-dark text-2xl mb-4">✓</span>
+            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-accent text-gold text-2xl mb-4">✓</span>
             <h1 className="font-display text-2xl text-ink">Anamnese de {nome.split(" ")[0]} registrada</h1>
             <p className="text-muted text-sm mt-3 leading-relaxed">As respostas já estão na ficha do paciente, na aba Anamnese.</p>
             <a
@@ -278,7 +278,7 @@ export default function PacientePage() {
     return (
       <main className="min-h-screen flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-8 text-center">
-          <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft text-accent-dark text-2xl mb-4">
+          <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-accent text-gold text-2xl mb-4">
             ✓
           </span>
           <h1 className="font-display text-2xl text-ink">Obrigado(a), {nome.split(" ")[0]}!</h1>

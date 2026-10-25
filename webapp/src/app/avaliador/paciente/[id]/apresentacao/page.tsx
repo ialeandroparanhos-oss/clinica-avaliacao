@@ -29,7 +29,7 @@ const ALTURA = 720;
 const INDICADORES_PACIENTE = ["peso_kg", "imc", "chair_stand_reps", "tug_seg", "velocidade_marcha_ms"];
 
 const COR_SITUACAO: Record<Classificacao, { fundo: string; ponto: string }> = {
-  adequado: { fundo: "bg-accent-soft text-accent-dark", ponto: "bg-accent" },
+  adequado: { fundo: "bg-ok-soft text-ok-dark", ponto: "bg-ok" },
   atencao: { fundo: "bg-warn-soft text-warn", ponto: "bg-warn" },
   prioridade: { fundo: "bg-info-soft text-info", ponto: "bg-info" },
   investigar: { fundo: "bg-surface text-muted border-2 border-border", ponto: "bg-ink/30" },
@@ -172,7 +172,7 @@ export default function Apresentacao() {
             <ul className="grid grid-cols-2 gap-x-14 gap-y-7">
               {fortes.slice(0, 6).map((d) => (
                 <li key={d.chave} className="flex items-start gap-5">
-                  <span className="text-accent-dark text-[44px] leading-none">✓</span>
+                  <span className="text-ok-dark text-[44px] leading-none">✓</span>
                   <div>
                     <p className="font-display text-[34px] text-ink">{TEXTO_DOMINIO[d.chave].nome}</p>
                     <p className="text-[22px] text-muted mt-1 leading-snug">{TEXTO_DOMINIO[d.chave].bom}</p>
@@ -355,7 +355,7 @@ export default function Apresentacao() {
           <ul className="space-y-4">
             {PORQUE_VALE_A_PENA.map((t) => (
               <li key={t} className="flex items-start gap-5 text-[24px] text-ink leading-snug">
-                <span className="text-accent-dark text-[36px] leading-none">✓</span>
+                <span className="text-ok-dark text-[36px] leading-none">✓</span>
                 {t}
               </li>
             ))}
@@ -393,7 +393,7 @@ export default function Apresentacao() {
 
     // ---------------------------------------------------------------- resultados por área (com números)
     resultadosParaApresentacao(paciente, perfil).forEach((g) => {
-      const COR_LEITURA = { ok: "bg-accent-soft text-accent-dark", atencao: "bg-warn-soft text-warn", info: "bg-surface text-muted border border-border" } as const;
+      const COR_LEITURA = { ok: "bg-ok-soft text-ok-dark", atencao: "bg-warn-soft text-warn", info: "bg-surface text-muted border border-border" } as const;
       lista.push({
         id: `resultado-${g.id}`,
         nav: `Resultados: ${g.titulo}`,

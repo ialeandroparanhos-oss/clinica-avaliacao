@@ -38,7 +38,7 @@ function Painel({ c, paciente }: { c: Condicao; paciente: PacienteRow }) {
   return (
     <div className="mt-2 rounded-xl border border-border bg-bg p-4 space-y-3 text-sm">
       {condicaoRevisada(c) ? (
-        <p className="rounded-lg bg-accent-soft text-accent-dark px-3 py-2 text-xs">Texto revisado clinicamente por {c.revisao!.por} em {c.revisao!.em.split("-").reverse().join("/")}.</p>
+        <p className="rounded-lg bg-ok-soft text-ok-dark px-3 py-2 text-xs">Texto revisado clinicamente por {c.revisao!.por} em {c.revisao!.em.split("-").reverse().join("/")}.</p>
       ) : (
         <p className="rounded-lg bg-warn-soft text-warn px-3 py-2 text-xs font-medium">
           {ROTULO_NAO_REVISADO}. Confira com a sua avaliação e com o médico do paciente antes de usar este texto numa conduta ou numa conversa com o paciente.

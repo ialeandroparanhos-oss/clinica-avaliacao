@@ -7,7 +7,7 @@ export default function Home() {
       <div className="w-full max-w-3xl">
         <div className="text-center mb-10">
           <Marca />
-          <p className="text-xs font-semibold tracking-widest text-accent uppercase mb-3">
+          <p className="text-xs font-semibold tracking-widest text-gold-dark uppercase mb-3">
             Avaliação Integrada de Saúde, Física e Funcional
           </p>
           <h1 className="font-display text-3xl sm:text-4xl text-ink text-balance">
@@ -18,9 +18,9 @@ export default function Home() {
         <div className="grid sm:grid-cols-2 gap-5">
           <Link
             href="/paciente"
-            className="group rounded-2xl border border-border bg-surface p-7 transition hover:border-accent hover:shadow-lg hover:shadow-accent/5"
+            className="group rounded-2xl border border-border bg-surface p-7 transition hover:border-gold hover:shadow-lg hover:shadow-accent/10"
           >
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-accent-soft text-accent-dark font-display text-lg">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-accent text-gold font-display text-lg">
               P
             </span>
             <h2 className="font-display text-xl text-ink mt-4">Sou paciente / aluno</h2>
@@ -35,9 +35,9 @@ export default function Home() {
 
           <Link
             href="/avaliador/login"
-            className="group rounded-2xl border border-border bg-surface p-7 transition hover:border-accent hover:shadow-lg hover:shadow-accent/5"
+            className="group rounded-2xl border border-border bg-surface p-7 transition hover:border-gold hover:shadow-lg hover:shadow-accent/10"
           >
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-accent-soft text-accent-dark font-display text-lg">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-accent text-gold font-display text-lg">
               A
             </span>
             <h2 className="font-display text-xl text-ink mt-4">Sou avaliador</h2>

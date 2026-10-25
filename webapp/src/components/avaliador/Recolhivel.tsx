@@ -12,7 +12,7 @@ const ContextoGrupo = createContext<Alvo | null>(null);
 
 export function GrupoRecolhiveis({ children, className = "" }: { children: ReactNode; className?: string }) {
   const [alvo, setAlvo] = useState<Alvo>({ sinal: 0, abrir: false });
-  const botao = "rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-muted hover:border-accent hover:text-accent-dark transition";
+  const botao = "rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-muted hover:border-gold hover:text-gold-dark transition";
   return (
     <ContextoGrupo.Provider value={alvo}>
       <div className={className}>
@@ -30,11 +30,12 @@ export function GrupoRecolhiveis({ children, className = "" }: { children: React
   );
 }
 
-export type TomRecolhivel = "neutro" | "accent" | "warn" | "danger" | "info";
+export type TomRecolhivel = "neutro" | "accent" | "ok" | "warn" | "danger" | "info";
 
 const ESTILO_TOM: Record<TomRecolhivel, { caixa: string; titulo: string; detalhe: string }> = {
   neutro: { caixa: "border-border bg-surface", titulo: "text-ink", detalhe: "text-muted" },
   accent: { caixa: "border-accent/25 bg-accent-soft", titulo: "text-accent-dark", detalhe: "text-accent-dark/80" },
+  ok: { caixa: "border-ok/25 bg-ok-soft", titulo: "text-ok-dark", detalhe: "text-ok-dark/85" },
   warn: { caixa: "border-warn/25 bg-warn-soft", titulo: "text-warn", detalhe: "text-warn/85" },
   danger: { caixa: "border-danger/25 bg-danger-soft", titulo: "text-danger", detalhe: "text-danger/85" },
   info: { caixa: "border-info/25 bg-info-soft", titulo: "text-info", detalhe: "text-info/85" },
@@ -91,7 +92,7 @@ export function Recolhivel({
 // Cartão de domínio do Painel Integrado: título e classificação sempre à vista, o porquê escondido.
 // ---------------------------------------------------------------------------
 export const ESTILO_CLASSIFICACAO: Record<Classificacao, { rotulo: string; tom: TomRecolhivel }> = {
-  adequado: { rotulo: "Adequado", tom: "accent" },
+  adequado: { rotulo: "Adequado", tom: "ok" },
   atencao: { rotulo: "Atenção", tom: "warn" },
   prioridade: { rotulo: "Prioridade", tom: "danger" },
   investigar: { rotulo: "Investigar", tom: "info" },

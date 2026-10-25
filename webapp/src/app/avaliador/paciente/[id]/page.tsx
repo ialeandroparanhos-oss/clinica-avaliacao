@@ -14,6 +14,7 @@ import { SerieChart } from "@/components/SerieChart";
 import { perguntasParQ } from "@/lib/anamnese/questionnaires";
 import { calcularPerfilIntegrado, dominiosSemDado, explicarConfianca } from "@/lib/integracao/perfil";
 import { CartaoDominio, GrupoRecolhiveis, Recolhivel } from "@/components/avaliador/Recolhivel";
+import { ResumoTreino } from "@/components/avaliador/ResumoTreino";
 import type { Plano } from "@/lib/integracao/plano";
 import { AbaPlano } from "@/components/avaliador/AbaPlano";
 import { INDICADORES, extrairSerie, type LinhaHistorico } from "@/lib/integracao/historico";
@@ -118,6 +119,10 @@ export default function DetalhePaciente() {
         </div>
       )}
 
+      <div className="mb-6">
+        <ResumoTreino paciente={paciente} />
+      </div>
+
       <div className="flex gap-1 border-b border-border mb-6 overflow-x-auto">
         {(
           [
@@ -136,7 +141,7 @@ export default function DetalhePaciente() {
             key={key}
             onClick={() => setAba(key)}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition whitespace-nowrap ${
-              aba === key ? "border-accent text-accent-dark" : "border-transparent text-muted hover:text-ink"
+              aba === key ? "border-gold text-accent-dark" : "border-transparent text-muted hover:text-ink"
             }`}
           >
             {label}
@@ -169,14 +174,14 @@ function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
   const semDado = dominiosSemDado(perfil);
   const confiancaLabel = { alta: "Alta", media: "Média", baixa: "Baixa" }[perfil.confianca];
   const confiancaClasse = {
-    alta: "bg-accent-soft text-accent-dark",
+    alta: "bg-ok-soft text-ok-dark",
     media: "bg-warn-soft text-warn",
     baixa: "bg-danger-soft text-danger",
   }[perfil.confianca];
   const contagens = [
     { n: perfil.riscos.length, rotulo: "prioridade", plural: "prioridades", classe: "bg-danger-soft text-danger" },
     { n: perfil.limitacoes.length, rotulo: "atenção", plural: "atenção", classe: "bg-warn-soft text-warn" },
-    { n: perfil.potencialidades.length, rotulo: "adequado", plural: "adequados", classe: "bg-accent-soft text-accent-dark" },
+    { n: perfil.potencialidades.length, rotulo: "adequado", plural: "adequados", classe: "bg-ok-soft text-ok-dark" },
     { n: semDado.length, rotulo: "a investigar", plural: "a investigar", classe: "bg-info-soft text-info" },
   ];
   const rotuloSarcopenia = {
@@ -186,7 +191,7 @@ function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
     dados_insuficientes: "Dados insuficientes",
   }[sarcopenia.classificacao];
   const tomSarcopenia = (
-    { sarcopenia_provavel: "danger", dinapenia_provavel: "warn", sem_sinais: "accent", dados_insuficientes: "neutro" } as const
+    { sarcopenia_provavel: "danger", dinapenia_provavel: "warn", sem_sinais: "ok", dados_insuficientes: "neutro" } as const
   )[sarcopenia.classificacao];
 
   return (
@@ -282,7 +287,7 @@ function AbaPerfilIntegrado({ paciente }: { paciente: PacienteRow }) {
       )}
 
       <div className="grid sm:grid-cols-2 gap-5 items-start">
-        <Recolhivel tom="accent" aberto titulo="Potencialidades" resumo={`${perfil.potencialidades.length}`}>
+        <Recolhivel tom="ok" aberto titulo="Potencialidades" resumo={`${perfil.potencialidades.length}`}>
           {perfil.potencialidades.length === 0 ? (
             <p className="text-sm">Nenhum domínio classificado como adequado ainda.</p>
           ) : (
@@ -579,7 +584,7 @@ function AbaAnamnese({ anamnese, status, paciente }: { anamnese: Anamnese; statu
 
       {riscoCV && (
         <Recolhivel
-          tom={riscoCV.classificacao === "alto" ? "danger" : riscoCV.classificacao === "moderado" ? "warn" : "accent"}
+          tom={riscoCV.classificacao === "alto" ? "danger" : riscoCV.classificacao === "moderado" ? "warn" : "ok"}
           aberto={riscoCV.classificacao !== "baixo"}
           titulo="Risco cardiovascular (triagem rápida)"
           resumo={{ baixo: "Baixo", moderado: "Moderado", alto: "Alto" }[riscoCV.classificacao]}
