@@ -254,6 +254,10 @@ Interromper imediatamente qualquer teste funcional/cardiorrespiratório diante d
 
 Entrou na base científica da Dra. Rita o estudo de **Wu MC et al., JAMA Netw Open 2026;9:e2628227 (PMID 42574013)**: coorte de 13.423 idosos de 65 anos ou mais em Taiwan, em que melhor desempenho no 8-foot up-and-go, apoio unipodal, levantar da cadeira em 30 s e degrau de 2 minutos se associou a menor mortalidade por todas as causas, de forma graduada. Serve para explicar ao paciente idoso por que esses testes são feitos. **Limites:** estudo observacional (associação, não prova que melhorar o teste reduza a mortalidade); população de Taiwan; resumo lido, texto completo não lido; **não traz cortes e não muda nenhuma regra do sistema.**
 
+## CORREÇÃO 26/10/2026 — MARCAR VÁRIAS OPÇÕES NOS GRUPOS DE BOTÕES
+
+Em "Estabilidade do core - o que você observou?" (e em todo grupo de botões marcáveis) um toque no espaço entre os botões, ou na borda de um botão, era repassado pelo navegador ao primeiro botão do grupo ("Mantém o alinhamento", que exclui as demais) e apagava as outras marcações, dando a impressão de que só cabia uma opção. Corrigido em `components/avaliador/cliques.tsx` (o clique fora dos botões não é mais repassado). Marcar várias continua permitido; só "Mantém o alinhamento" exclui as outras, por ser o oposto delas.
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 6 — Integração e Interpretação** (Etapa 7 do prompt-mestre): como cruzar os dados de todos os agentes anteriores para construir o Perfil Integrado de Saúde e Capacidade Funcional, identificar potencialidades/limitações/riscos/prioridades, e montar o Painel Integrado de Saúde (Seção 16) com critérios de classificação explícitos.

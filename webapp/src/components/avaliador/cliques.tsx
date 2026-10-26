@@ -7,6 +7,12 @@
 
 import { TextInput } from "@/components/forms";
 
+// Os grupos de botões ficam dentro de um <label> (Field). Sem isto, um toque no espaço entre os botões "clica" no
+// primeiro botão do grupo (o navegador repassa o clique do rótulo ao primeiro controle), o que apagava as outras marcações.
+function naoRepassarAoRotulo(e: React.MouseEvent<HTMLElement>) {
+  if ((e.target as HTMLElement).tagName !== "INPUT") e.preventDefault();
+}
+
 const base = "rounded-full border px-3 py-1.5 text-sm transition";
 const ativo = "bg-accent text-white border-accent";
 const inativo = "bg-surface text-ink border-border hover:border-accent";
@@ -28,7 +34,7 @@ export function EscolhaUnica({
 }) {
   const ehOutro = permitirOutro && valor !== "" && !opcoes.includes(valor);
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" onClick={naoRepassarAoRotulo}>
       <div className="flex flex-wrap gap-2">
         {opcoes.map((o) => {
           const sel = valor === o;
@@ -72,7 +78,7 @@ export function EscolhaMultipla({
     onChange([...valores.filter((v) => !exclusivas.includes(v)), o]);
   }
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2" onClick={naoRepassarAoRotulo}>
       {opcoes.map((o) => {
         const sel = valores.includes(o);
         return (
