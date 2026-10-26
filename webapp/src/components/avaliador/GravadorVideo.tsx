@@ -28,12 +28,14 @@ export function GravadorVideo({
   onGravado,
   onFoto,
   onFechar,
+  rotuloGravar = "● Gravar",
 }: {
   titulo: string;
   dica?: string;
-  onGravado: (arquivo: File) => void;
+  onGravado?: (arquivo: File) => void; // sem isso, a tela só tira foto
   onFoto?: (arquivo: File) => void;
   onFechar: () => void;
+  rotuloGravar?: string;
 }) {
   const refVideo = useRef<HTMLVideoElement>(null);
   const refStream = useRef<MediaStream | null>(null);
@@ -151,7 +153,7 @@ export function GravadorVideo({
         return;
       }
       pararCamera();
-      onGravado(new File([blob], nomeDoArquivo(tipo), { type: tipo }));
+      onGravado?.(new File([blob], nomeDoArquivo(tipo), { type: tipo }));
     };
     gravador.start(1000);
     refGravador.current = gravador;
@@ -193,9 +195,31 @@ export function GravadorVideo({
     setFase("pronto");
   }
 
+  // Foto com contagem opcional: dá tempo de o avaliador se afastar da câmera ou de o aluno se posicionar.
+  function aoTocarFoto() {
+    if (!usarContagem) {
+      tirarFoto();
+      return;
+    }
+    setFase("contagem");
+    setContagem(CONTAGEM_PADRAO_S);
+    let restante = CONTAGEM_PADRAO_S;
+    refTimer.current = setInterval(() => {
+      restante -= 1;
+      setContagem(restante);
+      if (restante <= 0) {
+        limparTimer();
+        tirarFoto();
+      }
+    }, 1000);
+  }
+
   function tirarFoto() {
     const v = refVideo.current;
-    if (!v || !v.videoWidth || !onFoto) return;
+    if (!v || !v.videoWidth || !onFoto) {
+      setFase("pronto");
+      return;
+    }
     const c = document.createElement("canvas");
     c.width = v.videoWidth;
     c.height = v.videoHeight;
@@ -263,12 +287,18 @@ export function GravadorVideo({
             >
               Trocar câmera
             </button>
-            <button type="button" onClick={aoTocarGravar} className="rounded-full bg-danger px-6 py-3 text-base font-semibold text-white hover:opacity-90">
-              ● Gravar
-            </button>
+            {onGravado && (
+              <button type="button" onClick={aoTocarGravar} className="rounded-full bg-danger px-6 py-3 text-base font-semibold text-white hover:opacity-90">
+                {rotuloGravar}
+              </button>
+            )}
             {onFoto && (
-              <button type="button" onClick={tirarFoto} className="rounded-lg border border-white/30 px-3 py-2 text-sm hover:bg-white/10">
-                Tirar foto
+              <button
+                type="button"
+                onClick={onGravado ? tirarFoto : aoTocarFoto}
+                className={onGravado ? "rounded-lg border border-white/30 px-3 py-2 text-sm hover:bg-white/10" : "rounded-full bg-white px-6 py-3 text-base font-semibold text-black hover:opacity-90"}
+              >
+                {onGravado ? "Tirar foto" : "● Tirar foto"}
               </button>
             )}
             <label className="inline-flex items-center gap-1.5 text-xs text-white/80">

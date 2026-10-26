@@ -11,7 +11,7 @@
 
 import { linhasBaseCientifica, nomeComTitulo } from "@/lib/agentes";
 import type { EstiloParecer } from "./pareceres";
-import { descreverMovimentos, type Movimentos } from "./movimento";
+import { CHAVE_DENTRO_PADRAO, MOVIMENTO_POR_ID, VISTAS_MOV, descreverMovimentos, type Movimentos } from "./movimento";
 
 export type VistaGuiada = "anterior" | "posterior" | "lateral";
 export type ObsGuiada = Partial<Record<VistaGuiada, string[]>>; // chaves marcadas por vista
@@ -127,6 +127,30 @@ export function textoObsPostural(postural: Record<string, any> | undefined, camp
   return [guiado.length > 0 ? `Achados marcados: ${guiado.join("; ")}.` : "", livre].filter(Boolean).join(" ");
 }
 
+// "Tudo dentro do padrão": quando o avaliador olhou tudo e nada chamou a atenção, um toque preenche só o que ainda
+// está em branco: "nada de relevante" nas três vistas e "dentro do padrão" nas vistas dos movimentos. Nada que o
+// avaliador já marcou é mexido. É uma decisão do avaliador, não do sistema.
+export function marcarTudoNoPadrao(g: ObsGuiada | undefined, movimentos: Movimentos | undefined, ids: string[] = MOVIMENTOS_SIMPLES): { guiada: ObsGuiada; movimentos: Movimentos } {
+  let guiada: ObsGuiada = { ...(g ?? {}) };
+  for (const v of VISTAS) if ((guiada[v] ?? []).length === 0) guiada = alternarAchado(guiada, v, CHAVE_NADA, true);
+  const novos: Movimentos = { ...(movimentos ?? {}) };
+  for (const id of ids) {
+    const def = MOVIMENTO_POR_ID.get(id);
+    if (!def) continue;
+    const atual = { ...(novos[id] ?? {}) } as Record<string, any>;
+    for (const v of VISTAS_MOV) {
+      const sv = (atual[v] ?? {}) as { obs?: string[] };
+      if ((sv.obs ?? []).length === 0) atual[v] = { ...sv, obs: [CHAVE_DENTRO_PADRAO] };
+    }
+    novos[id] = atual;
+  }
+  return { guiada, movimentos: novos };
+}
+
+export function tudoNoPadrao(g: ObsGuiada | undefined): boolean {
+  return !!g && VISTAS.every((v) => (g[v] ?? []).includes(CHAVE_NADA));
+}
+
 // Ficha que já tem registros do modo avançado abre nele, para nada ficar escondido.
 export function temDadosAvancados(postural: Record<string, any> | undefined): boolean {
   if (!postural) return false;
@@ -146,7 +170,7 @@ export function temDadosAvancados(postural: Record<string, any> | undefined): bo
 
 // Parecer curto do modo simples: o que o avaliador viu, os movimentos, o que observar na execução e o limite da leitura.
 export function gerarParecerSimples(g: ObsGuiada | undefined, movimentos: Movimentos | undefined, estilo: EstiloParecer, rotuloModo = "modo simples"): string {
-  const vistas = linhasGuiadas(g);
+  const vistas = tudoNoPadrao(g) ? ["Postura estática dentro do padrão nas três vistas (de frente, de costas e de lado): nada de relevante na observação visual."] : linhasGuiadas(g);
   const movs = descreverMovimentos(movimentos);
   if (vistas.length === 0 && movs.length === 0) return "";
   const atencoes = atencoesNaExecucao(g);

@@ -16,6 +16,8 @@ import { MarcacaoEscapula } from "./MarcacaoEscapula";
 import { temMarcacaoEscapula, type MarcacaoEscapula as DadosEscapula } from "@/lib/avaliacao/escapula";
 import { PainelParecer, estiloPreferido, lerParecer, type ParecerSalvo } from "./PainelParecer";
 import { AnaliseMovimento } from "./AnaliseMovimento";
+import { GravadorVideo } from "./GravadorVideo";
+import { extrairQuadroPostural } from "@/lib/avaliacao/videoPose";
 import type { Movimentos } from "@/lib/avaliacao/movimento";
 import { analisarVista, gerarParecer, ROTULO_VISTA, type AnaliseVistaSalva, type Vista } from "@/lib/avaliacao/analisePostural";
 import { detectarPontos, prepararImagem, type ImagemPreparada } from "@/lib/avaliacao/poseModelo";
@@ -29,7 +31,9 @@ import {
   alternarAchado,
   gerarParecerSimples,
   juntarGuiadaAoParecer,
+  marcarTudoNoPadrao,
   temDadosAvancados,
+  tudoNoPadrao,
   type ObsGuiada,
   type VistaGuiada,
 } from "@/lib/avaliacao/posturaSimples";
@@ -94,7 +98,31 @@ function FotoVista({
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [enviando, setEnviando] = useState(false);
+  const [camera, setCamera] = useState(false);
+  const [extraindo, setExtraindo] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
   const url = useFotoSignedUrl(path, versao);
+
+  // Vídeo curto com o aluno parado: o sistema escolhe o melhor quadro (corpo inteiro, menos movimento) e ele vira a
+  // foto da vista, que segue a mesma análise. O vídeo não é guardado nem enviado a serviço de IA.
+  async function daGravacao(file: File) {
+    setCamera(false);
+    setExtraindo(true);
+    setAviso("Procurando o melhor quadro do vídeo...");
+    try {
+      const quadro = await extrairQuadroPostural(file, setAviso);
+      if (!quadro) {
+        setAviso("Não encontrei o corpo inteiro em nenhum quadro. Enquadre da cabeça aos pés, com o aluno parado, e grave de novo.");
+        return;
+      }
+      setAviso(null);
+      await enviar(new File([quadro], "quadro.jpg", { type: "image/jpeg" }));
+    } catch (e: any) {
+      setAviso(e?.message ? `Não foi possível ler o vídeo: ${e.message}` : "Não foi possível ler o vídeo. Tente de novo.");
+    } finally {
+      setExtraindo(false);
+    }
+  }
 
   async function enviar(file: File) {
     setEnviando(true);
@@ -119,9 +147,25 @@ function FotoVista({
       ) : (
         <div className="h-44 w-32 rounded-lg border border-dashed border-border flex items-center justify-center text-xs text-muted text-center px-2">Sem foto</div>
       )}
-      <div className="flex items-center gap-3">
+      {camera && (
+        <GravadorVideo
+          titulo={label}
+          dica="Câmera parada na altura do quadril, o aluno dos pés à cabeça no quadro. Para vídeo, peça que fique parado por 5 a 10 segundos: o sistema escolhe o melhor quadro."
+          onFechar={() => setCamera(false)}
+          onFoto={(file) => {
+            setCamera(false);
+            enviar(file);
+          }}
+          onGravado={daGravacao}
+          rotuloGravar="Gravar vídeo curto"
+        />
+      )}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <button type="button" onClick={() => setCamera(true)} disabled={enviando || extraindo} className="rounded-lg bg-accent px-3 py-1 text-sm font-medium text-white hover:bg-accent-dark transition disabled:opacity-50">
+          ● Câmera
+        </button>
         <label className="text-sm font-medium text-accent hover:underline cursor-pointer">
-          {enviando ? "Enviando..." : url ? "Substituir" : "Enviar foto"}
+          {enviando ? "Enviando..." : extraindo ? "Lendo o vídeo..." : url ? "Substituir" : "Enviar foto"}
           <input
             type="file"
             accept="image/*"
@@ -140,6 +184,7 @@ function FotoVista({
           </button>
         )}
       </div>
+      {aviso && <p className="max-w-xs text-xs text-muted">{aviso}</p>}
     </div>
   );
 }
@@ -443,6 +488,18 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
   const vistasFoto: Vista[] = avancado ? VISTAS : VISTAS.filter((v) => v !== "lateral_e");
   const sugestoes = useMemo(() => sugerirAchados(analise.vistas), [analise.vistas]);
   const nSugestoes = totalSugestoes(sugestoes, analise.guiada);
+  // Sugestões dos movimentos ainda sem decisão (o botão "Tudo dentro do padrão" só vale com tudo decidido).
+  const idsMov = avancado ? Object.keys(analise.movimentos) : MOVIMENTOS_SIMPLES;
+  const nSugestoesMov = idsMov.reduce(
+    (n, id) =>
+      n +
+      (["sagital", "frontal"] as const).reduce((m, v) => {
+        const sv = (analise.movimentos[id] as any)?.[v] as { obs?: string[]; sugestoes?: { chave: string }[] } | undefined;
+        return m + (sv?.sugestoes ?? []).filter((s) => !(sv?.obs ?? []).includes(s.chave)).length;
+      }, 0),
+    0
+  );
+  const pendentesTotal = nSugestoes + nSugestoesMov;
 
   // O parecer acompanha as análises enquanto o avaliador não o edita; depois de
   // editado, o texto dele nunca é sobrescrito (aparece o aviso de "dados mudaram").
@@ -498,6 +555,14 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
     });
   }
 
+  // O avaliador olhou tudo e nada chamou a atenção: preenche só o que está em branco.
+  function tudoDentroDoPadrao() {
+    setAnalise((prev) => {
+      const r = marcarTudoNoPadrao(prev.guiada, prev.movimentos, avancado ? undefined : MOVIMENTOS_SIMPLES);
+      return comVistas({ ...prev, guiada: r.guiada, movimentos: r.movimentos }, prev.vistas);
+    });
+  }
+
   function aoResultado(vista: Vista, resultado: AnaliseVistaSalva) {
     setAnalise((prev) => comVistas(prev, { ...prev.vistas, [vista]: resultado }));
   }
@@ -524,7 +589,7 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
           <p className="mt-1 text-sm text-muted leading-relaxed">
             {avancado
               ? "Modo avançado: as 4 vistas, a análise automática das fotos, a marcação das escápulas, o vídeo e todos os movimentos, além da lista curta."
-              : "Três fotos com a análise automática dos graus (ela roda sozinha ao enviar a foto), uma lista curta do que você viu (o sistema já sugere o que achou e você só confirma) e dois testes de movimento, em foto ou vídeo (agachamento e flexão de tronco). Mesma distância, altura da câmera e posição do aluno em todas as reavaliações."}{" "}
+              : "Três fotos (tiradas na câmera do aplicativo, por um vídeo curto com o aluno parado, ou enviadas) com a análise automática dos graus (ela roda sozinha), uma lista curta do que você viu (o sistema já sugere o que achou e você só confirma) e dois testes de movimento, em foto ou vídeo (agachamento e flexão de tronco). Mesma distância, altura da câmera e posição do aluno em todas as reavaliações."}{" "}
             As fotos ficam em um arquivo privado, visível só para avaliadores da clínica.
           </p>
         </div>
@@ -620,6 +685,25 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
 
 
       <AnaliseMovimento pacienteId={pacienteId} movimentos={analise.movimentos} onChange={aoMovimentos} ids={avancado ? undefined : MOVIMENTOS_SIMPLES} simples={!avancado} />
+
+      <div className={`rounded-xl border px-4 py-3 flex flex-wrap items-center justify-between gap-3 ${tudoNoPadrao(analise.guiada) ? "border-ok/40 bg-ok-soft" : "border-border bg-bg"}`}>
+        <div className="max-w-xl">
+          <p className="text-sm font-medium text-ink">{tudoNoPadrao(analise.guiada) ? "✓ Postura dentro do padrão nas três vistas" : "Viu tudo e nada fora do padrão?"}</p>
+          <p className="text-xs text-muted leading-relaxed mt-0.5">
+            {pendentesTotal > 0
+              ? `Decida antes as ${pendentesTotal} sugestões do sistema (aceitar ou ignorar marcando outra opção).`
+              : "Um toque marca \"nada de relevante\" nas três vistas e \"dentro do padrão\" nos movimentos, só onde ainda está em branco. O que você já marcou não muda. A decisão é sua, não do sistema."}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={tudoDentroDoPadrao}
+          disabled={pendentesTotal > 0}
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark transition disabled:opacity-50"
+        >
+          Tudo dentro do padrão
+        </button>
+      </div>
 
       <PainelParecer
         agente="paula"

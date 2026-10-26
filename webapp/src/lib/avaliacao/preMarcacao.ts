@@ -9,7 +9,7 @@
 // São medidas 2D: dependem do enquadramento e da inclinação da câmera, e não são diagnóstico.
 
 import type { AnaliseVistaSalva, Medida, NomePonto, Pontos, Ponto, Vista } from "./analisePostural";
-import type { MedidaAngulo, VistaMov } from "./movimento";
+import { anguloDe, type MedidaAngulo, type VistaMov } from "./movimento";
 import type { VistaGuiada } from "./posturaSimples";
 
 export type Sugestao = { chave: string; detalhe: string };
@@ -110,4 +110,72 @@ export function preMarcarAngulo(movimentoId: string, vista: VistaMov, p: Pontos,
 export function pontosNaEscala(a: Pick<MedidaAngulo, "pts" | "largura">, larguraAlvo: number): { x: number; y: number }[] {
   const k = a.largura > 0 ? larguraAlvo / a.largura : 1;
   return a.pts.map((q) => ({ x: q.x * k, y: q.y * k }));
+}
+
+// ---------------------------------------------------------------------------
+// Observações sugeridas nos movimentos (a partir dos pontos do corpo no quadro do ponto máximo)
+// ---------------------------------------------------------------------------
+// Cortes PRÁTICOS do sistema, sem validação publicada: servem só para o sistema sugerir e o avaliador decidir.
+export const CORTE_AGACHAMENTO_RASO_GRAUS = 120; // joelho (quadril-joelho-tornozelo) acima disso no ponto mais baixo: desceu pouco
+export const CORTE_JOELHO_FLETE_GRAUS = 160; // na flexão de tronco, joelho abaixo disso: flexionou mais de ~20°
+export const CORTE_ELEVACAO_BRACO_GRAUS = 150; // quadril-ombro-punho abaixo disso: não chegou a elevar por completo
+export const CORTE_JOELHO_DENTRO_PCT = 6; // desvio do joelho para dentro, em % do comprimento da perna
+export const CORTE_DESVIO_TRONCO_GRAUS = 6;
+export const CORTE_BRACOS_ASSIM_PCT = 8; // diferença de altura dos punhos, em % do comprimento do tronco
+
+const ang3 = (a: Ponto, v: Ponto, b: Ponto): number | null =>
+  anguloDe({ tipo: "tres_pontos", pts: [a, v, b].map(({ x, y }) => ({ x, y })), largura: 0, altura: 0 });
+const arred = (n: number) => Math.round(n);
+
+export function sugerirObservacoes(movimentoId: string, vista: VistaMov, p: Pontos): Sugestao[] {
+  const saida: Sugestao[] = [];
+  const add = (chave: string, detalhe: string) => saida.push({ chave, detalhe });
+
+  if (vista === "sagital") {
+    const s = ladoMaisVisivel(p);
+    const ombro = p[`ombro_${s}` as NomePonto], quadril = p[`quadril_${s}` as NomePonto], joelho = p[`joelho_${s}` as NomePonto];
+    const tornozelo = p[`tornozelo_${s}` as NomePonto], punho = p[`punho_${s}` as NomePonto];
+    if (movimentoId === "agachamento" && vis(quadril) && vis(joelho) && vis(tornozelo)) {
+      const a = ang3(quadril, joelho, tornozelo);
+      if (a !== null && a > CORTE_AGACHAMENTO_RASO_GRAUS) add("amplitude_limitada", `joelho com ${arred(a)}° no ponto mais baixo (180° é estendido): desceu pouco`);
+    }
+    if (movimentoId === "flexao_tronco") {
+      if (vis(quadril) && vis(joelho) && vis(tornozelo)) {
+        const a = ang3(quadril, joelho, tornozelo);
+        if (a !== null && a < CORTE_JOELHO_FLETE_GRAUS) add("joelhos_fletem", `joelho com ${arred(a)}° (180° é estendido): flexionou cerca de ${arred(180 - a)}°`);
+      }
+      if (vis(punho) && vis(joelho) && punho.y < joelho.y) add("amplitude_limitada", "as mãos não passaram da altura dos joelhos");
+    }
+    if (movimentoId === "elevacao_bracos" && vis(quadril) && vis(ombro) && vis(punho)) {
+      const a = ang3(quadril, ombro, punho);
+      if (a !== null && a < CORTE_ELEVACAO_BRACO_GRAUS) add("amplitude_limitada", `braço com ${arred(a)}° em relação ao tronco (180° é totalmente elevado)`);
+    }
+    return saida;
+  }
+
+  // frontal (de frente ou de costas). Direito e esquerdo são os da própria pessoa, qualquer que seja o lado da câmera.
+  if (movimentoId === "agachamento") {
+    const mid = vis(p.quadril_e) && vis(p.quadril_d) ? (p.quadril_e!.x + p.quadril_d!.x) / 2 : null;
+    for (const s of ["d", "e"] as const) {
+      const q = p[`quadril_${s}` as NomePonto], j = p[`joelho_${s}` as NomePonto], t = p[`tornozelo_${s}` as NomePonto];
+      if (mid === null || !vis(q) || !vis(j) || !vis(t) || Math.abs(t.y - q.y) < 1) continue;
+      const xLinha = q.x + ((t.x - q.x) * (j.y - q.y)) / (t.y - q.y);
+      const paraDentro = (j.x - xLinha) * Math.sign(mid - q.x);
+      const perna = Math.hypot(t.x - q.x, t.y - q.y);
+      const pct = (paraDentro / perna) * 100;
+      if (pct > CORTE_JOELHO_DENTRO_PCT) add(`joelho_${s}_dentro`, `joelho ${s === "d" ? "direito" : "esquerdo"} cerca de ${arred(pct)}% do comprimento da perna para dentro da linha quadril-tornozelo`);
+    }
+    const pre = preMarcarAngulo(movimentoId, vista, p, 1, 1);
+    const a = pre ? anguloDe(pre.angulo) : null;
+    if (a !== null && a >= CORTE_DESVIO_TRONCO_GRAUS) add("desvio_lateral", `tronco ${arred(a)}° fora da vertical (do centro dos quadris ao centro dos ombros)`);
+  }
+  if (movimentoId === "elevacao_bracos" && vis(p.punho_e) && vis(p.punho_d) && vis(p.ombro_e) && vis(p.ombro_d) && vis(p.quadril_e) && vis(p.quadril_d)) {
+    const tronco = Math.hypot(
+      (p.ombro_e!.x + p.ombro_d!.x) / 2 - (p.quadril_e!.x + p.quadril_d!.x) / 2,
+      (p.ombro_e!.y + p.ombro_d!.y) / 2 - (p.quadril_e!.y + p.quadril_d!.y) / 2
+    );
+    const dif = (Math.abs(p.punho_e!.y - p.punho_d!.y) / (tronco || 1)) * 100;
+    if (tronco > 0 && dif > CORTE_BRACOS_ASSIM_PCT) add("bracos_assim", `um punho ${arred(dif)}% do comprimento do tronco mais baixo que o outro`);
+  }
+  return saida;
 }

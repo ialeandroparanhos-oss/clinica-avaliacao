@@ -12,9 +12,10 @@ import { GravadorVideo } from "./GravadorVideo";
 import { extensaoDoFormato } from "@/lib/avaliacao/gravacao";
 import { analisarVideoNoNavegador } from "@/lib/avaliacao/videoPose";
 import { detectarPontos, prepararImagem } from "@/lib/avaliacao/poseModelo";
-import { pontosNaEscala, preMarcarAngulo } from "@/lib/avaliacao/preMarcacao";
+import { pontosNaEscala, preMarcarAngulo, sugerirObservacoes } from "@/lib/avaliacao/preMarcacao";
 import { AVISO_MARGEM_ERRO_VIDEO, ROTULO_VEREDITO } from "@/lib/avaliacao/videoMovimento";
 import {
+  alternarObsMovimento,
   anguloDe,
   MOVIMENTOS,
   pontosNecessarios,
@@ -91,7 +92,7 @@ function BlocoVista({
 
   // Pré-marcação: o modelo de pose acha os pontos na foto (neste computador, sem enviar a foto a serviço de IA) e o
   // ângulo fica como PRÉ-MARCADO, esperando o ok do avaliador. Devolve null quando não há o que marcar.
-  async function preMarcar(blob: Blob): Promise<MedidaAngulo | null> {
+  async function preMarcar(blob: Blob): Promise<{ angulo: MedidaAngulo | null; sugestoes: { chave: string; detalhe: string }[] } | null> {
     setPreMarcando(true);
     setMsgPre("Pré-marcando o ângulo...");
     try {
@@ -103,12 +104,13 @@ function BlocoVista({
           return null;
         }
         const r = preMarcarAngulo(def.id, vista, pontos, img.largura, img.altura);
-        if (!r) {
-          setMsgPre("Não há ângulo automático para este movimento nesta vista. Se quiser, marque à mão.");
-          return null;
+        const sugestoes = sugerirObservacoes(def.id, vista, pontos);
+        if (!r && sugestoes.length === 0) {
+          setMsgPre("O sistema não tem ângulo nem sugestão automática para este movimento nesta vista. Se quiser, marque à mão.");
+          return { angulo: null, sugestoes: [] };
         }
         setMsgPre(null);
-        return r.angulo;
+        return { angulo: r?.angulo ?? null, sugestoes };
       } finally {
         URL.revokeObjectURL(img.urlExibicao);
       }
@@ -127,8 +129,8 @@ function BlocoVista({
       setMsgPre("Não foi possível abrir a foto para pré-marcar.");
       return;
     }
-    const ang = await preMarcar(data);
-    if (ang) onChange({ ...valor, angulo: ang });
+    const pre = await preMarcar(data);
+    if (pre) onChange({ ...valor, angulo: pre.angulo ?? valor.angulo, sugestoes: pre.sugestoes });
   }
 
   async function enviar(file: File) {
@@ -139,8 +141,8 @@ function BlocoVista({
     const { error } = await supabase.storage.from(BUCKET).upload(caminho, file, { upsert: true, contentType: file.type });
     if (error) setErro("Não foi possível enviar a foto agora. Tente de novo.");
     else {
-      const ang = await preMarcar(file);
-      onChange({ ...valor, foto_path: caminho, angulo: ang ?? undefined });
+      const pre = await preMarcar(file);
+      onChange({ ...valor, foto_path: caminho, angulo: pre?.angulo ?? undefined, sugestoes: pre?.sugestoes ?? [] });
     }
     setEnviando(false);
   }
@@ -158,8 +160,8 @@ function BlocoVista({
         const caminhoFoto = `${pacienteId}/mov_${def.id}_${vista}.jpg`;
         const { error } = await supabase.storage.from(BUCKET).upload(caminhoFoto, quadroMaximo, { upsert: true, contentType: "image/jpeg" });
         if (!error) {
-          const ang = await preMarcar(quadroMaximo);
-          novo = { ...novo, foto_path: caminhoFoto, angulo: ang ?? undefined };
+          const pre = await preMarcar(quadroMaximo);
+          novo = { ...novo, foto_path: caminhoFoto, angulo: pre?.angulo ?? undefined, sugestoes: pre?.sugestoes ?? [] };
         }
       }
       // Guarda o vídeo só se couber no limite do arquivo (o limite do plano costuma ser de 50 MB).
@@ -210,6 +212,7 @@ function BlocoVista({
 
   const opcoes = def.observacoes[vista];
   const marcadas = new Set(valor.obs ?? []);
+  const pendentes = (valor.sugestoes ?? []).filter((s) => !marcadas.has(s.chave) && opcoes.some((o) => o.chave === s.chave));
   const angulo = anguloDe(valor.angulo);
   const u = dims ? dims.w / 1000 : 1;
   const exibidos = medindo ? pts : valor.angulo ? pontosNaEscala(valor.angulo, dims?.w ?? valor.angulo.largura) : [];
@@ -456,28 +459,50 @@ function BlocoVista({
 
       <div>
         <p className="text-xs uppercase tracking-wide text-muted font-semibold mb-1.5">O que se observa (marque o que se aplica)</p>
+        {pendentes.length > 0 && (
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gold bg-gold-soft px-3 py-2">
+            <p className="text-xs text-ink">
+              <strong>O sistema sugeriu {pendentes.length} {pendentes.length === 1 ? "marcação" : "marcações"}</strong> pelos pontos do corpo no ponto máximo. Só valem depois do seu ok.
+            </p>
+            <button
+              type="button"
+              onClick={() => onChange({ ...valor, obs: pendentes.reduce((o, s) => alternarObsMovimento(o, s.chave, true), valor.obs ?? []) })}
+              className="rounded-lg bg-accent px-3 py-1 text-xs font-medium text-white hover:bg-accent-dark transition"
+            >
+              Aceitar todas
+            </button>
+          </div>
+        )}
         <ul className="space-y-1.5">
-          {opcoes.map((o) => (
-            <li key={o.chave}>
-              <label className="inline-flex items-start gap-2 text-sm text-ink cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="mt-1"
-                  checked={marcadas.has(o.chave)}
-                  onChange={(e) => {
-                    const novo = new Set(marcadas);
-                    if (e.target.checked) novo.add(o.chave);
-                    else novo.delete(o.chave);
-                    onChange({ ...valor, obs: Array.from(novo) });
-                  }}
-                />
-                <span>{o.rotulo}</span>
-              </label>
-            </li>
-          ))}
+          {opcoes.map((o) => {
+            const sug = pendentes.find((s) => s.chave === o.chave);
+            return (
+              <li key={o.chave} className={sug ? "rounded-lg border border-gold bg-gold-soft px-2 py-1.5" : ""}>
+                <label className="inline-flex items-start gap-2 text-sm text-ink cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={marcadas.has(o.chave)}
+                    onChange={(e) => onChange({ ...valor, obs: alternarObsMovimento(valor.obs, o.chave, e.target.checked) })}
+                  />
+                  <span>
+                    {o.rotulo}
+                    {sug && <span className="ml-2 rounded-full bg-gold px-2 py-0.5 text-[11px] font-semibold text-accent-dark">sugerido</span>}
+                  </span>
+                </label>
+                {sug && (
+                  <p className="ml-6 mt-0.5 text-xs text-gold-dark">
+                    {sug.detalhe}. Referência prática do sistema, sem validação publicada.{" "}
+                    <button type="button" onClick={() => onChange({ ...valor, obs: alternarObsMovimento(valor.obs, o.chave, true) })} className="font-semibold underline">
+                      aceitar
+                    </button>
+                  </p>
+                )}
+              </li>
+            );
+          })}
         </ul>
-      </div>
-      <TextArea value={valor.texto ?? ""} onChange={(e) => onChange({ ...valor, texto: e.target.value })} placeholder="Anotação livre desta vista (opcional)" />
+      </div>      <TextArea value={valor.texto ?? ""} onChange={(e) => onChange({ ...valor, texto: e.target.value })} placeholder="Anotação livre desta vista (opcional)" />
     </div>
   );
 }
@@ -508,8 +533,8 @@ export function AnaliseMovimento({
         <p className="text-xs text-muted leading-relaxed mt-1">
           {simples ? (
             <>
-              Peça o movimento e registre o ponto máximo de lado (<strong>sagital</strong>) e de frente ou de costas (<strong>frontal</strong>), em <strong>foto ou em vídeo</strong>. Ao enviar, o sistema <strong>pré-marca o ângulo</strong> na foto e você só
-              confirma (ou refaz à mão); depois é só marcar o roteiro. São registros descritivos, sem corte nem validação publicada: não são diagnóstico nem causa de dor. A foto e o vídeo ficam no arquivo privado da clínica e não vão a nenhum serviço de IA.
+              Peça o movimento e registre o ponto máximo de lado (<strong>sagital</strong>) e de frente ou de costas (<strong>frontal</strong>), em <strong>foto ou em vídeo</strong>. Ao enviar (ou gravar direto no aplicativo), o sistema <strong>pré-marca o ângulo</strong> na foto e <strong>sugere</strong> o que viu nos pontos do corpo; você só
+              confirma (ou refaz à mão) e marca o roteiro. Se estiver tudo normal, marque "dentro do padrão". São registros descritivos, sem corte nem validação publicada: não são diagnóstico nem causa de dor. A foto e o vídeo ficam no arquivo privado da clínica e não vão a nenhum serviço de IA.
             </>
           ) : (
             <>

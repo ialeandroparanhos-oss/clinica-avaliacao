@@ -135,6 +135,26 @@ export const MOVIMENTOS: DefMovimento[] = [
   },
 ];
 
+// Opção comum a todas as vistas: o avaliador viu o movimento e nada fora do esperado. Exclui as outras marcações.
+export const CHAVE_DENTRO_PADRAO = "dentro_padrao";
+export const ROTULO_DENTRO_PADRAO = "Sem alterações observadas (dentro do padrão)";
+for (const def of MOVIMENTOS) {
+  for (const v of VISTAS_MOV) def.observacoes[v] = [...def.observacoes[v], { chave: CHAVE_DENTRO_PADRAO, rotulo: ROTULO_DENTRO_PADRAO }];
+}
+
+// Marcar "dentro do padrão" limpa as demais; marcar qualquer outra tira o "dentro do padrão".
+export function alternarObsMovimento(atuais: string[] | undefined, chave: string, marcado: boolean): string[] {
+  const s = new Set(atuais ?? []);
+  if (marcado) {
+    if (chave === CHAVE_DENTRO_PADRAO) s.clear();
+    else s.delete(CHAVE_DENTRO_PADRAO);
+    s.add(chave);
+  } else {
+    s.delete(chave);
+  }
+  return Array.from(s);
+}
+
 export const MOVIMENTO_POR_ID = new Map(MOVIMENTOS.map((m) => [m.id, m]));
 
 // ---------------------------------------------------------------------------
@@ -158,6 +178,9 @@ export type VistaMovSalva = {
   angulo?: MedidaAngulo;
   video_path?: string; // vídeo guardado no arquivo privado (opcional)
   analise_video?: ResumoVideo; // análise inicial automática do vídeo
+  // O que o sistema sugeriu marcar, a partir dos pontos do corpo no quadro do ponto máximo. Só vira marcação depois
+  // do ok do avaliador (aceitar), e nunca entra no parecer enquanto não for aceito.
+  sugestoes?: { chave: string; detalhe: string }[];
 };
 export type MovimentoSalvo = Partial<Record<VistaMov, VistaMovSalva>> & { medida?: string; ativo?: boolean };
 export type Movimentos = Record<string, MovimentoSalvo>;

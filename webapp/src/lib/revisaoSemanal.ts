@@ -274,7 +274,7 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
   ],
   lembretes: [
     "I2 (em andamento): a etiqueta já está nas 30 condições; a revisão clínica dos textos é sua. Diga quais condições você revisou (sugestão: hipertensão, diabetes, obesidade, dor lombar e artrose) e a etiqueta sai dessas, com seu nome e a data.",
-    "P2 (de volta, em 26/10/2026): o vídeo voltou ao modo simples da aba Postural. Para calibrar os limites de adequação faltam vídeos reais de outros movimentos além da flexão (agachamento e, se usar, os do modo avançado), de lado e de frente, filmados como no guia de desenhos (POP, etapa 9). Quando enviar alguns, eu ajusto.",
+    "P2 (de volta, em 26/10/2026): o vídeo voltou ao modo simples da aba Postural. Para calibrar os limites de adequação faltam vídeos reais de outros movimentos além da flexão (agachamento e, se usar, os do modo avançado), de lado e de frente, filmados como no guia de desenhos (POP, etapa 9). Também servem fotos e vídeos reais de pessoas para conferir as sugestões automáticas (graus nas fotos e observações nos movimentos), que até agora só foram testadas com pontos sintéticos. Quando enviar alguns, eu ajusto.",
   ],
   candidatos: [
     {

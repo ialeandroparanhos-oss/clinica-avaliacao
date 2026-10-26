@@ -5,6 +5,7 @@
 
 import { INDICE_PONTO, type NomePonto, type Pontos } from "./analisePostural";
 import { carregarModeloPose } from "./poseModelo";
+import { escolherQuadroParado, QUADROS_POR_VIDEO_POSTURAL, type QuadroPose } from "./quadroPostural";
 import { resumirVideo, type InfoVideo, type Quadro, type ResumoVideo } from "./videoMovimento";
 
 const LADO_ANALISE_PX = 960;
@@ -136,6 +137,54 @@ export async function analisarVideoNoNavegador(
       quadroMaximo = await new Promise<Blob | null>((resolve) => c.toBlob((b) => resolve(b), "image/jpeg", 0.92));
     }
     return { resumo, quadroMaximo };
+  } finally {
+    URL.revokeObjectURL(url);
+    video.removeAttribute("src");
+    video.load();
+  }
+}
+
+// Foto postural a partir de um vídeo curto, com o aluno parado: devolve o quadro com o corpo inteiro visível e menos
+// movimento (ou null se em nenhum quadro a pessoa aparece inteira). Roda neste aparelho; o vídeo não é guardado.
+export async function extrairQuadroPostural(arquivo: Blob, aoMudar?: (mensagem: string) => void): Promise<Blob | null> {
+  const url = URL.createObjectURL(arquivo);
+  const video = document.createElement("video");
+  video.muted = true;
+  video.playsInline = true;
+  video.preload = "auto";
+  video.src = url;
+  try {
+    await esperar(video, "loadedmetadata");
+    await garantirDuracao(video);
+    const duracao = Number.isFinite(video.duration) ? video.duration : 0;
+    if (!duracao || !video.videoWidth) throw new Error("Não foi possível ler a duração ou o tamanho do vídeo.");
+    const modelo = await carregarModeloPose(aoMudar);
+    const n = QUADROS_POR_VIDEO_POSTURAL;
+    const quadros: QuadroPose[] = [];
+    const instantes: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const t = Math.min(duracao - 0.05, (duracao * i) / (n - 1));
+      aoMudar?.(`Procurando o melhor quadro: ${i + 1} de ${n}...`);
+      video.currentTime = Math.max(0, t);
+      await esperar(video, "seeked");
+      const canvas = desenhar(video, LADO_ANALISE_PX);
+      const brutos = modelo.detect(canvas).landmarks?.[0];
+      const pontos: Pontos = {};
+      if (brutos) {
+        for (const nome of Object.keys(INDICE_PONTO) as NomePonto[]) {
+          const p = brutos[INDICE_PONTO[nome]];
+          if (p) pontos[nome] = { x: p.x * canvas.width, y: p.y * canvas.height, v: p.visibility ?? 0 };
+        }
+      }
+      quadros.push({ t, pontos });
+      instantes.push(Math.max(0, t));
+    }
+    const melhor = escolherQuadroParado(quadros);
+    if (melhor === null) return null;
+    video.currentTime = instantes[melhor];
+    await esperar(video, "seeked");
+    const c = desenhar(video, LADO_FOTO_PX);
+    return await new Promise<Blob | null>((resolve) => c.toBlob((b) => resolve(b), "image/jpeg", 0.92));
   } finally {
     URL.revokeObjectURL(url);
     video.removeAttribute("src");
