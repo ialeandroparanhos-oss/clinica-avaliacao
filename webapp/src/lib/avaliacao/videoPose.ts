@@ -26,6 +26,28 @@ function esperar(video: HTMLVideoElement, evento: "loadedmetadata" | "seeked", m
   });
 }
 
+// Vídeo gravado pelo navegador (MediaRecorder, em WebM) costuma vir sem duração (Infinity) e sem poder pular para um
+// instante. O truque padrão é ir ao fim "impossível" para o navegador calcular a duração real e voltar ao começo.
+async function garantirDuracao(video: HTMLVideoElement): Promise<void> {
+  if (Number.isFinite(video.duration) && video.duration > 0) return;
+  await new Promise<void>((resolve, reject) => {
+    const t = setTimeout(() => {
+      video.removeEventListener("timeupdate", ok);
+      reject(new Error("O navegador não conseguiu medir a duração deste vídeo."));
+    }, 15000);
+    const ok = () => {
+      if (!Number.isFinite(video.duration)) return;
+      clearTimeout(t);
+      video.removeEventListener("timeupdate", ok);
+      resolve();
+    };
+    video.addEventListener("timeupdate", ok);
+    video.currentTime = 1e7;
+  });
+  video.currentTime = 0;
+  await esperar(video, "seeked");
+}
+
 function desenhar(video: HTMLVideoElement, ladoMax: number): HTMLCanvasElement {
   const escala = Math.min(1, ladoMax / Math.max(video.videoWidth, video.videoHeight));
   const c = document.createElement("canvas");
@@ -72,6 +94,7 @@ export async function analisarVideoNoNavegador(
   video.src = url;
   try {
     await esperar(video, "loadedmetadata");
+    await garantirDuracao(video);
     const duracao = Number.isFinite(video.duration) ? video.duration : 0;
     if (!duracao || !video.videoWidth) throw new Error("Não foi possível ler a duração ou o tamanho do vídeo.");
     const modelo = await carregarModeloPose(aoMudar);

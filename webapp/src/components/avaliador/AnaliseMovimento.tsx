@@ -8,6 +8,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { TextArea } from "@/components/forms";
+import { GravadorVideo } from "./GravadorVideo";
+import { extensaoDoFormato } from "@/lib/avaliacao/gravacao";
 import { analisarVideoNoNavegador } from "@/lib/avaliacao/videoPose";
 import { detectarPontos, prepararImagem } from "@/lib/avaliacao/poseModelo";
 import { pontosNaEscala, preMarcarAngulo } from "@/lib/avaliacao/preMarcacao";
@@ -77,6 +79,7 @@ function BlocoVista({
   const urlVideo = useUrlAssinada(valor.video_path);
   const [preMarcando, setPreMarcando] = useState(false);
   const [msgPre, setMsgPre] = useState<string | null>(null);
+  const [gravando, setGravando] = useState(false);
 
   useEffect(() => {
     setDims(null);
@@ -161,7 +164,7 @@ function BlocoVista({
       }
       // Guarda o vídeo só se couber no limite do arquivo (o limite do plano costuma ser de 50 MB).
       if (file.size <= 45 * 1024 * 1024) {
-        const extensao = (file.name.split(".").pop() || "mp4").toLowerCase();
+        const extensao = (file.name.split(".").pop() || extensaoDoFormato(file.type)).toLowerCase();
         const caminhoVideo = `${pacienteId}/mov_${def.id}_${vista}_video.${extensao}`;
         const { error } = await supabase.storage.from(BUCKET).upload(caminhoVideo, file, { upsert: true, contentType: file.type || "video/mp4" });
         if (!error) novo = { ...novo, video_path: caminhoVideo };
@@ -214,6 +217,21 @@ function BlocoVista({
 
   return (
     <div className="space-y-3 rounded-xl border border-border p-4">
+      {gravando && (
+        <GravadorVideo
+          titulo={`${def.nome} · ${ROTULO_VISTA_MOV[vista]}`}
+          dica={`Câmera parada (tripé ou apoiada), corpo inteiro no quadro, ${vista === "sagital" ? "de lado" : "de frente ou de costas"}. Peça o movimento completo, de 5 a 30 segundos.`}
+          onFechar={() => setGravando(false)}
+          onGravado={(arquivo) => {
+            setGravando(false);
+            analisarVideo(arquivo);
+          }}
+          onFoto={(arquivo) => {
+            setGravando(false);
+            enviar(arquivo);
+          }}
+        />
+      )}
       <p className="font-medium text-ink text-sm">{ROTULO_VISTA_MOV[vista]}</p>
 
       {url && dims ? (
@@ -271,8 +289,16 @@ function BlocoVista({
       <div className="rounded-lg bg-bg p-3 text-sm space-y-2">
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-xs uppercase tracking-wide text-muted font-semibold">Vídeo do movimento (análise inicial)</span>
+          <button
+            type="button"
+            onClick={() => setGravando(true)}
+            disabled={analisandoVideo}
+            className="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-dark transition disabled:opacity-50"
+          >
+            ● {valor.analise_video ? "Gravar de novo" : "Gravar agora"}
+          </button>
           <label className="font-medium text-accent hover:underline cursor-pointer">
-            {analisandoVideo ? "Analisando..." : valor.analise_video ? "Enviar outro vídeo" : "Enviar vídeo"}
+            {analisandoVideo ? "Analisando..." : valor.analise_video ? "ou enviar outro vídeo" : "ou enviar um vídeo"}
             <input
               type="file"
               accept="video/*"
