@@ -33,6 +33,7 @@ import {
   type ObsGuiada,
   type VistaGuiada,
 } from "@/lib/avaliacao/posturaSimples";
+import { sugerirAchados, totalSugestoes, type Sugestao } from "@/lib/avaliacao/preMarcacao";
 
 const BUCKET_FOTOS_POSTURAIS = "fotos-posturais";
 const VISTAS: Vista[] = ["anterior", "posterior", "lateral_d", "lateral_e"];
@@ -159,7 +160,9 @@ function AnaliseVista({
   onResultado,
   escapula,
   onEscapula,
+  automatico = false,
 }: {
+  automatico?: boolean;
   escapula?: DadosEscapula;
   onEscapula?: (m: DadosEscapula) => void;
   vista: Vista;
@@ -263,6 +266,16 @@ function AnaliseVista({
   const resultado = salva && salva.foto_path === caminho ? salva : null;
   const ocupado = estado === "preparando" || estado === "analisando";
 
+  // Modo simples: analisa sozinho quando a foto fica pronta (uma tentativa por foto), para o avaliador só conferir.
+  const tentouAuto = useRef("");
+  useEffect(() => {
+    const chave = `${caminho}#${versao}`;
+    if (!automatico || !imagem || resultado || estado !== "parado" || !caminho || tentouAuto.current === chave) return;
+    tentouAuto.current = chave;
+    executar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [automatico, imagem, resultado, estado, caminho, versao]);
+
   return (
     <div className="rounded-xl border border-border p-4 space-y-3">
       <div className="flex items-center justify-between gap-3">
@@ -337,12 +350,14 @@ function ChecklistVista({
   onChange,
   texto,
   onTexto,
+  sugeridas,
 }: {
   vista: VistaGuiada;
   marcadas: string[];
   onChange: (chave: string, marcado: boolean) => void;
   texto?: string;
   onTexto?: (t: string) => void;
+  sugeridas?: Sugestao[]; // pré-marcações do sistema, a partir dos graus medidos; só valem depois do ok
 }) {
   const nada = marcadas.includes(CHAVE_NADA);
   const caixa = "inline-flex items-start gap-2 text-sm text-ink cursor-pointer";
@@ -350,14 +365,29 @@ function ChecklistVista({
     <div className="rounded-xl border border-border p-4 space-y-2">
       <h4 className="font-display text-base text-ink">{ROTULO_VISTA_GUIADA[vista]}</h4>
       <ul className="space-y-1.5">
-        {ACHADOS[vista].map((a) => (
-          <li key={a.chave}>
-            <label className={caixa}>
-              <input type="checkbox" className="mt-1" checked={marcadas.includes(a.chave)} onChange={(e) => onChange(a.chave, e.target.checked)} />
-              <span>{a.rotulo}</span>
-            </label>
-          </li>
-        ))}
+        {ACHADOS[vista].map((a) => {
+          const marcada = marcadas.includes(a.chave);
+          const sug = !marcada ? (sugeridas ?? []).find((s) => s.chave === a.chave) : undefined;
+          return (
+            <li key={a.chave} className={sug ? "rounded-lg border border-gold bg-gold-soft px-2 py-1.5" : ""}>
+              <label className={caixa}>
+                <input type="checkbox" className="mt-1" checked={marcada} onChange={(e) => onChange(a.chave, e.target.checked)} />
+                <span>
+                  {a.rotulo}
+                  {sug && <span className="ml-2 rounded-full bg-gold px-2 py-0.5 text-[11px] font-semibold text-accent-dark">sugerido</span>}
+                </span>
+              </label>
+              {sug && (
+                <p className="ml-6 mt-0.5 text-xs text-gold-dark">
+                  {sug.detalhe}.{" "}
+                  <button type="button" onClick={() => onChange(a.chave, true)} className="font-semibold underline">
+                    aceitar
+                  </button>
+                </p>
+              )}
+            </li>
+          );
+        })}
         <li className="pt-1 border-t border-border">
           <label className={`${caixa} text-muted`}>
             <input type="checkbox" className="mt-1" checked={nada} onChange={(e) => onChange(CHAVE_NADA, e.target.checked)} />
@@ -411,6 +441,8 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
   const caminhoDe = (v: Vista) => d[`foto_${v}_path`];
   const avancado = modo === "avancado";
   const vistasFoto: Vista[] = avancado ? VISTAS : VISTAS.filter((v) => v !== "lateral_e");
+  const sugestoes = useMemo(() => sugerirAchados(analise.vistas), [analise.vistas]);
+  const nSugestoes = totalSugestoes(sugestoes, analise.guiada);
 
   // O parecer acompanha as análises enquanto o avaliador não o edita; depois de
   // editado, o texto dele nunca é sobrescrito (aparece o aviso de "dados mudaram").
@@ -456,6 +488,16 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
     setAnalise((prev) => comVistas({ ...prev, guiada: alternarAchado(prev.guiada, vista, chave, marcado) }, prev.vistas));
   }
 
+  // O sistema só sugere; aceitar todas é o ok do avaliador de uma vez.
+  function aceitarTodas() {
+    setAnalise((prev) => {
+      const sg = sugerirAchados(prev.vistas);
+      let g = prev.guiada;
+      for (const v of ["anterior", "posterior", "lateral"] as VistaGuiada[]) for (const s of sg[v] ?? []) g = alternarAchado(g, v, s.chave, true);
+      return comVistas({ ...prev, guiada: g }, prev.vistas);
+    });
+  }
+
   function aoResultado(vista: Vista, resultado: AnaliseVistaSalva) {
     setAnalise((prev) => comVistas(prev, { ...prev.vistas, [vista]: resultado }));
   }
@@ -469,7 +511,7 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
     parecer: analise.parecer,
   };
   const estadoAuto = useAutoSalvar(dadosAtuais, rascunho);
-  const vistasComFoto = VISTAS.filter((v) => caminhoDe(v));
+  const vistasComFoto = vistasFoto.filter((v) => caminhoDe(v));
   const campoTexto = { anterior: "obs_anterior", posterior: "obs_posterior", lateral: "obs_lateral_d" } as const;
 
   return (
@@ -482,7 +524,7 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
           <p className="mt-1 text-sm text-muted leading-relaxed">
             {avancado
               ? "Modo avançado: as 4 vistas, a análise automática das fotos, a marcação das escápulas, o vídeo e todos os movimentos, além da lista curta."
-              : "Três fotos, uma lista curta do que você viu e dois testes de movimento (agachamento e flexão de tronco). É o que mais ajuda a prescrever. Mesma distância, altura da câmera e posição do aluno em todas as reavaliações."}{" "}
+              : "Três fotos com a análise automática dos graus (ela roda sozinha ao enviar a foto), uma lista curta do que você viu (o sistema já sugere o que achou e você só confirma) e dois testes de movimento, em foto ou vídeo (agachamento e flexão de tronco). Mesma distância, altura da câmera e posição do aluno em todas as reavaliações."}{" "}
             As fotos ficam em um arquivo privado, visível só para avaliadores da clínica.
           </p>
         </div>
@@ -501,11 +543,66 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
         ))}
       </div>
 
+      <div className="pt-4 border-t border-border space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="font-display text-lg text-ink">Análise automática das fotos (graus)</h3>
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            <label className="inline-flex items-center gap-1.5 text-muted cursor-pointer">
+              <input type="checkbox" checked={grade} onChange={(e) => setGrade(e.target.checked)} /> mostrar grade
+            </label>
+            <button
+              type="button"
+              onClick={() => setSinal((n) => n + 1)}
+              disabled={vistasComFoto.length === 0}
+              className="font-medium text-accent hover:underline disabled:opacity-50"
+            >
+              Analisar todas as fotos
+            </button>
+          </div>
+        </div>
+        <p className="text-xs text-muted leading-relaxed">
+          O agente localiza os pontos do corpo na foto, mede ombros, quadris, cabeça, tronco, joelhos e o alinhamento com a linha de prumo, e desenha o resultado sobre a foto. A análise roda neste computador: <strong>a foto não é
+          enviada a nenhum serviço de IA</strong> (só o modelo é baixado, uma vez). São medidas em foto 2D, sujeitas a erro de enquadramento e de marcação - os cortes (3° discreta, 6° evidente) são referências práticas do
+          sistema, sem validação publicada.
+        </p>
+
+        {vistasComFoto.length === 0 ? (
+          <p className="text-sm text-muted">Envie ao menos uma foto para a análise rodar sozinha.</p>
+        ) : (
+          <div className="grid lg:grid-cols-2 gap-4">
+            {vistasFoto.map((v) => (
+              <AnaliseVista
+                key={v}
+                vista={v}
+                caminho={caminhoDe(v)}
+                versao={versaoFotos[v]}
+                salva={analise.vistas[v]}
+                sinal={sinal}
+                grade={grade}
+                automatico={!avancado}
+                onResultado={(r) => aoResultado(v, r)}
+                escapula={avancado && v === "posterior" ? analise.escapula : undefined}
+                onEscapula={avancado && v === "posterior" ? aoEscapula : undefined}
+              />
+            ))}
+          </div>
+        )}
+      </div>
       <div className="pt-4 border-t border-border space-y-3">
         <div>
           <h3 className="font-display text-lg text-ink">O que você viu nas fotos</h3>
           <p className="text-xs text-muted leading-relaxed mt-1">Marque só o que estiver claro. Assimetrias leves são comuns e, sozinhas, não indicam problema.</p>
         </div>
+        {nSugestoes > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gold bg-gold-soft px-4 py-3">
+            <p className="text-sm text-ink">
+              <strong>O sistema sugeriu {nSugestoes} {nSugestoes === 1 ? "marcação" : "marcações"}</strong> a partir dos graus medidos nas fotos. Elas só valem depois do seu ok.
+            </p>
+            <button type="button" onClick={aceitarTodas} className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark transition">
+              Aceitar todas as sugestões
+            </button>
+          </div>
+        )}
         <div className="grid gap-4 lg:grid-cols-3">
           {(["anterior", "posterior", "lateral"] as VistaGuiada[]).map((v) => (
             <ChecklistVista
@@ -515,46 +612,12 @@ export function AbaPostural({ pacienteId, dados, onSalvo }: { pacienteId: string
               onChange={(chave, marcado) => aoGuiada(v, chave, marcado)}
               texto={avancado ? undefined : d[campoTexto[v]]}
               onTexto={avancado ? undefined : (t) => set(campoTexto[v], t)}
+              sugeridas={sugestoes[v]}
             />
           ))}
         </div>
       </div>
 
-      {avancado && (
-        <div className="pt-4 border-t border-border space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="font-display text-lg text-ink">Análise automática das fotos</h3>
-            <div className="flex flex-wrap items-center gap-4 text-sm">
-              <label className="inline-flex items-center gap-1.5 text-muted cursor-pointer">
-                <input type="checkbox" checked={grade} onChange={(e) => setGrade(e.target.checked)} /> mostrar grade
-              </label>
-              <button
-                type="button"
-                onClick={() => setSinal((n) => n + 1)}
-                disabled={vistasComFoto.length === 0}
-                className="font-medium text-accent hover:underline disabled:opacity-50"
-              >
-                Analisar todas as fotos
-              </button>
-            </div>
-          </div>
-          <p className="text-xs text-muted leading-relaxed">
-            O agente localiza os pontos do corpo na foto, mede ombros, quadris, cabeça, tronco, joelhos e o alinhamento com a linha de prumo, e desenha o resultado sobre a foto. A análise roda neste computador: <strong>a foto não é
-            enviada a nenhum serviço de IA</strong> (só o modelo é baixado, uma vez). São medidas em foto 2D, sujeitas a erro de enquadramento e de marcação - os cortes (3° discreta, 6° evidente) são referências práticas do
-            sistema, sem validação publicada.
-          </p>
-
-          {vistasComFoto.length === 0 ? (
-            <p className="text-sm text-muted">Envie ao menos uma foto para habilitar a análise.</p>
-          ) : (
-            <div className="grid lg:grid-cols-2 gap-4">
-              {VISTAS.map((v) => (
-                <AnaliseVista key={v} vista={v} caminho={caminhoDe(v)} versao={versaoFotos[v]} salva={analise.vistas[v]} sinal={sinal} grade={grade} onResultado={(r) => aoResultado(v, r)} escapula={v === "posterior" ? analise.escapula : undefined} onEscapula={v === "posterior" ? aoEscapula : undefined} />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
       <AnaliseMovimento pacienteId={pacienteId} movimentos={analise.movimentos} onChange={aoMovimentos} ids={avancado ? undefined : MOVIMENTOS_SIMPLES} simples={!avancado} />
 

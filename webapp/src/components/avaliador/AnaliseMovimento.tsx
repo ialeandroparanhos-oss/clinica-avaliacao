@@ -9,6 +9,8 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { TextArea } from "@/components/forms";
 import { analisarVideoNoNavegador } from "@/lib/avaliacao/videoPose";
+import { detectarPontos, prepararImagem } from "@/lib/avaliacao/poseModelo";
+import { pontosNaEscala, preMarcarAngulo } from "@/lib/avaliacao/preMarcacao";
 import { AVISO_MARGEM_ERRO_VIDEO, ROTULO_VEREDITO } from "@/lib/avaliacao/videoMovimento";
 import {
   anguloDe,
@@ -73,6 +75,8 @@ function BlocoVista({
   const [analisandoVideo, setAnalisandoVideo] = useState(false);
   const [msgVideo, setMsgVideo] = useState<string | null>(null);
   const urlVideo = useUrlAssinada(valor.video_path);
+  const [preMarcando, setPreMarcando] = useState(false);
+  const [msgPre, setMsgPre] = useState<string | null>(null);
 
   useEffect(() => {
     setDims(null);
@@ -82,6 +86,48 @@ function BlocoVista({
     img.src = url;
   }, [url]);
 
+  // Pré-marcação: o modelo de pose acha os pontos na foto (neste computador, sem enviar a foto a serviço de IA) e o
+  // ângulo fica como PRÉ-MARCADO, esperando o ok do avaliador. Devolve null quando não há o que marcar.
+  async function preMarcar(blob: Blob): Promise<MedidaAngulo | null> {
+    setPreMarcando(true);
+    setMsgPre("Pré-marcando o ângulo...");
+    try {
+      const img = await prepararImagem(blob);
+      try {
+        const { pontos, encontrou } = await detectarPontos(img, setMsgPre);
+        if (!encontrou) {
+          setMsgPre("Não encontrei a pessoa nesta foto para pré-marcar o ângulo. Se quiser, marque à mão.");
+          return null;
+        }
+        const r = preMarcarAngulo(def.id, vista, pontos, img.largura, img.altura);
+        if (!r) {
+          setMsgPre("Não há ângulo automático para este movimento nesta vista. Se quiser, marque à mão.");
+          return null;
+        }
+        setMsgPre(null);
+        return r.angulo;
+      } finally {
+        URL.revokeObjectURL(img.urlExibicao);
+      }
+    } catch {
+      setMsgPre("Não foi possível pré-marcar agora. Se quiser, marque à mão.");
+      return null;
+    } finally {
+      setPreMarcando(false);
+    }
+  }
+
+  async function preMarcarDaFoto() {
+    if (!valor.foto_path) return;
+    const { data, error } = await supabase.storage.from(BUCKET).download(valor.foto_path);
+    if (error || !data) {
+      setMsgPre("Não foi possível abrir a foto para pré-marcar.");
+      return;
+    }
+    const ang = await preMarcar(data);
+    if (ang) onChange({ ...valor, angulo: ang });
+  }
+
   async function enviar(file: File) {
     setEnviando(true);
     setErro(null);
@@ -89,7 +135,10 @@ function BlocoVista({
     const caminho = `${pacienteId}/mov_${def.id}_${vista}.${extensao}`;
     const { error } = await supabase.storage.from(BUCKET).upload(caminho, file, { upsert: true, contentType: file.type });
     if (error) setErro("Não foi possível enviar a foto agora. Tente de novo.");
-    else onChange({ ...valor, foto_path: caminho, angulo: undefined });
+    else {
+      const ang = await preMarcar(file);
+      onChange({ ...valor, foto_path: caminho, angulo: ang ?? undefined });
+    }
     setEnviando(false);
   }
 
@@ -105,7 +154,10 @@ function BlocoVista({
       if (quadroMaximo) {
         const caminhoFoto = `${pacienteId}/mov_${def.id}_${vista}.jpg`;
         const { error } = await supabase.storage.from(BUCKET).upload(caminhoFoto, quadroMaximo, { upsert: true, contentType: "image/jpeg" });
-        if (!error) novo = { ...novo, foto_path: caminhoFoto, angulo: undefined };
+        if (!error) {
+          const ang = await preMarcar(quadroMaximo);
+          novo = { ...novo, foto_path: caminhoFoto, angulo: ang ?? undefined };
+        }
       }
       // Guarda o vídeo só se couber no limite do arquivo (o limite do plano costuma ser de 50 MB).
       if (file.size <= 45 * 1024 * 1024) {
@@ -157,7 +209,7 @@ function BlocoVista({
   const marcadas = new Set(valor.obs ?? []);
   const angulo = anguloDe(valor.angulo);
   const u = dims ? dims.w / 1000 : 1;
-  const exibidos = medindo ? pts : valor.angulo?.pts ?? [];
+  const exibidos = medindo ? pts : valor.angulo ? pontosNaEscala(valor.angulo, dims?.w ?? valor.angulo.largura) : [];
   const tipoExibido = medindo ?? valor.angulo?.tipo;
 
   return (
@@ -216,7 +268,6 @@ function BlocoVista({
       </div>
       {erro && <p className="text-xs text-danger">{erro}</p>}
 
-      {!simples && (
       <div className="rounded-lg bg-bg p-3 text-sm space-y-2">
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-xs uppercase tracking-wide text-muted font-semibold">Vídeo do movimento (análise inicial)</span>
@@ -300,9 +351,8 @@ function BlocoVista({
         )}
         {urlVideo && <video src={urlVideo} controls className="w-full max-w-sm rounded-lg bg-black" />}
       </div>
-      )}
 
-      {!simples && url && dims && (
+      {url && dims && (
         <div className="rounded-lg bg-bg p-3 text-sm space-y-2">
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-xs uppercase tracking-wide text-muted font-semibold">Medir ângulo na foto</span>
@@ -311,6 +361,9 @@ function BlocoVista({
             </button>
             <button type="button" onClick={() => { setMedindo("vertical"); setPts([]); }} className="font-medium text-accent hover:underline">
               linha em relação à vertical
+            </button>
+            <button type="button" onClick={preMarcarDaFoto} disabled={preMarcando} className="font-medium text-accent hover:underline disabled:opacity-50">
+              {preMarcando ? "Pré-marcando..." : "pré-marcar automaticamente"}
             </button>
             {(valor.angulo || medindo) && (
               <button
@@ -336,7 +389,37 @@ function BlocoVista({
               .
             </p>
           )}
-          {angulo !== null && !medindo && (
+          {msgPre && <p className="text-xs text-muted">{msgPre}</p>}
+          {valor.angulo?.pre && angulo !== null && !medindo && (
+            <div className="rounded-lg border border-gold bg-gold-soft p-3 space-y-2">
+              <p className="text-ink">
+                <strong>Pré-marcado automaticamente:</strong> {valor.angulo.descricao ?? "ângulo"}: <strong>{angulo.toFixed(0)}°</strong>. Confira se os pontos estão no lugar na foto.
+              </p>
+              <div className="flex flex-wrap items-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...valor, angulo: { ...valor.angulo!, pre: false } })}
+                  className="rounded-lg bg-accent px-4 py-1.5 text-sm font-medium text-white hover:bg-accent-dark transition"
+                >
+                  Está certo, confirmar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const { angulo: _a, ...resto } = valor;
+                    onChange(resto);
+                    setMedindo(valor.angulo?.tipo ?? "tres_pontos");
+                    setPts([]);
+                  }}
+                  className="text-sm font-medium text-accent hover:underline"
+                >
+                  Refazer à mão
+                </button>
+              </div>
+              <p className="text-xs text-muted">Enquanto não confirmar, esta medida não entra no parecer nem nos relatórios.</p>
+            </div>
+          )}
+          {angulo !== null && !medindo && !valor.angulo?.pre && (
             <p className="text-ink">
               <strong>{angulo.toFixed(0)}°</strong>
               <span className="text-muted"> {valor.angulo?.tipo === "vertical" ? "de inclinação em relação à vertical da foto (0° = vertical)" : "no vértice marcado"}. Medida 2D, depende do enquadramento e da inclinação da câmera.</span>
@@ -399,8 +482,8 @@ export function AnaliseMovimento({
         <p className="text-xs text-muted leading-relaxed mt-1">
           {simples ? (
             <>
-              Peça o movimento e registre o ponto máximo de lado (<strong>sagital</strong>) e de frente ou de costas (<strong>frontal</strong>): uma foto e o roteiro de marcar. É o que mais ajuda a prescrever. São registros descritivos, sem corte
-              nem validação publicada: não são diagnóstico nem causa de dor. A foto fica no arquivo privado da clínica.
+              Peça o movimento e registre o ponto máximo de lado (<strong>sagital</strong>) e de frente ou de costas (<strong>frontal</strong>), em <strong>foto ou em vídeo</strong>. Ao enviar, o sistema <strong>pré-marca o ângulo</strong> na foto e você só
+              confirma (ou refaz à mão); depois é só marcar o roteiro. São registros descritivos, sem corte nem validação publicada: não são diagnóstico nem causa de dor. A foto e o vídeo ficam no arquivo privado da clínica e não vão a nenhum serviço de IA.
             </>
           ) : (
             <>

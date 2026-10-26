@@ -146,6 +146,10 @@ export type MedidaAngulo = {
   pts: PontoImg[]; // em pixels da foto
   largura: number;
   altura: number;
+  // Pré-marcação automática: os pontos vieram do modelo de pose e só valem depois do ok do avaliador (pre = true
+  // enquanto não confirmada; fora do parecer e dos relatórios até lá). descricao diz o que o ângulo mede.
+  pre?: boolean;
+  descricao?: string;
 };
 export type VistaMovSalva = {
   foto_path?: string;
@@ -196,7 +200,7 @@ export function temMovimento(movimentos: Movimentos | undefined): boolean {
   return MOVIMENTOS.some((def) => {
     const m = movimentos[def.id];
     if (!m) return false;
-    return !!m.medida || VISTAS_MOV.some((v) => (m[v]?.obs?.length ?? 0) > 0 || !!m[v]?.texto || !!m[v]?.foto_path || !!m[v]?.angulo || !!m[v]?.analise_video);
+    return !!m.medida || VISTAS_MOV.some((v) => (m[v]?.obs?.length ?? 0) > 0 || !!m[v]?.texto || !!m[v]?.foto_path || (!!m[v]?.angulo && !m[v]?.angulo?.pre) || !!m[v]?.analise_video);
   });
 }
 
@@ -211,7 +215,7 @@ export function descreverMovimentos(movimentos: Movimentos | undefined): string[
       const sv = m[v];
       if (!sv) continue;
       const obs = (sv.obs ?? []).map((k) => def.observacoes[v].find((o) => o.chave === k)?.rotulo).filter(Boolean) as string[];
-      const ang = anguloDe(sv.angulo);
+      const ang = sv.angulo?.pre ? null : anguloDe(sv.angulo);
       const itens: string[] = [];
       if (obs.length > 0) itens.push(obs.join("; "));
       if (ang !== null) itens.push(`ângulo medido na foto ${f(ang)}°${sv.angulo?.tipo === "vertical" ? " em relação à vertical" : ""}`);
