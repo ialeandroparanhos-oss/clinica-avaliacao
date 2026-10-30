@@ -21,6 +21,8 @@ import {
   CORTE_FFMI,
   classificarMassaMagraPct,
   compararMetodosGordura,
+  conferirBioimpedancia,
+  ORIENTACAO_BIOIMPEDANCIA,
   faixaDoNivelPW,
   NIVEL_ALVO_PADRAO,
   TABELA_MASSA_MAGRA_PCT,
@@ -230,6 +232,7 @@ export function AbaFisica({
   const somaDobras = somaDobrasProtocolo(d.protocolo_dobras as ProtocoloDobras, d, sexoNorm);
   const percentualBioInformado = paraNumero(d.bio_percentual_gordura);
   const divergenciaGordura = compararMetodosGordura(d, idadeNum, sexoNorm);
+  const problemasBio = conferirBioimpedancia(d);
   const classePW = classificarGorduraPollockWilmore(paraNumero(d.percentual_gordura), idadeNum, sexoNorm);
 
   const percentualGorduraEncontrado = paraNumero(d.percentual_gordura);
@@ -597,6 +600,17 @@ export function AbaFisica({
         )}
         {d.bio_percentual_gordura && percentualBioInformado === null && (
           <p className="mt-2 text-xs text-danger">Valor não reconhecido - digite apenas números (ex.: 18,5).</p>
+        )}
+        {problemasBio.length > 0 && (
+          <div className="mt-3 rounded-lg border border-warn bg-warn-soft p-3 text-sm text-ink space-y-1.5" role="alert">
+            <p className="font-medium text-warn">! Bioimpedância: os números não fecham entre si. Pode haver erro.</p>
+            <ul className="list-disc pl-5 space-y-0.5">
+              {problemasBio.map((p) => (
+                <li key={p.codigo}>{p.texto}</li>
+              ))}
+            </ul>
+            <p className="text-xs text-muted leading-relaxed">{ORIENTACAO_BIOIMPEDANCIA}</p>
+          </div>
         )}
         {divergenciaGordura && (
           <p className={`mt-3 rounded-lg p-3 text-sm ${divergenciaGordura.divergente ? "bg-warn-soft text-warn" : "bg-bg text-muted"}`}>

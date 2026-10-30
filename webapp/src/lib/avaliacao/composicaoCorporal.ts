@@ -561,6 +561,57 @@ export function compararMetodosGordura(fisica: Record<string, any> | undefined, 
   return { dobras, bio, diferenca, divergente, texto };
 }
 
+// ---------------------------------------------------------------------------
+// Conferência dos números da bioimpedância (30/10/2026, pedido do profissional)
+//
+// Os campos da bioimpedância (%G, massa gorda, massa magra, água) vêm do laudo do aparelho e são digitados à mão, por
+// isso é fácil trocar ou errar um número. Esta conferência só compara os valores entre si e com o peso, e AVISA; não
+// corrige nada. Tolerâncias práticas do sistema, sem validação publicada: soma das massas até 5% do peso (ou 1,5 kg), %G
+// até 2 pontos de diferença, massa magra em % até 3 pontos. Alguns aparelhos mostram massa MUSCULAR no lugar de massa
+// magra: nesse caso a soma fica menor que o peso e o aviso vale como pedido de conferência, não como erro certo.
+// ---------------------------------------------------------------------------
+export type ProblemaBioimpedancia = { codigo: "impossivel" | "soma_nao_fecha" | "kg_vs_percentual" | "magra_vs_percentual" | "pg_implausivel" | "agua_inusual"; texto: string };
+
+export function conferirBioimpedancia(fisica: Record<string, any> | undefined): ProblemaBioimpedancia[] {
+  const f = fisica ?? {};
+  const peso = paraNumero(f.peso_kg);
+  const gorda = paraNumero(f.bio_massa_gorda_kg);
+  const magra = paraNumero(f.bio_massa_magra_kg);
+  const pct = paraNumero(f.bio_percentual_gordura);
+  const agua = paraNumero(f.bio_agua_corporal_pct);
+  const n1 = (x: number) => x.toFixed(1).replace(".", ",");
+  const saida: ProblemaBioimpedancia[] = [];
+  const add = (codigo: ProblemaBioimpedancia["codigo"], texto: string) => saida.push({ codigo, texto });
+
+  if (peso !== null && peso > 0) {
+    if (gorda !== null && gorda > peso * 1.02) add("impossivel", `massa gorda de ${n1(gorda)} kg é maior que o peso (${n1(peso)} kg)`);
+    if (magra !== null && magra > peso * 1.02) add("impossivel", `massa magra de ${n1(magra)} kg é maior que o peso (${n1(peso)} kg)`);
+    if (gorda !== null && magra !== null && !saida.some((s) => s.codigo === "impossivel")) {
+      const soma = gorda + magra;
+      if (Math.abs(soma - peso) > Math.max(1.5, 0.05 * peso)) {
+        add("soma_nao_fecha", `massa gorda (${n1(gorda)} kg) + massa magra (${n1(magra)} kg) somam ${n1(soma)} kg, mas o peso é ${n1(peso)} kg (diferença de ${n1(Math.abs(soma - peso))} kg)`);
+      }
+    }
+    if (gorda !== null && pct !== null && gorda <= peso * 1.02) {
+      const eq = (gorda / peso) * 100;
+      if (Math.abs(eq - pct) > 2) add("kg_vs_percentual", `a massa gorda de ${n1(gorda)} kg equivale a ${n1(eq)}% do peso, mas o %G informado é ${n1(pct)}%`);
+    }
+    if (magra !== null && pct !== null && magra <= peso * 1.02) {
+      const eq = (magra / peso) * 100;
+      if (Math.abs(eq - (100 - pct)) > 3) add("magra_vs_percentual", `a massa magra de ${n1(magra)} kg equivale a ${n1(eq)}% do peso, mas com %G de ${n1(pct)}% ela deveria ficar perto de ${n1(100 - pct)}%`);
+    }
+  }
+  if (pct !== null && (pct < 3 || pct > 60)) add("pg_implausivel", `%G de ${n1(pct)}% está fora do que é possível na prática (3 a 60%)`);
+  if (agua !== null && (agua < 35 || agua > 75)) add("agua_inusual", `água corporal de ${n1(agua)}% está fora do usual (cerca de 45 a 65% na maioria das pessoas); confira se não foi digitado em litros ou em outra unidade`);
+  return saida;
+}
+
+export const ORIENTACAO_BIOIMPEDANCIA =
+  "Confira os números no laudo do aparelho (pode ser digitação, campo trocado, ou o aparelho mostrar massa muscular no lugar de massa magra). O sistema não usa as massas em kg digitadas nos cálculos (usa %G e peso), então o resultado não muda, mas o dado registrado pode estar errado.";
+
+export function textoAlertaBioimpedancia(problemas: ProblemaBioimpedancia[]): string {
+  return `Bioimpedância com números que não fecham entre si: ${problemas.map((p) => p.texto).join("; ")}. ${ORIENTACAO_BIOIMPEDANCIA}`;
+}
 // %G ideal de referência na versão ANTERIOR (ponto médio da faixa saudável de Gallagher). Não é mais usada para
 // sugerir o ideal (ver percentualGorduraIdealSugerido, 30/10/2026); fica só como registro e para os testes.
 export function percentualGorduraIdealGallagher(idade: number | null, sexo: SexoComp): number | null {

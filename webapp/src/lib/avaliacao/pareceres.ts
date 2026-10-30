@@ -18,7 +18,7 @@ import { calcularPerfilIntegrado, type Classificacao, type DomainKey, type Domai
 import { paraNumero } from "@/lib/numeros";
 import { linhasBaseCientifica, nomeComTitulo, type AgenteId } from "@/lib/agentes";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
-import { analisarComposicao, compararMetodosGordura, CORTE_FFMI, faixaDoNivelPW } from "@/lib/avaliacao/composicaoCorporal";
+import { analisarComposicao, compararMetodosGordura, conferirBioimpedancia, CORTE_FFMI, faixaDoNivelPW, textoAlertaBioimpedancia } from "@/lib/avaliacao/composicaoCorporal";
 import { assimetriaLados, CAMPOS_CIRCUNFERENCIA, LIMITE_ASSIMETRIA_PCT } from "@/lib/avaliacao/medidasRegionais";
 
 export type EstiloParecer = "sucinto" | "explicativo";
@@ -257,6 +257,8 @@ function leituraMarco(p: PacienteRow, estilo: EstiloParecer): string[] {
   }
   const diverg = compararMetodosGordura(f, idade, sexo);
   if (diverg?.divergente) L.push(`ATENÇÃO, métodos divergentes: ${diverg.texto}`);
+  const problemasBio = conferirBioimpedancia(f);
+  if (problemasBio.length > 0) L.push(`ATENÇÃO, ${textoAlertaBioimpedancia(problemasBio)}`);
   const mm = c.massaMagraTabela;
   if (mm) {
     L.push(
