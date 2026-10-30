@@ -42,10 +42,55 @@ details > summary:focus-visible {
     transform: translateY(0);
   }
 }
+/* Figura da abertura: varredura que sobe e desce, anel que pulsa e ponto que pisca. */
+.avatar-varredura {
+  animation: avatar-varre 3.4s ease-in-out infinite alternate;
+}
+@keyframes avatar-varre {
+  from {
+    transform: translateY(2px);
+  }
+  to {
+    transform: translateY(335px);
+  }
+}
+.avatar-anel {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: avatar-anel 2.4s ease-in-out infinite;
+}
+@keyframes avatar-anel {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+.avatar-pisca {
+  animation: avatar-pisca 1.4s ease-in-out infinite;
+}
+@keyframes avatar-pisca {
+  50% {
+    opacity: 0.2;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .abertura-entra {
     animation: none;
     opacity: 1;
+  }
+  .avatar-varredura,
+  .avatar-anel,
+  .avatar-pisca {
+    animation: none;
+  }
+  .avatar-varredura {
+    display: none;
   }
 }
 
