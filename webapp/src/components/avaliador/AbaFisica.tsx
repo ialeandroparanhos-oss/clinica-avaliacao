@@ -236,7 +236,7 @@ export function AbaFisica({
   const faixaIdeal = faixaGorduraSugerida(idadeNum, sexoNorm);
   const nivelAlvoPW = NIVEL_ALVO_PADRAO;
   const faixaAlvoPW = faixaDoNivelPW(nivelAlvoPW, idadeNum, sexoNorm);
-  const percentualIdealSugerido = percentualGorduraIdealSugerido(idadeNum, sexoNorm, nivelAlvoPW);
+  const percentualIdealSugerido = percentualGorduraIdealSugerido(idadeNum, sexoNorm, nivelAlvoPW, percentualGorduraEncontrado);
   const massaMagraTabela = classificarMassaMagraPct(percentualGorduraEncontrado, sexoNorm);
   const composicaoAtual = analisarComposicao(d, idadeNum, sexoNorm);
   const faixaMassaMagraKg =
@@ -631,7 +631,7 @@ export function AbaFisica({
             value={d.percentual_gordura_ideal}
             onChange={(v) => set("percentual_gordura_ideal", v)}
             sugestao={percentualIdealSugerido}
-            sufixo={faixaAlvoPW ? `% (ideal da tabela para ${faixaAlvoPW.faixaEtaria}: ${faixaAlvoPW.faixa[0]} a ${faixaAlvoPW.faixa[1]}%)` : faixaIdeal ? `% (sem tabela para esta idade: faixa saudável ${faixaIdeal[0]}-${faixaIdeal[1]}%)` : "%"}
+            sufixo={faixaAlvoPW ? `% (ideal da tabela para ${faixaAlvoPW.faixaEtaria}: ${faixaAlvoPW.faixa[0]} a ${faixaAlvoPW.faixa[1]}%)` : faixaIdeal ? `% (sem tabela para esta idade: faixa saudável ${faixaIdeal[0]}-${faixaIdeal[1]}%; o ideal não é sugerido, defina se quiser)` : "%"}
           />
           <ValorCalculado label="%G excedente" valor={percentualExcedente !== null ? `${percentualExcedente.toFixed(1)}%` : null} />
           <ValorCalculado label="Peso de gordura total" valor={pesoGorduraTotalKg !== null ? `${pesoGorduraTotalKg.toFixed(1)} kg` : null} />

@@ -354,7 +354,7 @@ export function analisarComposicao(fisica: Record<string, any> | undefined, idad
 
   const idealInformado = paraNumero(f.massa_magra_ideal_kg);
   const nivelAlvo = nivelAlvoValido(f.percentual_gordura_ideal_nivel);
-  const pgIdeal = paraNumero(f.percentual_gordura_ideal) ?? percentualGorduraIdealSugerido(idade, sexo, nivelAlvo);
+  const pgIdeal = paraNumero(f.percentual_gordura_ideal) ?? percentualGorduraIdealSugerido(idade, sexo, nivelAlvo, pg);
   const massaMagraIdealKg = idealInformado ?? (peso !== null && pgIdeal !== null ? peso * (1 - pgIdeal / 100) : null);
   const massaMagraPctDaMeta = massaMagraKg !== null && massaMagraIdealKg !== null && massaMagraIdealKg > 0 ? (massaMagraKg / massaMagraIdealKg) * 100 : null;
 
@@ -561,9 +561,8 @@ export function compararMetodosGordura(fisica: Record<string, any> | undefined, 
   return { dobras, bio, diferenca, divergente, texto };
 }
 
-// %G ideal de referência na versão ANTERIOR (ponto médio da faixa saudável de Gallagher). Mantida só para a
-// triagem de sarcopenia (lib/integracao/sarcopenia.ts), cuja regra "massa magra < 90% da meta" foi montada
-// sobre esse valor e não deve mudar sem decisão clínica.
+// %G ideal de referência na versão ANTERIOR (ponto médio da faixa saudável de Gallagher). Não é mais usada para
+// sugerir o ideal (ver percentualGorduraIdealSugerido, 30/10/2026); fica só como registro e para os testes.
 export function percentualGorduraIdealGallagher(idade: number | null, sexo: SexoComp): number | null {
   const faixa = faixaGorduraSugerida(idade, sexo);
   if (!faixa) return null;
@@ -571,10 +570,15 @@ export function percentualGorduraIdealGallagher(idade: number | null, sexo: Sexo
 }
 
 // %G ideal sugerido: ponto médio do nível-alvo da tabela Pollock & Wilmore para a idade e o sexo (padrão:
-// "Excelente"; o avaliador escolhe o nível na aba Física). Fora de 18 a 65 anos não há tabela: usa o ponto
-// médio da faixa saudável de Gallagher.
-export function percentualGorduraIdealSugerido(idade: number | null, sexo: SexoComp, nivel?: unknown): number | null {
+// "Excelente"; o avaliador escolhe o nível na aba Física). Mudança de 30/10/2026 (decisão do profissional):
+//  - fora de 18 a 65 anos (ou sem idade ou sexo) NÃO se sugere um número único: o ponto médio da faixa de
+//    Gallagher dava, por exemplo, 29,5% para uma mulher de 66 anos que tinha 21%, ou seja, "ideal" acima do que
+//    ela já tem. Nesses casos a tela mostra só a faixa saudável e o avaliador define o ideal, se quiser;
+//  - o %G atual (pgAtual), quando informado, limita a sugestão: nunca se sugere um ideal acima do que a pessoa já tem.
+export function percentualGorduraIdealSugerido(idade: number | null, sexo: SexoComp, nivel?: unknown, pgAtual?: number | null): number | null {
   const alvo = faixaDoNivelPW(nivelAlvoValido(nivel), idade, sexo);
-  if (alvo) return (alvo.faixa[0] + alvo.faixa[1]) / 2;
-  return percentualGorduraIdealGallagher(idade, sexo);
+  if (!alvo) return null;
+  const sugerido = (alvo.faixa[0] + alvo.faixa[1]) / 2;
+  if (pgAtual !== null && pgAtual !== undefined && Number.isFinite(pgAtual) && sugerido > pgAtual) return null;
+  return sugerido;
 }

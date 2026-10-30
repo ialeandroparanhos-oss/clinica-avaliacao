@@ -204,7 +204,7 @@ export default function RelatorioTecnico() {
   const pctTc6 = percentualDoPrevisto(paraNumero(paciente.funcional?.tc6_metros), previstoTc6);
   const tc6Texto = previstoTc6 !== null ? `${Math.round(previstoTc6)} m${pctTc6 !== null ? ` (realizado = ${Math.round(pctTc6)}% do previsto; sem corte de classificação adotado)` : ""}` : null;
   const nivelAlvoRel = nivelAlvoValido(paciente.fisica?.percentual_gordura_ideal_nivel);
-  const percentualIdealSugerido = percentualGorduraIdealSugerido(idadeNum, sexoNorm, nivelAlvoRel);
+  const percentualIdealSugerido = percentualGorduraIdealSugerido(idadeNum, sexoNorm, nivelAlvoRel, percentualGordura);
   const compRel = analisarComposicao(paciente.fisica, idadeNum, sexoNorm);
   const percentualIdealEfetivo = paraNumero(paciente.fisica?.percentual_gordura_ideal) ?? percentualIdealSugerido;
   const percentualExcedente = percentualGordura && percentualIdealEfetivo !== null ? percentualGordura - percentualIdealEfetivo : null;

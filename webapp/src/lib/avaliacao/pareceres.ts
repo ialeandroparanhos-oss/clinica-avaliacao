@@ -243,6 +243,14 @@ function leituraMarco(p: PacienteRow, estilo: EstiloParecer): string[] {
           L.push(`CUIDADO: manter a massa magra atual e chegar a esse %G daria ${fmt(pesoIdeal, 1, "kg")} (IMC ${fmt(imcIdeal, 1)}, abaixo de 18,5). Use o %G ideal como referência de composição, não como meta de peso: a prioridade é ganhar massa magra.`);
         }
       }
+    } else {
+      // Sem %G ideal sugerido (mudança de 30/10/2026): fora de 18 a 65 anos não há tabela, e o sistema não sugere
+      // um ideal acima do %G que a pessoa já tem.
+      L.push(
+        c.nivelPW
+          ? `%G ideal de referência: não sugerido, porque o %G atual (${fmt(c.pg, 1, "%")}) já está abaixo do ponto médio do nível-alvo da tabela. Defina um ideal na aba Física, se quiser.`
+          : `%G ideal de referência: não sugerido, porque a tabela Pollock & Wilmore vale de 18 a 65 anos${c.faixa ? ` (faixa saudável de Gallagher para esta idade: ${c.faixa[0]} a ${c.faixa[1]}%, só como referência)` : ""}. Defina um ideal na aba Física, se quiser.`
+      );
     }
   } else {
     L.push("Gordura corporal: NÃO registrada (dobras ou bioimpedância). Sem ela só há o IMC, que não separa gordura de massa magra: registre o %G para uma leitura confiável.");
