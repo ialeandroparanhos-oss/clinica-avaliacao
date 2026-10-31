@@ -18,7 +18,6 @@ import {
   calcularPercentualGorduraDobras,
   classificarGorduraPollockWilmore,
   analisarComposicao,
-  CORTE_FFMI,
   classificarMassaMagraPct,
   avisoAlvoMassaMagra,
   carenciasPorLimite,
@@ -675,7 +674,7 @@ export function AbaFisica({
             }
           />
           <div className="space-y-1.5">
-            <NumField label="% de massa magra ideal (alvo da carência)" suffix="%" value={d.massa_magra_pct_ideal} onChange={(v) => set("massa_magra_pct_ideal", v)} />
+            <NumField label="% de massa magra ideal (alvo)" suffix="%" value={d.massa_magra_pct_ideal} onChange={(v) => set("massa_magra_pct_ideal", v)} />
             {limitesMM.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5 text-xs">
                 <span className="text-muted">Usar:</span>
@@ -710,7 +709,7 @@ export function AbaFisica({
               </p>
             )}
           </div>
-          <ValorCalculado label="Carência muscular" valor={carenciaMuscularKg !== null ? `${carenciaMuscularKg.toFixed(1)} kg` : null}>
+          <ValorCalculado label="Massa magra a ganhar até o alvo" valor={carenciaMuscularKg !== null ? `${carenciaMuscularKg.toFixed(1)} kg` : null}>
             <p className="text-xs text-muted mt-1">
               {carenciaMuscular
                 ? `((% de massa magra ideal − % encontrada) × massa magra em kg) ÷ 100 = ((${carenciaMuscular.pctIdeal.toFixed(1)}% − ${carenciaMuscular.pctAtual.toFixed(1)}%) × ${carenciaMuscular.massaMagraKg.toFixed(1)} kg) ÷ 100. A % ideal vem ${
@@ -723,16 +722,6 @@ export function AbaFisica({
                 Até cada limite da tabela: {carenciasLimites.map((c) => `${c.rotulo} (${c.pct}%): ${c.kg.toFixed(1)} kg`).join(" · ")}.
               </p>
             )}
-          </ValorCalculado>
-          <ValorCalculado
-            label="Carência de massa magra pelo índice (teste)"
-            valor={composicaoAtual.carenciaIndiceKg !== null ? `${composicaoAtual.carenciaIndiceKg.toFixed(1)} kg` : null}
-          >
-            <p className="text-xs text-muted mt-1">
-              {composicaoAtual.ffmi !== null && sexoNorm !== "desconhecido"
-                ? `Quanto falta para o índice de massa magra (hoje ${composicaoAtual.ffmi.toFixed(1)} kg/m²) chegar ao corte GLIM de ${CORTE_FFMI[sexoNorm]} kg/m². Zero quando já atinge. Considera a altura; é estimativa por dobras/bioimpedância.`
-                : "Precisa de peso, altura, %G e sexo."}
-            </p>
           </ValorCalculado>
           <ValorCalculado label="Peso ideal" valor={pesoIdealKg !== null ? `${pesoIdealKg.toFixed(1)} kg` : null}>
             {imcNoPesoIdeal !== null && imcNoPesoIdeal < 18.5 && (

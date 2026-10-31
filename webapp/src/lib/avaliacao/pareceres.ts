@@ -269,8 +269,8 @@ function leituraMarco(p: PacienteRow, estilo: EstiloParecer): string[] {
     const corte = sexo !== "desconhecido" ? CORTE_FFMI[sexo] : null;
     L.push(
       `Massa magra absoluta: ${fmt(c.massaMagraKg, 1, "kg")}${c.ffmi !== null ? `, índice ${fmt(c.ffmi, 1)} kg/m²` : ""}${corte !== null && c.ffmi !== null ? ` (corte de massa reduzida GLIM: ${corte} kg/m²): ${c.ffmiBaixo ? "BAIXA" : "adequada"}` : ""}${
-        c.carenciaMuscular !== null ? `; carência muscular de ${fmt(c.carenciaMuscular.kg, 1, "kg")} (massa magra ${fmt(c.carenciaMuscular.pctAtual, 1, "%")} do peso; ideal a partir de ${fmt(c.carenciaMuscular.pctIdeal, 1, "%")}; fórmula do profissional, regra do sistema sem validação publicada)` : ""
-      }${c.carenciaIndiceKg !== null && c.carenciaIndiceKg > 0 ? `; faltam cerca de ${fmt(c.carenciaIndiceKg, 1, "kg")} de massa magra para o índice chegar ao corte (teste)` : ""}. É a única leitura de massa magra independente do %G, porque considera a altura.`
+        c.carenciaMuscular !== null ? `; ${c.carenciaMuscular.kg > 0 ? `faltam ${fmt(c.carenciaMuscular.kg, 1, "kg")} de massa magra para chegar ao alvo` : "já está no alvo de massa magra"} (massa magra ${fmt(c.carenciaMuscular.pctAtual, 1, "%")} do peso; alvo ${fmt(c.carenciaMuscular.pctIdeal, 1, "%")}; fórmula do profissional, regra do sistema sem validação publicada)` : ""
+      }. O índice é a única leitura de massa magra independente do %G, porque considera a altura.`
     );
   }  const padraoTxt: Record<string, string> = {
     gordura_alta_massa_baixa: "Padrão de MAIOR ATENÇÃO: gordura alta com massa magra baixa. Peso e IMC podem parecer aceitáveis e esconder o problema; a prioridade é ganhar massa magra (treino de força progressivo, com nutrição) e reduzir gordura sem perder músculo. Se a força também estiver reduzida, é compatível com obesidade sarcopênica (triagem; confirmar).",
