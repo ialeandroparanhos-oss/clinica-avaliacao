@@ -207,7 +207,7 @@ export function servicosParaPaciente(plano: Pick<Plano, "servicos"> | undefined)
   return (plano?.servicos ?? [])
     .filter(itemAprovado)
     .map((s) => {
-      const primeira = [...s.etapas].filter((e) => e.texto.trim() !== "").sort((a, b) => ordem.indexOf(a.horizonte) - ordem.indexOf(b.horizonte))[0];
+      const primeira = [...s.etapas].filter((e) => e.texto.trim() !== "" && !e.semInicio).sort((a, b) => ordem.indexOf(a.horizonte) - ordem.indexOf(b.horizonte))[0];
       return {
         servico: s.servico,
         nome: NOME_SERVICO[s.servico].split(" (")[0],

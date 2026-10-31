@@ -23,7 +23,7 @@ import { CAMPOS_CIRCUNFERENCIA, calcularMassaMagraRelativa, expansibilidadeTorac
 import { paraNumero } from "@/lib/numeros";
 import { mensagemTecnica } from "@/lib/avaliacao/whatsapp";
 import { PainelSupervisao } from "@/components/avaliador/PainelSupervisao";
-import { NOME_SERVICO, ROTULO_PRIORIDADE_SERVICO } from "@/lib/integracao/servicos";
+import { PROFISSOES, ROTULO_PRIORIDADE_SERVICO, inicioDoServico, rotuloServico } from "@/lib/integracao/servicos";
 import { avaliarMobilidadeObjetiva, paresDeMobilidade } from "@/lib/avaliacao/mobilidade";
 import { percentualDoPrevisto, tc6Previsto } from "@/lib/avaliacao/tc6";
 import { nomeComTitulo, textoRevisao, type AgenteId } from "@/lib/agentes";
@@ -549,7 +549,10 @@ export default function RelatorioTecnico() {
               <ul className="list-disc list-inside text-sm text-muted space-y-1">
                 {plano.servicos.filter(itemAprovado).map((s) => (
                   <li key={s.id}>
-                    <strong className="text-ink">{NOME_SERVICO[s.servico]}</strong> ({ROTULO_PRIORIDADE_SERVICO[s.prioridade].toLowerCase()}): {s.motivos.join("; ")}.{" "}
+                    <strong className="text-ink">{rotuloServico(s)}</strong> ({ROTULO_PRIORIDADE_SERVICO[s.prioridade].toLowerCase()}; {inicioDoServico(s).quando === "agora" ? "começar agora" : "entra depois"}): {s.motivos.join("; ")}.{" "}
+                    {s.beneficios && s.beneficios.length > 0 ? `Em que ajuda: ${s.beneficios.join("; ")}. ` : ""}
+                    {s.areas && s.areas.length > 0 ? `Áreas: ${s.areas.map((a) => `${a.nome} (${a.atuacao})`).join("; ")}. ` : ""}
+                    {`Profissional: ${PROFISSOES[s.servico].profissional.toLowerCase()}. `}
                     {s.etapas.map((e) => `${e.horizonte === "365" ? "Anual" : `${e.horizonte} dias`}: ${e.texto}`).join(" ")}
                   </li>
                 ))}

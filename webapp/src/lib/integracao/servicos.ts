@@ -1,7 +1,11 @@
 // Agente 7 — Dr. Theo: serviços da clínica sugeridos a partir da avaliação e da anamnese.
 //
-// Serviços: fisioterapia, musculação, Pilates, RPG, medicina tradicional chinesa (acupuntura),
-// massoterapia e psicologia. Para cada um o sistema diz:
+// Serviços da clínica (decisão do profissional, 30/10/2026): psicologia, medicina tradicional chinesa (acupuntura),
+// fisioterapia e suas áreas (ortopédica, coluna e postura com RPG, geriátrica e prevenção de quedas, neurofuncional,
+// cardiorrespiratória e pélvica), musculação e Pilates. RPG e massoterapia deixaram de ser serviços à parte (o RPG é
+// uma técnica da fisioterapia; a massoterapia não é oferecida), mas planos antigos que os tenham continuam abrindo.
+// O sistema NÃO prescreve exercício (tipo, carga, frequência): isso é do profissional de cada serviço; ele indica
+// QUAIS serviços combinam com o quadro atual e por onde começar. Para cada um o sistema diz:
 //  - POR QUÊ (os achados do paciente que motivaram a sugestão);
 //  - QUANDO incluir (30, 60, 90 dias ou anual, com a sequência entre os serviços);
 //  - se é INDICADO ou OPCIONAL (preferência do paciente);
@@ -27,7 +31,7 @@ import { triarSarcopeniaDinapenia } from "./sarcopenia";
 
 export type ServicoId = "fisioterapia" | "musculacao" | "pilates" | "rpg" | "mtc" | "massoterapia" | "psicologia";
 
-export const ORDEM_SERVICOS: ServicoId[] = ["fisioterapia", "psicologia", "musculacao", "pilates", "rpg", "mtc", "massoterapia"];
+export const ORDEM_SERVICOS: ServicoId[] = ["fisioterapia", "psicologia", "musculacao", "pilates", "mtc", "rpg", "massoterapia"];
 
 export const NOME_SERVICO: Record<ServicoId, string> = {
   fisioterapia: "Fisioterapia",
@@ -42,7 +46,7 @@ export const NOME_SERVICO: Record<ServicoId, string> = {
 // Texto simples para o paciente (sem preço, sem pressão).
 export const TEXTO_SERVICO_PACIENTE: Record<ServicoId, string> = {
   fisioterapia: "cuidar da dor e recuperar o movimento, com exercícios terapêuticos acompanhados",
-  musculacao: "ganhar força com treino acompanhado, aumentando a carga aos poucos",
+  musculacao: "ganhar força e disposição com treino acompanhado, no ritmo que o seu corpo permitir",
   pilates: "melhorar controle do corpo, postura e mobilidade com exercícios de solo ou aparelhos",
   rpg: "trabalhar postura e alongamento global, em sessões individuais",
   mtc: "acupuntura como apoio ao alívio da dor, se você quiser",
@@ -53,7 +57,42 @@ export const TEXTO_SERVICO_PACIENTE: Record<ServicoId, string> = {
 export type PrioridadeServico = "indicado" | "opcional";
 export const ROTULO_PRIORIDADE_SERVICO: Record<PrioridadeServico, string> = { indicado: "Indicado", opcional: "Opcional" };
 
-export type EtapaServico = { horizonte: Horizonte; texto: string };
+export type EtapaServico = { horizonte: Horizonte; texto: string; semInicio?: boolean }; // semInicio: a etapa é só um aviso e não começa o serviço
+
+// Área da fisioterapia indicada para o quadro (a fisioterapia tem várias áreas, cada uma com um foco).
+export type AreaFisio = { chave: string; nome: string; atuacao: string; motivos: string[] };
+
+// Leitura das profissões: quem é o profissional, o que ele faz e em que costuma ajudar. É descrição do campo de
+// atuação (não é afirmação de resultado); a evidência de cada caso vem separada, nas referências conferidas.
+export const PROFISSOES: Record<ServicoId, { profissional: string; atuacao: string; beneficios: string[] }> = {
+  fisioterapia: {
+    profissional: "Fisioterapeuta",
+    atuacao: "avalia o movimento e a função do corpo e trata dor, lesões e limitações com exercício terapêutico, terapia manual, orientação e recursos de reabilitação. Atua em várias áreas: ortopédica, coluna e postura (inclui RPG), geriátrica e prevenção de quedas, neurofuncional, cardiorrespiratória e pélvica.",
+    beneficios: ["reduzir a dor e a inflamação", "recuperar movimento, força e função depois de lesão ou cirurgia", "reeducar a postura e o controle da coluna", "treinar equilíbrio e reduzir o risco de queda", "preparar o corpo para voltar ao treino com segurança"],
+  },
+  psicologia: {
+    profissional: "Psicólogo(a)",
+    atuacao: "oferece escuta e avaliação psicológica e acompanhamento (por exemplo, terapia cognitivo-comportamental) para estresse, ansiedade, humor, sono, relação com a dor e mudança de hábitos. Não prescreve medicamentos: quando necessário, trabalha junto com o médico.",
+    beneficios: ["apoio emocional e estratégias para lidar com estresse, ansiedade e humor rebaixado", "lidar melhor com a dor persistente e com o medo de se mexer", "melhorar o sono e a rotina", "sustentar a motivação e a regularidade nos hábitos e no treino"],
+  },
+  mtc: {
+    profissional: "Profissional de medicina tradicional chinesa (acupuntura)",
+    atuacao: "faz a avaliação pela medicina tradicional chinesa e utiliza a acupuntura e técnicas relacionadas como apoio ao cuidado, em geral para dor, tensão, estresse e sono. É um apoio: não substitui o exercício nem o tratamento médico.",
+    beneficios: ["apoio ao alívio da dor persistente", "relaxamento e redução da tensão", "apoio ao sono e ao estresse (sem referência conferida pelo sistema para este uso)"],
+  },
+  musculacao: {
+    profissional: "Profissional de educação física (musculação)",
+    atuacao: "avalia, planeja e acompanha o treino de força, ensinando a técnica e ajustando o treino ao longo do tempo. Quem define o tipo de exercício, as cargas, a frequência e a progressão é o profissional.",
+    beneficios: ["ganhar força e massa muscular", "melhorar a composição corporal e a saúde dos ossos", "facilitar as tarefas do dia a dia e a autonomia", "contribuir para o humor, a disposição e o sono"],
+  },
+  pilates: {
+    profissional: "Instrutor(a) de Pilates",
+    atuacao: "conduz exercícios de controle do corpo, respiração, mobilidade e estabilidade do tronco, em solo ou em aparelhos, com ajuste individual. Quem define os exercícios e a progressão é o instrutor.",
+    beneficios: ["melhorar o controle do tronco e a mobilidade", "ganhar consciência corporal e postura", "dar continuidade à reabilitação depois da fisioterapia", "apoio em dor lombar e cervical"],
+  },
+  rpg: { profissional: "Fisioterapeuta (RPG)", atuacao: "Reeducação Postural Global, técnica da fisioterapia (serviço antigo, hoje dentro da fisioterapia).", beneficios: ["postura e alongamento global"] },
+  massoterapia: { profissional: "Massoterapeuta", atuacao: "massagem para relaxamento e alívio da tensão (serviço antigo, hoje não sugerido).", beneficios: ["relaxamento e alívio da tensão"] },
+};
 
 export type ServicoPlano = {
   id: string;
@@ -66,7 +105,24 @@ export type ServicoPlano = {
   regra: string;
   status?: StatusItem;
   comentario?: string;
+  areas?: AreaFisio[]; // só na fisioterapia: áreas indicadas para este quadro
+  beneficios?: string[]; // em que este serviço ajuda no quadro desta pessoa
 };
+
+// Por onde começar: "agora" quando a primeira etapa é nas primeiras semanas (30 dias); senão entra depois.
+const ORDEM_HORIZONTE: Horizonte[] = ["30", "60", "90", "180", "365"];
+export function inicioDoServico(s: Pick<ServicoPlano, "etapas">): { quando: "agora" | "depois"; horizonte: Horizonte | null } {
+  const e = [...s.etapas].filter((x) => x.texto.trim() !== "" && !x.semInicio).sort((a, b) => ORDEM_HORIZONTE.indexOf(a.horizonte) - ORDEM_HORIZONTE.indexOf(b.horizonte))[0];
+  if (!e) return { quando: "depois", horizonte: null };
+  return { quando: e.horizonte === "30" ? "agora" : "depois", horizonte: e.horizonte };
+}
+
+// Nome para relatórios e resumos: "Fisioterapia (ortopédica; coluna e postura)".
+export function rotuloServico(s: Pick<ServicoPlano, "servico" | "areas">): string {
+  const base = NOME_SERVICO[s.servico].split(" (")[0];
+  const areas = (s.areas ?? []).map((a) => a.nome.split(" (")[0].split(":")[0].toLowerCase());
+  return areas.length > 0 ? `${base} (${areas.join("; ")})` : base;
+}
 
 const PUBMED = (pmid: string) => `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
 
@@ -79,6 +135,7 @@ const REF = {
   HEMPEN_2025: { rotulo: "Hempen & Hummelsberger, Complement Ther Med 2025 - revisão de revisões sobre acupuntura", url: PUBMED("40021024") },
   FURLAN_2015: { rotulo: "Furlan et al., Cochrane 2015 - massagem para dor lombar", url: PUBMED("26329399") },
   WILLIAMS_2020: { rotulo: "Williams et al., Cochrane 2020 - terapias psicológicas para dor crônica", url: PUBMED("32794606") },
+  NOETEL_2024: { rotulo: "Noetel et al., BMJ 2024 - exercício para depressão (revisão sistemática com meta-análise em rede)", url: PUBMED("38355154") },
   GOMEZ_2024: { rotulo: "Gómez-Redondo et al., Sports Med 2024 - exercício supervisionado x não supervisionado (60+)", url: PUBMED("38647999") },
 };
 
@@ -150,11 +207,59 @@ function extrairSinais(perfil: PerfilIntegrado, paciente: PacienteRow) {
 
 const lista = (r: string[]) => r.map((x) => x.toLowerCase()).join(", ");
 
+// O que cada área da fisioterapia faz e em que ajuda (campo de atuação, não promessa de resultado).
+const ATUACAO_AREA: Record<string, { nome: string; atuacao: string; beneficio: string }> = {
+  ortopedica: {
+    nome: "Ortopédica e musculoesquelética",
+    atuacao: "dor e lesões de músculos, tendões e articulações, artrose e pós-cirurgia ortopédica: avaliação do movimento, exercício terapêutico, terapia manual e orientação",
+    beneficio: "reduzir a dor e a inflamação e recuperar movimento e função",
+  },
+  coluna_postura: {
+    nome: "Coluna e postura (inclui RPG)",
+    atuacao: "dor de coluna e alterações posturais: reeducação postural (por exemplo, RPG), controle do tronco, mobilidade e orientação",
+    beneficio: "aliviar a dor de coluna e reeducar a postura e o controle do tronco",
+  },
+  quedas: {
+    nome: "Geriátrica: equilíbrio, marcha e prevenção de quedas",
+    atuacao: "equilíbrio, marcha, força de pernas e segurança nas tarefas do dia a dia, para reduzir o risco de queda",
+    beneficio: "treinar equilíbrio e marcha e reduzir o risco de queda",
+  },
+  neurofuncional: {
+    nome: "Neurofuncional",
+    atuacao: "movimento, equilíbrio e coordenação quando há condição do sistema nervoso (por exemplo, AVC, doença de Parkinson ou neuropatia) ou tontura",
+    beneficio: "recuperar controle de movimento, equilíbrio e independência",
+  },
+  cardiorrespiratoria: {
+    nome: "Cardiorrespiratória",
+    atuacao: "reabilitação e condicionamento em condições do coração ou do pulmão (por exemplo, asma, DPOC ou após evento cardíaco), com segurança e liberação médica",
+    beneficio: "melhorar o fôlego e a tolerância ao esforço com acompanhamento seguro",
+  },
+  pelvica: {
+    nome: "Pélvica (assoalho pélvico)",
+    atuacao: "assoalho pélvico: perda de urina, dor pélvica, gestação e pós-parto",
+    beneficio: "cuidar do assoalho pélvico e dos sintomas urinários ou de dor pélvica",
+  },
+};
+
 export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow): ServicoPlano[] {
   const s: Sinais = extrairSinais(perfil, paciente);
   const saida: ServicoPlano[] = [];
-  const add = (servico: ServicoId, prioridade: PrioridadeServico, motivos: string[], etapas: EtapaServico[], extra: { evidencia?: Evidencia; ressalva?: string } = {}) =>
-    saida.push({ id: gerarId(), servico, prioridade, motivos, etapas, evidencia: extra.evidencia, ressalva: extra.ressalva, regra: `servico|${servico}`, status: "sugerido" });
+  const add = (
+    servico: ServicoId,
+    prioridade: PrioridadeServico,
+    motivos: string[],
+    etapas: EtapaServico[],
+    extra: { evidencia?: Evidencia; ressalva?: string; areas?: AreaFisio[]; beneficios?: string[] } = {}
+  ) =>
+    saida.push({ id: gerarId(), servico, prioridade, motivos, etapas, evidencia: extra.evidencia, ressalva: extra.ressalva, areas: extra.areas, beneficios: extra.beneficios, regra: `servico|${servico}`, status: "sugerido" });
+
+  // Texto das condições e da queixa (só o que está escrito: o sistema não diagnostica; o avaliador confirma).
+  const textoCond = normalizar([s.a.historico_saude.doencas, s.a.historico_saude.outras_condicoes, s.a.motivo.queixa_principal, s.a.motivo.motivo_procura].filter(Boolean).join(" "));
+  const tontura = s.a.prontidao.parq.dizziness === true;
+  const cardioParq = s.a.prontidao.parq.heart_condition === true;
+  const humorSinalizado = s.a.saude_mental.sinalizacao === "sim";
+  const bem = s.dom("bem_estar")?.classificacao;
+  const humorAlterado = bem === "prioridade" || bem === "atencao" || humorSinalizado;
 
   // Fase inicial "delicada": dor forte, inflamação ou sinal de alerta -> a musculação começa depois da fisioterapia.
   const faseInicial = s.temDor && ((s.maxNrs ?? 0) >= 7 || s.inflamacao || s.bandeiras);
@@ -162,7 +267,43 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
   const avisoMedico = aguardarMedico ? "Há sinal de alerta: inicie os serviços com exercício só depois da avaliação e liberação médica." : undefined;
   const prefixo = (t: string) => (aguardarMedico ? `Após liberação médica: ${t}` : t);
 
-  // 1) Fisioterapia
+  // 1) Fisioterapia e as suas áreas
+  const areas: AreaFisio[] = [];
+  const addArea = (chave: keyof typeof ATUACAO_AREA, nome: string | null, motivos: string[]) => {
+    if (motivos.length === 0) return;
+    const d = ATUACAO_AREA[chave];
+    areas.push({ chave, nome: nome ?? d.nome, atuacao: d.atuacao, motivos });
+  };
+  const motOrt: string[] = [];
+  if (s.temDor && s.mskQualquer) motOrt.push(`dor em ${lista(s.regioes)}${s.maxNrs !== null ? ` (até ${s.maxNrs}/10)` : ""}`);
+  if (s.inflamacao) motOrt.push("relato de inflamação ou inchaço na anamnese (o sistema só identifica o que está escrito: confirme na avaliação)");
+  if (s.lesoes) motOrt.push("histórico de lesão ou cirurgia");
+  if (s.osteoParq) motOrt.push("problema ósseo ou articular que pode piorar com o esforço (PAR-Q+)");
+  addArea("ortopedica", null, motOrt);
+  const motCol: string[] = [];
+  if ((s.lombar.length > 0 || s.cervical.length > 0) && (s.dorCronica || s.dom("mobilidade")?.classificacao === "atencao" || s.coreAlterado)) {
+    motCol.push(`dor na coluna (${lista([...s.lombar, ...s.cervical])})${s.dorCronica ? ", persistente" : ""}`);
+    if (s.dom("mobilidade")?.classificacao === "atencao") motCol.push("mobilidade com assimetria ou restrição nos testes");
+    if (s.coreAlterado) motCol.push("alteração observada na estabilidade do core");
+  }
+  addArea("coluna_postura", null, motCol);
+  const motQ: string[] = [];
+  if (s.quedas) motQ.push("queda nos últimos 12 meses");
+  if (s.dom("equilibrio")?.classificacao === "prioridade") motQ.push("equilíbrio com prioridade nos testes");
+  else if (s.dom("equilibrio")?.classificacao === "atencao" && (s.idade ?? 0) >= 60) motQ.push("equilíbrio com atenção nos testes");
+  addArea("quedas", (s.idade ?? 0) >= 60 ? null : "Equilíbrio e prevenção de quedas", motQ);
+  const motNeuro: string[] = [];
+  if (/\bavc\b|derrame|parkinson|esclerose|neuropatia|neurolog|alzheimer|paralisia|labirintite|vertigem/.test(textoCond)) motNeuro.push("condição do sistema nervoso citada na anamnese (confirme na avaliação)");
+  if (tontura) motNeuro.push("tontura relatada no PAR-Q+");
+  addArea("neurofuncional", null, motNeuro);
+  const motCardio: string[] = [];
+  if (cardioParq) motCardio.push("condição do coração relatada no PAR-Q+");
+  if (/\basma\b|dpoc|bronquite|enfisema|insuficiencia cardiaca|infarto|cardiopatia|marcapasso/.test(textoCond)) motCardio.push("condição do coração ou do pulmão citada na anamnese (confirme na avaliação)");
+  addArea("cardiorrespiratoria", null, motCardio);
+  const motPelv: string[] = [];
+  if (/incontinencia|perda de urina|escape de urina|bexiga|assoalho pelvico|prolapso|dor pelvica|gestante|gravidez|pos-parto|pos parto/.test(textoCond)) motPelv.push("queixa pélvica, urinária ou de gestação/pós-parto citada na anamnese (confirme na avaliação)");
+  addArea("pelvica", null, motPelv);
+
   const motFisio: string[] = [];
   if (s.temDor && ((s.maxNrs ?? 0) >= 4 || !s.dorCronica || s.inflamacao)) motFisio.push(`dor ${s.regioes.length > 0 ? `em ${lista(s.regioes)}` : "relatada"}${s.maxNrs !== null ? ` (até ${s.maxNrs}/10)` : ""}`);
   if (s.inflamacao) motFisio.push("relato de inflamação ou inchaço na anamnese (o sistema só identifica o que está escrito: confirme na avaliação)");
@@ -170,12 +311,18 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
   if (s.osteoParq) motFisio.push("problema ósseo ou articular que pode piorar com o esforço (PAR-Q+)");
   if (s.dom("mobilidade")?.classificacao === "atencao") motFisio.push("mobilidade com assimetria ou restrição nos testes");
   if (s.dom("equilibrio")?.classificacao === "prioridade") motFisio.push("risco de queda");
-  if (motFisio.length > 0) {
-    const indicado = (s.temDor && ((s.maxNrs ?? 0) >= 4 || s.inflamacao)) || s.dom("equilibrio")?.classificacao === "prioridade" || s.lesoes;
+  const motivosFisio = motFisio.length > 0 ? motFisio : areas.flatMap((a) => a.motivos);
+  if (motFisio.length > 0 || areas.length > 0) {
+    const indicado = (s.temDor && ((s.maxNrs ?? 0) >= 4 || s.inflamacao)) || s.dom("equilibrio")?.classificacao === "prioridade" || s.lesoes || s.quedas || areas.some((a) => a.chave === "neurofuncional");
+    const rpgLombar = areas.some((a) => a.chave === "coluna_postura") && s.lombar.length > 0 && s.dorCronica;
+    const referencias = s.joelho.length > 0 ? [REF.FRANSEN_2015, REF.NICE_NG59] : [REF.NICE_NG59, REF.FRANSEN_2015];
+    if (rpgLombar) referencias.push(REF.GONZALEZ_2021);
+    const quedasIdoso = areas.some((a) => a.chave === "quedas") && (s.idade ?? 0) >= 60;
+    if (quedasIdoso) referencias.push(REF.OMS_2020);
     add(
       "fisioterapia",
       indicado ? "indicado" : "opcional",
-      motFisio,
+      motivosFisio,
       [
         { horizonte: "30", texto: prefixo("Iniciar nas primeiras semanas: avaliação, controle da dor e da inflamação, e exercícios terapêuticos (frequência definida pelo fisioterapeuta).") },
         { horizonte: "60", texto: "Reavaliar a continuidade: manter, espaçar as sessões ou dar alta, conforme a evolução da dor e da função." },
@@ -183,14 +330,19 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
       ],
       {
         evidencia: {
-          resumo: s.joelho.length > 0
-            ? "Na artrose de joelho, o exercício terapêutico reduz a dor (evidência de alta qualidade) e melhora a função (qualidade moderada); programas individuais tendem a render mais que os em grupo ou em casa. Para dor lombar, a diretriz NICE NG59 recomenda educação e exercício como base."
-            : "Exercício terapêutico acompanhado é a base do cuidado de dor musculoesquelética persistente (diretriz NICE NG59 para dor lombar; na artrose de joelho, revisão Cochrane com evidência de alta qualidade para dor).",
+          resumo:
+            (s.joelho.length > 0
+              ? "Na artrose de joelho, o exercício terapêutico reduz a dor (evidência de alta qualidade) e melhora a função (qualidade moderada); programas individuais tendem a render mais que os em grupo ou em casa. Para dor lombar, a diretriz NICE NG59 recomenda educação e exercício como base."
+              : "Exercício terapêutico acompanhado é a base do cuidado de dor musculoesquelética persistente (diretriz NICE NG59 para dor lombar; na artrose de joelho, revisão Cochrane com evidência de alta qualidade para dor).") +
+            (rpgLombar ? " Na dor lombar crônica, uma meta-análise de 7 ensaios (334 pacientes) encontrou menos dor e melhor função com a Reeducação Postural Global (RPG) do que com outros programas de exercício (evidência baixa a moderada)." : "") +
+            (quedasIdoso ? " Para pessoas com 60 anos ou mais, a OMS recomenda atividade física com equilíbrio e força em 3 ou mais dias por semana para prevenir quedas." : ""),
           certeza: "Alta para exercício na dor de joelho (Cochrane); diretriz para dor lombar.",
           ressalva: "A evidência é do exercício terapêutico: recursos passivos isolados têm menos suporte. O sistema não identifica o diagnóstico: o fisioterapeuta define a conduta.",
-          referencias: s.joelho.length > 0 ? [REF.FRANSEN_2015, REF.NICE_NG59] : [REF.NICE_NG59, REF.FRANSEN_2015],
+          referencias,
         },
-        ressalva: avisoMedico,
+        ressalva: avisoMedico ?? (areas.some((a) => a.chave === "cardiorrespiratoria") ? "Condição do coração ou do pulmão: a fisioterapia cardiorrespiratória começa com liberação médica." : undefined),
+        areas,
+        beneficios: Array.from(new Set([...areas.map((a) => ATUACAO_AREA[a.chave].beneficio), ...(areas.length === 0 ? ["reduzir a dor e recuperar movimento e função"] : [])])),
       }
     );
   }
@@ -202,13 +354,13 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
     motPsi.push("item de ideação de autolesão positivo no PHQ-9: encaminhamento prioritário, com avaliação médica/psiquiátrica");
     prioridadePsi = "indicado";
   }
-  const bem = s.dom("bem_estar")?.classificacao;
   if (bem === "prioridade") {
     motPsi.push("triagem de humor/ansiedade em faixa sugestiva de quadro importante (triagem, não diagnóstico)");
     prioridadePsi = "indicado";
   } else if (bem === "atencao") {
     motPsi.push("triagem de bem-estar emocional com atenção (oferecer e acolher)");
   }
+  if (humorSinalizado && bem !== "prioridade" && bem !== "atencao") motPsi.push("relata que estresse, ansiedade ou humor atrapalham bastante o dia a dia");
   if (s.psicossocialDor) {
     motPsi.push("fatores psicossociais da dor (medo de movimento ou baixa autoeficácia)");
     if (s.dorCronica) prioridadePsi = "indicado";
@@ -221,6 +373,11 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
   }
   if (s.dom("sono")?.classificacao === "prioridade") motPsi.push("sono de má qualidade importante");
   if (motPsi.length > 0) {
+    const benPsi: string[] = [];
+    if (s.ideacao || bem === "prioridade" || bem === "atencao" || humorSinalizado) benPsi.push("apoio emocional e acompanhamento para humor, ansiedade e estresse");
+    if (s.psicossocialDor || (s.temDor && s.dorCronica)) benPsi.push("estratégias para lidar com a dor persistente e com o medo de se mexer");
+    if (s.dom("sono")?.classificacao === "prioridade" || (typeof s.estresse === "number" && s.estresse >= 5)) benPsi.push("apoio ao sono e ao manejo do estresse");
+    benPsi.push("sustentar a motivação e a regularidade nos hábitos e no treino");
     add(
       "psicologia",
       prioridadePsi,
@@ -240,41 +397,50 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
             }
           : undefined,
         ressalva: s.ideacao ? "Sinal de risco: acione o fluxo de encaminhamento prioritário (Nina) antes de qualquer oferta de serviço." : "Respeite a vontade do paciente: é opcional e confidencial.",
+        beneficios: benPsi,
       }
     );
   }
 
-  // 3) Musculação (treino de força supervisionado)
+  // 3) Musculação (treino de força supervisionado). O sistema indica o serviço; o profissional define o treino.
   const motMusc: string[] = [];
   const forca = s.dom("forca")?.classificacao;
   if (forca === "prioridade" || forca === "atencao") motMusc.push("força abaixo da referência nos testes");
   if (s.sarcopenia.classificacao === "sarcopenia_provavel" || s.sarcopenia.classificacao === "dinapenia_provavel") motMusc.push("triagem sugere perda de força ou de massa muscular");
   if (s.precisa("composicao_corporal")) motMusc.push("composição corporal com atenção (preservar massa magra)");
   if (s.sedentario) motMusc.push("sedentarismo (a OMS recomenda força em 2 ou mais dias por semana)");
+  if (humorAlterado) motMusc.push("humor ou ansiedade na triagem: o treino de força é uma das formas de exercício associadas a menos sintomas depressivos, como apoio ao cuidado psicológico (não o substitui)");
   const idoso = s.idade !== null && s.idade >= 60;
   if (motMusc.length > 0 || idoso) {
     if (motMusc.length === 0) motMusc.push("base de todo plano: força em 2 ou mais dias por semana (OMS)");
-    const indicado = forca === "prioridade" || forca === "atencao" || s.sarcopenia.classificacao !== "sem_sinais" && s.sarcopenia.classificacao !== "dados_insuficientes";
+    const indicado = forca === "prioridade" || forca === "atencao" || (s.sarcopenia.classificacao !== "sem_sinais" && s.sarcopenia.classificacao !== "dados_insuficientes");
     const etapas: EtapaServico[] = faseInicial
       ? [
-          { horizonte: "30", texto: "Neste início, o fortalecimento acontece dentro da fisioterapia (exercícios terapêuticos); a musculação ainda não." },
-          { horizonte: "90", texto: prefixo("Iniciar a musculação supervisionada (2x/semana, técnica e cargas leves), com a liberação do fisioterapeuta e a dor sob controle.") },
-          { horizonte: "365", texto: "Manter o treino de força em 2 ou mais dias por semana e reavaliar a força a cada 90 dias." },
+          { horizonte: "30", texto: "Neste início, o fortalecimento acontece dentro da fisioterapia (exercícios terapêuticos); a musculação ainda não.", semInicio: true },
+          { horizonte: "90", texto: prefixo("Iniciar a musculação supervisionada, com a liberação do fisioterapeuta e a dor sob controle; o profissional define o treino.") },
+          { horizonte: "365", texto: "Manter o treino de força com acompanhamento e reavaliar a força a cada 90 dias." },
         ]
       : [
-          { horizonte: "30", texto: prefixo("Iniciar musculação supervisionada, 2x/semana, para aprender os movimentos (carga leve a moderada).") },
-          { horizonte: "60", texto: "Progredir séries e carga conforme a técnica e a resposta." },
+          { horizonte: "30", texto: prefixo("Iniciar a musculação supervisionada; o profissional define o treino, as cargas e a progressão.") },
+          { horizonte: "60", texto: "Reavaliar o treino com o profissional conforme a técnica e a resposta." },
           { horizonte: "90", texto: "Reavaliar a força e renovar o treino." },
-          { horizonte: "365", texto: "Manter o treino de força em 2 ou mais dias por semana." },
+          { horizonte: "365", texto: "Manter o treino de força com acompanhamento." },
         ];
+    const benMusc = ["ganhar força e massa muscular", "facilitar as tarefas do dia a dia e a autonomia"];
+    if (s.precisa("composicao_corporal")) benMusc.push("melhorar a composição corporal (preservar e ganhar massa magra)");
+    if (humorAlterado) benMusc.push("contribuir para o humor e a disposição, junto do acompanhamento psicológico");
+    if (idoso) benMusc.push("proteger ossos e músculos com o envelhecimento");
     add("musculacao", indicado ? "indicado" : "opcional", motMusc, etapas, {
       evidencia: {
-        resumo: "A OMS recomenda atividade de fortalecimento dos grandes grupos musculares em 2 ou mais dias por semana. Em pessoas com 60 anos ou mais, exercício com ou sem supervisão foi seguro; a supervisão pôde somar um ganho extra, principalmente na força do joelho (34 ensaios).",
+        resumo:
+          "A OMS recomenda atividade de fortalecimento dos grandes grupos musculares em 2 ou mais dias por semana. Em pessoas com 60 anos ou mais, exercício com ou sem supervisão foi seguro; a supervisão pôde somar um ganho extra, principalmente na força do joelho (34 ensaios)." +
+          (humorAlterado ? " Em pessoas com depressão, o treino de força foi uma das modalidades com efeito moderado sobre os sintomas depressivos (revisão com 218 estudos), mas a confiança nesse resultado é baixa ou muito baixa." : ""),
         certeza: "Diretriz (OMS 2020); meta-análise de ensaios (supervisão).",
-        ressalva: "A vantagem da supervisão vem de estudo em maiores de 60 anos e é pequena e não robusta em todos os desfechos.",
-        referencias: [REF.OMS_2020, REF.GOMEZ_2024],
+        ressalva: "A vantagem da supervisão vem de estudo em maiores de 60 anos e é pequena e não robusta em todos os desfechos." + (humorAlterado ? " O dado sobre depressão é de pessoas com diagnóstico de depressão; aqui há só uma triagem, e o treino é apoio, não tratamento." : ""),
+        referencias: humorAlterado ? [REF.OMS_2020, REF.GOMEZ_2024, REF.NOETEL_2024] : [REF.OMS_2020, REF.GOMEZ_2024],
       },
       ressalva: avisoMedico,
+      beneficios: benMusc,
     });
   }
 
@@ -295,11 +461,11 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
       motPil,
       faseInicial || motFisio.length > 0
         ? [
-            { horizonte: "60", texto: prefixo("Acrescentar o Pilates (em geral 2x/semana) junto da reavaliação da continuidade da fisioterapia.") },
+            { horizonte: "60", texto: prefixo("Acrescentar o Pilates junto da reavaliação da continuidade da fisioterapia; o instrutor define os exercícios e a frequência.") },
             { horizonte: "90", texto: "Avaliar a continuidade: o Pilates pode seguir como manutenção do controle motor e da mobilidade." },
           ]
         : [
-            { horizonte: "30", texto: prefixo("Iniciar o Pilates (em geral 2x/semana), com foco em controle do tronco e mobilidade.") },
+            { horizonte: "30", texto: prefixo("Iniciar o Pilates, com foco em controle do tronco e mobilidade; o instrutor define os exercícios e a frequência.") },
             { horizonte: "90", texto: "Reavaliar a mobilidade e o controle motor; manter ou ajustar." },
           ],
       {
@@ -310,85 +476,51 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
           referencias: [REF.YAMATO_2015],
         },
         ressalva: avisoMedico,
+        beneficios: ["melhorar o controle do tronco e a mobilidade", "ganhar consciência corporal e postura", ...(s.temDor && motFisio.length > 0 ? ["dar continuidade à reabilitação depois da fisioterapia"] : [])],
       }
     );
   }
 
-  // 5) RPG
-  const motRpg: string[] = [];
-  if ((s.lombar.length > 0 || s.cervical.length > 0) && s.dorCronica) motRpg.push(`dor crônica na coluna (${lista([...s.lombar, ...s.cervical])})`);
-  if (motRpg.length > 0 && (s.dom("mobilidade")?.classificacao === "atencao" || s.coreAlterado || s.dorCronica)) {
-    if (s.dom("mobilidade")?.classificacao === "atencao") motRpg.push("restrição ou assimetria de mobilidade");
-    add(
-      "rpg",
-      "opcional",
-      motRpg,
-      [
-        { horizonte: "30", texto: prefixo("Ciclo inicial de sessões individuais (frequência definida pelo terapeuta).") },
-        { horizonte: "60", texto: "Reavaliar a resposta (dor 0 a 10 e mobilidade) e decidir manter ou encerrar." },
-      ],
-      {
-        evidencia: {
-          resumo: "Em dor lombar crônica, uma meta-análise de 7 ensaios (334 pacientes) encontrou menos dor e melhor função com a Reeducação Postural Global em comparação com outros programas de exercício.",
-          certeza: "Baixa a moderada (poucos ensaios e amostras pequenas; os autores a descrevem como forte, mas o número de estudos é pequeno).",
-          ressalva: "Evidência para dor lombar crônica; para dor cervical e para postura em geral o sistema não tem dado conferido. Sem superioridade comprovada sobre outro exercício bem conduzido: oferecer como opção.",
-          referencias: [REF.GONZALEZ_2021],
-        },
-        ressalva: avisoMedico,
-      }
-    );
-  }
-
-  // 6) Medicina Tradicional Chinesa (acupuntura)
-  if (s.temDor && s.dorCronica && s.mskQualquer) {
+  // 5) Medicina Tradicional Chinesa (acupuntura): apoio opcional para dor persistente ou intensa, tensão, estresse e sono.
+  const motMtc: string[] = [];
+  const dorMtc = s.temDor && s.mskQualquer && (s.dorCronica || (s.maxNrs ?? 0) >= 7);
+  if (dorMtc) motMtc.push(`${s.dorCronica ? "dor crônica" : "dor intensa"} musculoesquelética (${lista(s.regioes)}${s.maxNrs !== null ? `, até ${s.maxNrs}/10` : ""})`);
+  if (s.temDor && s.caracteristicas.some((c) => ["Peso", "Aperto"].includes(c))) motMtc.push("dor descrita como peso ou aperto (possível tensão muscular)");
+  if (typeof s.estresse === "number" && s.estresse >= 5) motMtc.push(`estresse percebido ${s.estresse}/10`);
+  if (s.dom("sono")?.classificacao === "prioridade") motMtc.push("sono de má qualidade importante");
+  if (humorAlterado) motMtc.push("humor ou ansiedade na triagem (apoio ao relaxamento, junto do acompanhamento psicológico)");
+  if (motMtc.length > 0) {
+    const benMtc: string[] = [];
+    if (dorMtc) benMtc.push("apoio ao alívio da dor persistente");
+    if (motMtc.length > (dorMtc ? 1 : 0) || !dorMtc) benMtc.push("relaxamento e redução da tensão", "apoio ao sono e ao estresse");
     add(
       "mtc",
       "opcional",
-      [`dor crônica musculoesquelética (${lista(s.regioes)})`],
+      motMtc,
       [
-        { horizonte: "30", texto: prefixo("Ciclo inicial de acupuntura como apoio ao alívio da dor, se o paciente quiser (número de sessões definido pelo profissional).") },
-        { horizonte: "60", texto: "Avaliar a resposta (dor 0 a 10 por região) e decidir se continua: manter só se houver benefício que o paciente perceba." },
+        { horizonte: "30", texto: prefixo("Ciclo inicial de acupuntura como apoio, se o paciente quiser (número de sessões definido pelo profissional).") },
+        { horizonte: "60", texto: "Avaliar a resposta (dor 0 a 10, sono e estresse) e decidir se continua: manter só se houver benefício que o paciente perceba." },
       ],
       {
-        evidencia: {
-          resumo:
-            "Uma revisão de revisões sistemáticas de 2017 a 2022 classificou a acupuntura como de efeito positivo para dor crônica, dor lombar e artrose de joelho. As diretrizes divergem: por exemplo, a NICE (NG59, 2016) não recomenda acupuntura para dor lombar.",
-          certeza: "Divergente: revisão de revisões positiva, com qualidade variável dos ensaios; diretriz NICE contrária para dor lombar.",
-          ressalva:
-            "Os autores da revisão são ligados a uma sociedade de medicina chinesa e apontam falta de ensaios de alta qualidade em vários casos. É um apoio opcional, nunca substitui o exercício, e a decisão é do paciente.",
-          referencias: [REF.HEMPEN_2025, REF.NICE_NG59],
-        },
-        ressalva: avisoMedico,
+        evidencia: dorMtc
+          ? {
+              resumo:
+                "Uma revisão de revisões sistemáticas de 2017 a 2022 classificou a acupuntura como de efeito positivo para dor crônica, dor lombar e artrose de joelho. As diretrizes divergem: por exemplo, a NICE (NG59, 2016) não recomenda acupuntura para dor lombar.",
+              certeza: "Divergente: revisão de revisões positiva, com qualidade variável dos ensaios; diretriz NICE contrária para dor lombar.",
+              ressalva:
+                "Os autores da revisão são ligados a uma sociedade de medicina chinesa e apontam falta de ensaios de alta qualidade em vários casos. É um apoio opcional, nunca substitui o exercício, e a decisão é do paciente." + (s.dorCronica ? "" : " A revisão conferida é sobre dor crônica; para dor intensa recente o sistema não tem referência conferida."),
+              referencias: [REF.HEMPEN_2025, REF.NICE_NG59],
+            }
+          : undefined,
+        ressalva: dorMtc ? avisoMedico : "O sistema não tem referência conferida para a acupuntura em estresse, sono ou humor: sugerida só como opção do paciente, nunca como tratamento principal." + (avisoMedico ? ` ${avisoMedico}` : ""),
+        beneficios: benMtc,
       }
     );
   }
 
-  // 7) Massoterapia
-  const motMassa: string[] = [];
-  if (s.temDor && s.caracteristicas.some((c) => ["Peso", "Aperto"].includes(c))) motMassa.push("dor descrita como peso ou aperto (possível tensão muscular)");
-  if (typeof s.estresse === "number" && s.estresse >= 5) motMassa.push(`estresse percebido ${s.estresse}/10`);
-  if (s.a.contexto.exige_esforco_fisico === true) motMassa.push("trabalho com demanda física");
-  if (motMassa.length > 0) {
-    add(
-      "massoterapia",
-      "opcional",
-      motMassa,
-      [
-        { horizonte: "30", texto: prefixo("Sessões pontuais para alívio da tensão e relaxamento, sempre junto do exercício (não o substitui).") },
-        { horizonte: "60", texto: "Reavaliar a necessidade: manter só se aliviar de forma perceptível." },
-      ],
-      {
-        evidencia: {
-          resumo: "Na dor lombar, a massagem melhorou a dor e a função apenas a curto prazo, com evidência de qualidade baixa a muito baixa; os efeitos adversos foram leves (piora temporária da dor).",
-          certeza: "Baixa a muito baixa, só curto prazo.",
-          ressalva: "Evidência é de dor lombar; serve como apoio de conforto, não como tratamento principal.",
-          referencias: [REF.FURLAN_2015],
-        },
-        ressalva: avisoMedico,
-      }
-    );
-  }
+  // RPG e massoterapia não são mais sugeridos como serviços à parte (30/10/2026): o RPG é área da fisioterapia (coluna e
+  // postura) e a massoterapia não é oferecida pela clínica.
 
-  const ordem = (x: ServicoPlano) => ORDEM_SERVICOS.indexOf(x.servico) + (x.prioridade === "indicado" ? 0 : 100);
-  return saida.sort((a, b) => ordem(a) - ordem(b));
+  const rank = (x: ServicoPlano) => (x.prioridade === "indicado" ? 0 : 100) + (inicioDoServico(x).quando === "agora" ? 0 : 50) + ORDEM_SERVICOS.indexOf(x.servico);
+  return saida.sort((a, b) => rank(a) - rank(b));
 }

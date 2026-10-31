@@ -133,8 +133,15 @@ export function mesclarSugestoes(
   const descricoes = new Set(atual.itens.map((i) => i.descricao));
   const regrasEnc = new Set(atual.encaminhamentos.map((e) => e.regra).filter(Boolean));
   const textosEnc = new Set(atual.encaminhamentos.map((e) => e.especialidade + e.motivo));
-  // Serviço já presente (mesmo que o avaliador tenha decidido ou editado) não é duplicado nem alterado.
-  const servicosAtuais = atual.servicos ?? [];
+  // Serviço já presente não é duplicado. Se o avaliador já decidiu ou editou (concordo, discordo, editado), nada muda.
+  // Se ainda está só "sugerido" (ninguém mexeu), o texto é atualizado com a sugestão mais recente (novas áreas,
+  // benefícios e motivos). RPG e massoterapia deixaram de ser serviços à parte (30/10/2026): se ainda estiverem
+  // apenas "sugeridos", saem; se o avaliador já decidiu sobre eles, ficam como estão.
+  const novosServ = new Map((sugestao.servicos ?? []).map((s) => [s.regra, s]));
+  const legados = new Set(["servico|rpg", "servico|massoterapia"]);
+  const servicosAtuais = (atual.servicos ?? [])
+    .filter((s) => !(legados.has(s.regra) && (s.status ?? "sugerido") === "sugerido"))
+    .map((s) => ((s.status ?? "sugerido") === "sugerido" && novosServ.has(s.regra) ? { ...novosServ.get(s.regra)!, id: s.id } : s));
   const regrasServ = new Set(servicosAtuais.map((s) => s.regra));
   return {
     itens: [...atual.itens, ...sugestao.itens.filter((i) => !(i.regra && regrasItens.has(i.regra)) && !descricoes.has(i.descricao))],

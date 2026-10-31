@@ -31,7 +31,7 @@ import {
   type Plano,
   type StatusItem,
 } from "@/lib/integracao/plano";
-import { NOME_SERVICO, ROTULO_PRIORIDADE_SERVICO, type EtapaServico, type PrioridadeServico, type ServicoPlano } from "@/lib/integracao/servicos";
+import { NOME_SERVICO, PROFISSOES, ROTULO_PRIORIDADE_SERVICO, inicioDoServico, rotuloServico, type EtapaServico, type PrioridadeServico, type ServicoPlano } from "@/lib/integracao/servicos";
 
 const ORDEM_CATEGORIA: Categoria[] = ["seguranca", "encaminhamento", "intervencao", "orientacao", "reavaliacao"];
 
@@ -121,8 +121,9 @@ function PainelServicos({
       <div>
         <h4 className="font-display text-base text-ink">Serviços da clínica que podem entrar no plano</h4>
         <p className="text-xs text-muted leading-relaxed mt-1">
-          Sugeridos a partir dos achados da avaliação e da anamnese, com o momento em que cada um poderia entrar (30, 60, 90 dias ou anual). Cada serviço mostra o motivo e o que a literatura diz; o que tem evidência fraca ou divergente
-          aparece como <strong>opcional</strong>. O sistema só sugere o que tem um achado que o justifique; <strong>a decisão é sua e do paciente</strong>, e nada é oferecido sem a sua aprovação.
+          Os serviços da clínica (psicologia, medicina chinesa, fisioterapia e suas áreas, musculação e Pilates) que combinam com o quadro atual, a partir dos resultados, dos pareceres e da anamnese. Cada um mostra por onde começar, o motivo, o que o profissional faz e em
+          que ajuda neste caso, e o que a literatura diz; o que tem evidência fraca ou divergente aparece como <strong>opcional</strong>. O sistema indica <strong>quais serviços</strong>, não o exercício: o tipo de treino, a carga e a frequência são do profissional de cada serviço.
+          Só sugere o que tem um achado que o justifique; <strong>a decisão é sua e do paciente</strong>, e nada é oferecido sem a sua aprovação.
         </p>
       </div>
 
@@ -130,6 +131,27 @@ function PainelServicos({
         <p className="text-sm text-muted">Nenhum serviço sugerido ainda. Use &quot;Sugerir a partir dos resultados&quot; (precisa de dados de dor, testes ou questionários).</p>
       ) : (
         <>
+          {ativos.length > 0 && (
+            <div className="rounded-xl border border-gold bg-gold-soft px-4 py-3 text-sm space-y-1">
+              {(() => {
+                const agora = ativos.filter((s) => inicioDoServico(s).quando === "agora");
+                const depois = ativos.filter((s) => inicioDoServico(s).quando === "depois");
+                return (
+                  <>
+                    <p className="text-ink">
+                      <strong>Por onde começar:</strong> {agora.length > 0 ? agora.map((s) => `${rotuloServico(s)}${s.prioridade === "opcional" ? " (opcional)" : ""}`).join(" · ") : "nenhum serviço pede início imediato."}
+                    </p>
+                    {depois.length > 0 && (
+                      <p className="text-ink">
+                        <strong>Entram depois:</strong> {depois.map((s) => `${rotuloServico(s)} (${horizontes.find((h) => h.chave === inicioDoServico(s).horizonte)?.curto ?? "mais adiante"})`).join(" · ")}
+                      </p>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          )}
+
           {ativos.length > 0 && (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {horizontes.map((h) => {
@@ -166,10 +188,35 @@ function PainelServicos({
                     <p className={`text-sm font-medium text-ink ${status === "discordo" ? "line-through" : ""}`}>{NOME_SERVICO[s.servico]}</p>
                     <Selo tom={s.prioridade === "indicado" ? "ok" : "neutro"}>{ROTULO_PRIORIDADE_SERVICO[s.prioridade]}</Selo>
                     <Selo tom={TOM_STATUS[status]}>{ROTULO_STATUS[status]}</Selo>
+                    <Selo tom={inicioDoServico(s).quando === "agora" ? "ok" : "neutro"}>{inicioDoServico(s).quando === "agora" ? "Começar agora" : `Entra depois (${horizontes.find((h) => h.chave === inicioDoServico(s).horizonte)?.curto ?? "mais adiante"})`}</Selo>
                   </div>
                   <p className="text-xs text-muted">
                     <strong>Por que:</strong> {s.motivos.join("; ")}.
                   </p>
+                  {s.areas && s.areas.length > 0 && (
+                    <div className="rounded-lg bg-bg p-3 text-xs space-y-1.5">
+                      <p className="font-semibold text-ink">Áreas da fisioterapia indicadas para este quadro</p>
+                      <ul className="space-y-1.5">
+                        {s.areas.map((a) => (
+                          <li key={a.chave} className="text-ink">
+                            <strong>{a.nome}</strong> <span className="text-muted">({a.motivos.join("; ")}). O que faz: {a.atuacao}.</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {s.beneficios && s.beneficios.length > 0 && (
+                    <p className="text-xs text-ink">
+                      <strong>Em que ajuda neste quadro:</strong> {s.beneficios.join("; ")}.
+                    </p>
+                  )}
+                  <details className="text-xs">
+                    <summary className="cursor-pointer font-medium text-accent">Quem atua e o que faz: {PROFISSOES[s.servico].profissional}</summary>
+                    <p className="mt-1.5 text-ink leading-relaxed">
+                      O(a) {PROFISSOES[s.servico].profissional.toLowerCase()} {PROFISSOES[s.servico].atuacao}
+                    </p>
+                    <p className="mt-1 text-muted">Costuma ajudar em: {PROFISSOES[s.servico].beneficios.join("; ")}.</p>
+                  </details>
                   {editando ? (
                     <div className="space-y-2">
                       <label className="text-xs text-ink">
@@ -354,7 +401,7 @@ export function AbaPlano({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo
     if (servAprov.length > 0) {
       linhas.push("", "SERVIÇOS DA CLÍNICA");
       servAprov.forEach((s) => {
-        linhas.push(`- ${NOME_SERVICO[s.servico]} (${ROTULO_PRIORIDADE_SERVICO[s.prioridade].toLowerCase()})`);
+        linhas.push(`- ${rotuloServico(s)} (${ROTULO_PRIORIDADE_SERVICO[s.prioridade].toLowerCase()}; ${inicioDoServico(s).quando === "agora" ? "começar agora" : "entra depois"})`);
         s.etapas.forEach((e) => linhas.push(`    ${HORIZONTES.find((h) => h.chave === e.horizonte)?.curto ?? e.horizonte}: ${e.texto}`));
       });
     }

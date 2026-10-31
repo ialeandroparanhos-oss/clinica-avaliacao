@@ -77,6 +77,7 @@ const R: Referencia[] = [
   { id: "hempen2025", curta: "Hempen 2025", citacao: "Hempen M, Hummelsberger J. Complement Ther Med 2025;89:103149", pmid: "40021024", apoia: "revisão de revisões (2017-2022): acupuntura com efeito positivo em dor crônica, dor lombar e artrose de joelho; autores ligados a sociedade de medicina chinesa e qualidade variável dos ensaios; diretriz NICE NG59 não recomenda acupuntura na dor lombar" },
   { id: "gallagher2000", curta: "Gallagher 2000", citacao: "Gallagher D, et al. Am J Clin Nutr 2000;72:694", pmid: "10966886", apoia: "faixas provisórias de %G saudável por idade e sexo, obtidas ligando os limites de IMC (subpeso < 18,5; sobrepeso ≥ 25; obesidade ≥ 30) à gordura medida por 4 compartimentos e DXA; amostra com IMC até 35" },
   { id: "glim2019", curta: "GLIM 2019", citacao: "Cederholm T, et al. Clin Nutr 2019;38:1", pmid: "30181091", apoia: "critérios GLIM: massa muscular reduzida como critério fenotípico (índice de massa livre de gordura < 17 kg/m² em homens e < 15 em mulheres, valores conforme Sobestiansky 2021); pensados para DXA ou bioimpedância" },
+  { id: "noetel2024", curta: "Noetel 2024", citacao: "Noetel M, et al. BMJ 2024;384:e075847", pmid: "38355154", apoia: "exercício para depressão: caminhada ou corrida, ioga, treino de força, exercício aeróbico misto e tai chi ou qigong reduziram os sintomas em pessoas com depressão (218 estudos); a confiança no resultado é baixa ou muito baixa" },
   { id: "gomez2024", curta: "Gómez-Redondo 2024", citacao: "Gómez-Redondo P, et al. Sports Med 2024;54:1877", pmid: "38647999", apoia: "34 ensaios com pessoas de 60 anos ou mais: exercício supervisionado e não supervisionado foram seguros, com presença semelhante (81%); a supervisão trouxe ganho extra, só robusto na força de extensão do joelho, e os autores pedem mais pesquisa" },
   // Referências da aba "Condições de saúde" (conferidas no PubMed em 09/10/2026). Onde o PubMed não trouxe o
   // resumo (diretrizes), "apoia" diz só o escopo pelo título; o conteúdo exato deve ser conferido no texto.
@@ -114,7 +115,7 @@ const REFS_POR_AGENTE: Record<Exclude<AgenteId, "iris">, string[]> = {
   paula: ["rani2023", "dhondt2020", "rode2026"],
   rita: ["ewgsop2", "rikli2013", "fernandes2021", "barry2014", "podsiadlo1991", "macedo2008", "britto2013", "wu2026"],
   caio: ["friend2015", "mandsager2018", "ross2016", "tanaka2001"],
-  theo: ["oms2020", "acsm2015", "gomez2024", "fransen2015", "yamato2015", "furlan2015", "williams2020", "gonzalez2021", "hempen2025"],
+  theo: ["oms2020", "acsm2015", "gomez2024", "fransen2015", "yamato2015", "furlan2015", "williams2020", "gonzalez2021", "hempen2025", "noetel2024"],
   clara: ["richter2020", "oms2020", "gomez2024"],
 };
 
