@@ -12,7 +12,7 @@ import type { PacienteRow } from "@/lib/anamnese/types";
 import { createClient } from "@/lib/supabase/client";
 import { Field, TextArea, TextInput } from "@/components/forms";
 import { SalvarBar, Selo, mesclarNoPlano, useAutoSalvar, type TomSelo } from "./campos";
-import { calcularPerfilIntegrado } from "@/lib/integracao/perfil";
+import { calcularPerfilIntegrado, dominiosSemDado, textoDominiosSemDado } from "@/lib/integracao/perfil";
 import {
   HORIZONTES,
   HORIZONTE_LEGADO,
@@ -128,7 +128,7 @@ function PainelServicos({
       </div>
 
       {servicos.length === 0 ? (
-        <p className="text-sm text-muted">Nenhum serviço sugerido ainda. Use &quot;Sugerir a partir dos resultados&quot; (precisa de dados de dor, testes ou questionários).</p>
+        <p className="text-sm text-muted">Nenhum serviço sugerido ainda. Use &quot;Sugerir a partir dos resultados&quot;. O sistema só indica serviço quando há achado que o justifique (dor, testes, questionários); com poucos dados ele mostra apenas o ponto de partida, e a Dra. Nina lista o que falta coletar.</p>
       ) : (
         <>
           {ativos.length > 0 && (
@@ -308,6 +308,11 @@ export function AbaPlano({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo
   const atualizarItem = (id: string, patch: Partial<ItemPlano>) => setItens((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
   const atualizarEnc = (id: string, patch: Partial<Encaminhamento>) => setEncaminhamentos((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
 
+  // Plano provisório: o plano é gerado mesmo com poucos dados; a Dra. Nina continua listando o que falta na supervisão.
+  const perfilAtual = calcularPerfilIntegrado(paciente);
+  const semDado = dominiosSemDado(perfilAtual);
+  const provisorio = perfilAtual.confianca !== "alta" && semDado.length > 0;
+
   function gerarSugestoes() {
     const perfil = calcularPerfilIntegrado(paciente);
     const sugestao = sugerirPlano(perfil, paciente);
@@ -316,7 +321,8 @@ export function AbaPlano({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo
     setItens(mesclado.itens);
     setEncaminhamentos(mesclado.encaminhamentos);
     setServicos(mesclado.servicos);
-    setMensagem(novos > 0 ? `${novos} sugestão(ões) nova(s) adicionada(s) para você revisar. O que você já decidiu ou editou não foi alterado.` : "Nenhuma sugestão nova: o plano já contém as sugestões para estes resultados.");
+    const aviso = provisorio ? ` Plano provisório: foi gerado com ${semDado.length} domínio(s) sem dado; a Dra. Nina continua listando o que falta na supervisão.` : "";
+    setMensagem((novos > 0 ? `${novos} sugestão(ões) nova(s) adicionada(s) para você revisar. O que você já decidiu ou editou não foi alterado.` : "Nenhuma sugestão nova: o plano já contém as sugestões para estes resultados.") + aviso);
   }
 
   function concordarComPendentes() {
@@ -439,6 +445,16 @@ export function AbaPlano({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo
           <Selo tom="ok">{contagem.aprovados} no plano</Selo>
           <Selo tom="neutro">{contagem.discordo} descartados</Selo>
         </div>
+        {provisorio && (
+          <div className="rounded-xl border border-warn bg-warn-soft px-4 py-3 text-sm space-y-1" role="status">
+            <p className="font-medium text-warn">! Plano provisório: dá para gerar e usar já, mesmo com poucos dados</p>
+            <p className="text-ink leading-relaxed">
+              Confiança do perfil: <strong>{{ alta: "alta", media: "média", baixa: "baixa" }[perfilAtual.confianca]}</strong> ({semDado.length} de {perfilAtual.dominios.length} domínios sem dado). O plano traz o que já dá para indicar e o que falta coletar; ele fica mais preciso quando você completar. O que
+              falta: {textoDominiosSemDado(perfilAtual)}.
+            </p>
+            <p className="text-xs text-muted">A Dra. Nina continua mostrando as lacunas e as conferências no painel de Supervisão, e o relatório técnico avisa que o plano é provisório.</p>
+          </div>
+        )}
         {mensagem && <p className="text-sm text-accent-dark">{mensagem}</p>}
       </div>
 

@@ -143,8 +143,15 @@ export function mesclarSugestoes(
     .filter((s) => !(legados.has(s.regra) && (s.status ?? "sugerido") === "sugerido"))
     .map((s) => ((s.status ?? "sugerido") === "sugerido" && novosServ.has(s.regra) ? { ...novosServ.get(s.regra)!, id: s.id } : s));
   const regrasServ = new Set(servicosAtuais.map((s) => s.regra));
+  // O item de "dados pendentes" é só um lembrete: se ainda está "a revisar", acompanha a sugestão mais recente (some quando
+  // não há mais pendência; se o avaliador já decidiu ou editou, não é mexido).
+  const novasPend = new Map(sugestao.itens.filter((i) => i.regra?.startsWith("pendencias|")).map((i) => [i.regra, i]));
+  const itensAtuais = atual.itens
+    .filter((i) => !(i.regra?.startsWith("pendencias|") && (i.status ?? "concordo") === "sugerido" && !novasPend.has(i.regra)))
+    .map((i) => (i.regra?.startsWith("pendencias|") && (i.status ?? "concordo") === "sugerido" && novasPend.has(i.regra) ? { ...novasPend.get(i.regra)!, id: i.id } : i));
+  const regrasItens2 = new Set(itensAtuais.map((i) => i.regra).filter(Boolean));
   return {
-    itens: [...atual.itens, ...sugestao.itens.filter((i) => !(i.regra && regrasItens.has(i.regra)) && !descricoes.has(i.descricao))],
+    itens: [...itensAtuais, ...sugestao.itens.filter((i) => !(i.regra && (regrasItens.has(i.regra) || regrasItens2.has(i.regra))) && !descricoes.has(i.descricao))],
     encaminhamentos: [...atual.encaminhamentos, ...sugestao.encaminhamentos.filter((e) => !(e.regra && regrasEnc.has(e.regra)) && !textosEnc.has(e.especialidade + e.motivo))],
     servicos: [...servicosAtuais, ...(sugestao.servicos ?? []).filter((s) => !regrasServ.has(s.regra))],
   };

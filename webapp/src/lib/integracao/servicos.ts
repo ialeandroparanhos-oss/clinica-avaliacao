@@ -518,6 +518,31 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
     );
   }
 
+  // Poucos dados e nenhum serviço com achado que o justifique (plano provisório): a OMS recomenda força em 2 ou mais dias
+  // por semana a todos os adultos, então a musculação entra como OPÇÃO de partida, dita como tal. Os demais serviços só
+  // entram quando houver achado; a supervisão da Nina continua listando o que falta coletar.
+  if (saida.length === 0 && perfil.confianca !== "alta") {
+    add(
+      "musculacao",
+      "opcional",
+      ["ainda há poucos dados para indicar outros serviços; a base de todo plano é a força em 2 ou mais dias por semana (OMS)"],
+      [
+        { horizonte: "30", texto: prefixo("Iniciar a musculação supervisionada como ponto de partida; o profissional define o treino, as cargas e a progressão.") },
+        { horizonte: "90", texto: "Reavaliar a força e renovar o treino; rever os serviços quando a avaliação estiver completa." },
+      ],
+      {
+        evidencia: {
+          resumo: "A OMS recomenda atividade de fortalecimento dos grandes grupos musculares em 2 ou mais dias por semana para todos os adultos.",
+          certeza: "Diretriz (OMS 2020).",
+          ressalva: "Sugestão provisória, sem achado específico: ao completar a avaliação, o sistema pode indicar outros serviços ou mudar esta indicação.",
+          referencias: [REF.OMS_2020],
+        },
+        ressalva: avisoMedico,
+        beneficios: ["ganhar força e massa muscular", "facilitar as tarefas do dia a dia e a autonomia"],
+      }
+    );
+  }
+
   // RPG e massoterapia não são mais sugeridos como serviços à parte (30/10/2026): o RPG é área da fisioterapia (coluna e
   // postura) e a massoterapia não é oferecida pela clínica.
 

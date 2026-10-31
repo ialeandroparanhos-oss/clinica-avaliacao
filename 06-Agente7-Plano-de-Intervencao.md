@@ -209,6 +209,20 @@ O Dr. Theo agora sugere, a partir dos achados da avaliação e da anamnese, **qu
 
 Código: `lib/integracao/servicos.ts` (`PROFISSOES`, `AreaFisio`, `inicioDoServico`, `rotuloServico`), `plano.ts` (mesclar), `AbaPlano.tsx`, relatório técnico e `agentes.ts` (referência nova). 31 verificações novas. POP versão 1.6.
 
+## REVISÃO 30/10/2026 (2) — PLANO PROVISÓRIO COM POUCOS DADOS, COM A SUPERVISÃO DA NINA MOSTRANDO O QUE FALTA (pedido do profissional)
+
+**Pedido:** o plano de intervenção deve ser gerado mesmo com poucos dados disponíveis, e a Dra. Nina deve continuar mostrando, na supervisão, o que falta.
+
+**Situação antes:** o botão "Sugerir a partir dos resultados" nunca foi bloqueado por falta de dado, mas com ficha quase vazia o plano saía discreto (poucos itens, nenhum serviço, mensagem "precisa de dados") e sem dizer que era preliminar.
+
+**O que foi feito:**
+1. **Plano provisório explícito.** Com confiança do perfil média ou baixa e domínios sem dado, a aba Plano mostra a faixa "Plano provisório: dá para gerar e usar já", com a confiança, quantos domínios estão sem dado e **o que coletar e onde** (por exemplo, "Força: um teste de força na aba Funcional; Dor: o capítulo de dor da anamnese"). Ao gerar, a mensagem repete o aviso.
+2. **Item de pendências acionável.** O item "Completar a avaliação" do plano passa a listar cada domínio sem dado com o próximo passo e diz que o plano é provisório. Ele acompanha os dados: ao sugerir de novo, se ainda está "a revisar" é atualizado ou some quando não há mais pendência; se o avaliador já decidiu, não muda.
+3. **Ponto de partida nos serviços.** Se não há nenhum serviço com achado que o justifique e a confiança não é alta, entra **só a musculação, como opção de partida**, dita como provisória, com a referência da OMS (força em 2 ou mais dias por semana). Psicologia, fisioterapia e medicina chinesa **não** são sugeridas sem achado (o sistema não "enche o pacote"); a mensagem do painel explica isso.
+4. **Supervisão da Nina.** Continua com a cobertura (áreas registradas e não registradas), o aviso de "domínios sem dado" e ganha o item **"Plano de intervenção"** (nível atenção): "O plano já pode ser gerado (provisório), mas há poucos dados" ou "O plano foi gerado com poucos dados e é provisório", sempre com a lista do que falta. O relatório técnico também traz a nota de plano provisório.
+
+**Limites:** o plano provisório é ponto de partida; as doses dos itens seguem a literatura de adultos saudáveis e devem ser adaptadas pelo avaliador. Código: `perfil.ts` (`PROXIMO_PASSO_DOMINIO`, `textoDominiosSemDado`), `planoCiencia.ts`, `plano.ts` (mesclar), `servicos.ts`, `supervisao.ts`, `AbaPlano.tsx` e o relatório técnico. 22 verificações novas. POP versão 1.7.
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 8 — Relatório e Devolutiva** (Etapas 7 e 8 do prompt-mestre): como transformar o Perfil Integrado e o Plano de Intervenção em um relatório compreensível ao paciente e tecnicamente adequado ao profissional, seguindo o roteiro de conversa RECONHECER → MOSTRAR → EXPLICAR → PRIORIZAR → PROJETAR → PLANEJAR, sem linguagem alarmista.

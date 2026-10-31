@@ -32,7 +32,7 @@ import { LogoEAssinatura } from "@/components/LogoEAssinatura";
 import { EnvioWhatsApp } from "@/components/avaliador/EnvioWhatsApp";
 import { triarSarcopeniaDinapenia } from "@/lib/integracao/sarcopenia";
 import { vo2maxDeRegistro, vo2maxDeTeste, testePrincipalDoRegistro, avaliarVO2max, ROTULO_CLASSE_VO2, descreverPSE, metDeVo2, fcMaxTanaka, fcMaxFox } from "@/lib/avaliacao/cardiorrespiratoria";
-import { calcularPerfilIntegrado, type Classificacao } from "@/lib/integracao/perfil";
+import { calcularPerfilIntegrado, dominiosSemDado, textoDominiosSemDado, type Classificacao } from "@/lib/integracao/perfil";
 import { HORIZONTES, HORIZONTE_LEGADO, ROTULO_CATEGORIA, itemAprovado, type Plano } from "@/lib/integracao/plano";
 
 const ROTULO_CLASSIFICACAO: Record<Classificacao, string> = {
@@ -542,6 +542,11 @@ export default function RelatorioTecnico() {
                 </div>
               );
             })
+          )}
+          {perfil.confianca !== "alta" && dominiosSemDado(perfil).length > 0 && (
+            <p className="mt-3 rounded-lg border border-warn/40 bg-warn-soft px-3 py-2 text-sm text-ink">
+              <strong>Plano provisório:</strong> gerado com poucos dados (confiança do perfil {{ alta: "alta", media: "média", baixa: "baixa" }[perfil.confianca]}; {dominiosSemDado(perfil).length} domínio(s) sem dado). Falta: {textoDominiosSemDado(perfil)}. Use como ponto de partida e revise quando a avaliação estiver completa.
+            </p>
           )}
           {plano?.servicos && plano.servicos.filter(itemAprovado).length > 0 && (
             <div className="mt-3">

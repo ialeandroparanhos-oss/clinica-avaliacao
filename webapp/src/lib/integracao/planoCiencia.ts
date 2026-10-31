@@ -23,7 +23,7 @@ import { triarSarcopeniaDinapenia } from "./sarcopenia";
 import { analisarComposicao } from "@/lib/avaliacao/composicaoCorporal";
 import { conectarObjetivo } from "./objetivo";
 import { liberacaoPara } from "@/lib/avaliacao/liberacaoTeste";
-import type { DomainKey, DomainResult, PerfilIntegrado } from "./perfil";
+import { PROXIMO_PASSO_DOMINIO, type DomainKey, type DomainResult, type PerfilIntegrado } from "./perfil";
 import type { Categoria, Encaminhamento, Evidencia, Horizonte, ItemPlano, Referencia, SugestaoPlano } from "./plano";
 
 function gerarId(): string {
@@ -586,7 +586,7 @@ export function sugerirItensComCiencia(perfil: PerfilIntegrado, paciente: Pacien
     itens.push({
       id: gerarId(),
       horizonte: "30",
-      descricao: `Completar a avaliação dos domínios sem dados: ${pendentes.map((d) => d.titulo).join(", ")} - as sugestões ficam mais precisas depois.`,
+      descricao: `Completar a avaliação para o plano ficar mais preciso (este plano é provisório): ${pendentes.map((d) => `${d.titulo} (${PROXIMO_PASSO_DOMINIO[d.chave]})`).join("; ")}. Depois, use "Sugerir a partir dos resultados" de novo: o que você já decidiu não muda.`,
       origem: "Perfil Integrado — dados pendentes",
       categoria: "reavaliacao",
       regra: "pendencias|30",

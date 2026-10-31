@@ -533,6 +533,27 @@ export const LIMITE_SEM_DADO_CONFIANCA_MEDIA = 5;
 
 // Domínios que ainda não têm dado para classificar. A justificativa de cada um
 // já diz o que falta ("Sem teste de apoio unipodal registrado ainda").
+// O que fazer para preencher cada domínio sem dado (onde está no aplicativo). Usado no plano provisório e na supervisão.
+export const PROXIMO_PASSO_DOMINIO: Record<DomainKey, string> = {
+  forca: "um teste de força (5x sentar-e-levantar, dinamometria ou outro) na aba Funcional",
+  mobilidade: "os testes de mobilidade na aba Funcional",
+  equilibrio: "o apoio unipodal na aba Funcional",
+  capacidade_cardiorrespiratoria: "um teste cardiorrespiratório na aba Cardio",
+  composicao_corporal: "peso, altura, cintura e %G na aba Física",
+  dor: "o capítulo de dor da anamnese",
+  estilo_de_vida: "a atividade física atual e o estresse na anamnese",
+  sono: "o PSQI na anamnese",
+  bem_estar: "a pergunta inicial de bem-estar emocional e, se indicado, o questionário",
+  funcionalidade: "os testes de funcionalidade na aba Funcional",
+};
+
+// Texto curto do que falta, por domínio: "Força (um teste de força ... na aba Funcional); Dor (...)".
+export function textoDominiosSemDado(perfil: PerfilIntegrado): string {
+  return dominiosSemDado(perfil)
+    .map((d) => `${d.titulo} (${PROXIMO_PASSO_DOMINIO[d.chave]})`)
+    .join("; ");
+}
+
 export function dominiosSemDado(perfil: PerfilIntegrado): DomainResult[] {
   return perfil.dominios.filter((d) => d.classificacao === "investigar");
 }

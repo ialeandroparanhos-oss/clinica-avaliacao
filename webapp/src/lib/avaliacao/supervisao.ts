@@ -12,7 +12,7 @@
 
 import type { PacienteRow } from "@/lib/anamnese/types";
 import { mesclarComPadrao } from "@/lib/anamnese/defaults";
-import { calcularPerfilIntegrado } from "@/lib/integracao/perfil";
+import { calcularPerfilIntegrado, textoDominiosSemDado } from "@/lib/integracao/perfil";
 import { detectarDiscrepancias } from "@/lib/integracao/discrepancias";
 import { triarSarcopeniaDinapenia } from "@/lib/integracao/sarcopenia";
 import { itemAprovado, type Plano } from "@/lib/integracao/plano";
@@ -117,6 +117,15 @@ export function supervisionar(paciente: PacienteRow): ResultadoSupervisao {
   }
   const pendentes = perfil.dominios.filter((d) => d.classificacao === "investigar");
   if (pendentes.length > 0) add("atencao", "Perfil Integrado", `Domínios sem dado suficiente: ${pendentes.map((d) => d.titulo.toLowerCase()).join(", ")}. O relatório trata isso como "a investigar", nunca como normal.`);
+  // Plano provisório (30/10/2026): o plano é gerado mesmo com poucos dados; a Nina continua mostrando o que falta.
+  if (pendentes.length > 0 && perfil.confianca !== "alta") {
+    const itensPlano = (plano?.itens?.length ?? 0) + (plano?.servicos?.length ?? 0);
+    add(
+      "atencao",
+      "Plano de intervenção",
+      `${itensPlano > 0 ? "O plano foi gerado com poucos dados e é provisório" : "O plano já pode ser gerado (provisório), mas há poucos dados"} (confiança do perfil ${perfil.confianca}; ${pendentes.length} domínio(s) sem dado). Falta: ${textoDominiosSemDado(perfil)}. Revise o plano e os serviços quando completar.`
+    );
+  }
   for (const d of detectarDiscrepancias(paciente)) add("atencao", "Discrepância", `${d.titulo}: ${d.descricao}`);
 
   const revisar = [...(plano?.itens ?? []), ...(plano?.encaminhamentos ?? []), ...(plano?.servicos ?? [])].filter((i: { status?: string }) => (i.status ?? "concordo") === "sugerido").length;
