@@ -227,6 +227,13 @@ Código: `lib/integracao/servicos.ts` (`PROFISSOES`, `AreaFisio`, `inicioDoServi
 
 Decisão: no plano provisório (poucos dados), entram **pelo menos a fisioterapia, a medicina chinesa e a musculação consciente** como ponto de partida, porque a anamnese e a dor já dão base para começar. Antes entrava só a musculação. Agora, quando a confiança do perfil não é alta e o serviço ainda não saiu por uma regra com achado, ele entra como **opcional, "começar agora" e marcado como provisório**: a **fisioterapia** como avaliação inicial (com a área ortopédica quando há dor musculoesquelética relatada), a **medicina chinesa** como apoio opcional se o paciente quiser, e a **musculação consciente** com a referência da OMS. A fisioterapia e a medicina chinesa de partida **não trazem evidência** (o sistema não tem referência conferida para elas sem achado) e dizem isso; quando há achado, valem as regras de sempre, com prioridade "indicado" e as referências. **Psicologia e Pilates continuam só com achado.** O nome do serviço passou a ser **"Musculação consciente"**. **O Recovery não foi incluído** (ainda não faz parte dos serviços); as perguntas novas na anamnese também ficaram para depois. 6 verificações novas no teste de serviços. POP versão 1.8.
 
+## AJUSTE 31/10/2026 (2) — PILATES E MUSCULAÇÃO CONSCIENTE (decisão do profissional)
+
+1. **Pilates** pode ser incluído com dor lombar, dor nas costas e outros quadros. Já entrava com dor lombar ou cervical, mobilidade com restrição, core alterado e equilíbrio com atenção. Agora também entra com **dor nas costas na região dorsal** e com **alterações posturais marcadas** na avaliação (desvio da coluna, curva lombar aumentada ou reduzida, cabeça ou ombros à frente, pelve projetada); "nada de relevante" não puxa o Pilates. Continua **opcional** (a referência conferida, Yamato 2015, é de dor lombar) e sempre com algum achado.
+2. **Musculação consciente = musculação comum com proteção articular** (definição do profissional). A descrição da profissão e o texto para o paciente passam a dizer isso; com dor, lesão ou problema articular, o cartão acrescenta o motivo "a força é trabalhada com proteção das articulações" e o benefício correspondente. Quem define exercícios, amplitude, carga e velocidade continua sendo o profissional.
+
+POP versão 1.9.
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 8 — Relatório e Devolutiva** (Etapas 7 e 8 do prompt-mestre): como transformar o Perfil Integrado e o Plano de Intervenção em um relatório compreensível ao paciente e tecnicamente adequado ao profissional, seguindo o roteiro de conversa RECONHECER → MOSTRAR → EXPLICAR → PRIORIZAR → PROJETAR → PLANEJAR, sem linguagem alarmista.

@@ -46,7 +46,7 @@ export const NOME_SERVICO: Record<ServicoId, string> = {
 // Texto simples para o paciente (sem preço, sem pressão).
 export const TEXTO_SERVICO_PACIENTE: Record<ServicoId, string> = {
   fisioterapia: "cuidar da dor e recuperar o movimento, com exercícios terapêuticos acompanhados",
-  musculacao: "ganhar força e disposição com treino acompanhado, no ritmo que o seu corpo permitir",
+  musculacao: "ganhar força e disposição com treino acompanhado, protegendo as suas articulações e no ritmo que o seu corpo permitir",
   pilates: "melhorar controle do corpo, postura e mobilidade com exercícios de solo ou aparelhos",
   rpg: "trabalhar postura e alongamento global, em sessões individuais",
   mtc: "acupuntura como apoio ao alívio da dor, se você quiser",
@@ -81,9 +81,9 @@ export const PROFISSOES: Record<ServicoId, { profissional: string; atuacao: stri
     beneficios: ["apoio ao alívio da dor persistente", "relaxamento e redução da tensão", "apoio ao sono e ao estresse (sem referência conferida pelo sistema para este uso)"],
   },
   musculacao: {
-    profissional: "Profissional de educação física (musculação)",
-    atuacao: "avalia, planeja e acompanha o treino de força, ensinando a técnica e ajustando o treino ao longo do tempo. Quem define o tipo de exercício, as cargas, a frequência e a progressão é o profissional.",
-    beneficios: ["ganhar força e massa muscular", "melhorar a composição corporal e a saúde dos ossos", "facilitar as tarefas do dia a dia e a autonomia", "contribuir para o humor, a disposição e o sono"],
+    profissional: "Profissional de educação física (musculação consciente)",
+    atuacao: "conduz a musculação comum (treino de força) com proteção das articulações: avalia, planeja e acompanha o treino, ensinando a técnica e escolhendo exercícios, amplitude, carga e velocidade que poupem as articulações, e ajusta tudo ao longo do tempo. Quem define o tipo de exercício, as cargas, a frequência e a progressão é o profissional.",
+    beneficios: ["ganhar força e massa muscular com proteção das articulações", "melhorar a composição corporal e a saúde dos ossos", "facilitar as tarefas do dia a dia e a autonomia", "contribuir para o humor, a disposição e o sono"],
   },
   pilates: {
     profissional: "Instrutor(a) de Pilates",
@@ -409,6 +409,8 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
   if (s.sarcopenia.classificacao === "sarcopenia_provavel" || s.sarcopenia.classificacao === "dinapenia_provavel") motMusc.push("triagem sugere perda de força ou de massa muscular");
   if (s.precisa("composicao_corporal")) motMusc.push("composição corporal com atenção (preservar massa magra)");
   if (s.sedentario) motMusc.push("sedentarismo (a OMS recomenda força em 2 ou mais dias por semana)");
+  const articular = s.articulacoesMsk.length > 0 || s.lesoes || s.osteoParq;
+  if (articular && s.temDor) motMusc.push("dor, lesão ou problema articular: a musculação consciente trabalha a força com proteção das articulações");
   if (humorAlterado) motMusc.push("humor ou ansiedade na triagem: o treino de força é uma das formas de exercício associadas a menos sintomas depressivos, como apoio ao cuidado psicológico (não o substitui)");
   const idoso = s.idade !== null && s.idade >= 60;
   if (motMusc.length > 0 || idoso) {
@@ -427,6 +429,7 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
           { horizonte: "365", texto: "Manter o treino de força com acompanhamento." },
         ];
     const benMusc = ["ganhar força e massa muscular", "facilitar as tarefas do dia a dia e a autonomia"];
+    if (articular) benMusc.unshift("treinar a força protegendo as articulações (dor, lesão ou problema articular)");
     if (s.precisa("composicao_corporal")) benMusc.push("melhorar a composição corporal (preservar e ganhar massa magra)");
     if (humorAlterado) benMusc.push("contribuir para o humor e a disposição, junto do acompanhamento psicológico");
     if (idoso) benMusc.push("proteger ossos e músculos com o envelhecimento");
@@ -446,8 +449,12 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
 
   // 4) Pilates
   const motPil: string[] = [];
+  const dorsal = s.regioes.filter((r) => /dorsal|toracic|dorso|escapul/.test(normalizar(r)));
+  const posturais = Object.values((paciente.postural?.obs_guiada ?? {}) as Record<string, string[]>).flat().filter((c) => ["coluna_desvio", "lombar_aumentada", "lombar_reduzida", "cabeca_frente", "ombros_frente", "pelve_frente"].includes(c));
   if (s.lombar.length > 0) motPil.push(`dor lombar ou nas costas (${lista(s.lombar)})`);
+  if (dorsal.length > 0) motPil.push(`dor nas costas, região dorsal (${lista(dorsal)})`);
   if (s.cervical.length > 0) motPil.push(`dor cervical (${lista(s.cervical)})`);
+  if (posturais.length > 0) motPil.push("alterações posturais marcadas na avaliação (coluna, cabeça, ombros ou pelve)");
   if (s.dom("mobilidade")?.classificacao === "atencao") motPil.push("mobilidade com assimetria ou restrição");
   if (s.coreAlterado) motPil.push("alteração observada na estabilidade do core");
   if (s.dom("equilibrio")?.classificacao === "atencao") motPil.push("equilíbrio com atenção");
@@ -476,7 +483,7 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
           referencias: [REF.YAMATO_2015],
         },
         ressalva: avisoMedico,
-        beneficios: ["melhorar o controle do tronco e a mobilidade", "ganhar consciência corporal e postura", ...(s.temDor && motFisio.length > 0 ? ["dar continuidade à reabilitação depois da fisioterapia"] : [])],
+        beneficios: ["melhorar o controle do tronco e a mobilidade", "ganhar consciência corporal e postura", ...(s.lombar.length > 0 || dorsal.length > 0 || s.cervical.length > 0 ? ["apoio à dor nas costas e no pescoço"] : []), ...(s.temDor && motFisio.length > 0 ? ["dar continuidade à reabilitação depois da fisioterapia"] : [])],
       }
     );
   }
