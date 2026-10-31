@@ -223,6 +223,10 @@ Código: `lib/integracao/servicos.ts` (`PROFISSOES`, `AreaFisio`, `inicioDoServi
 
 **Limites:** o plano provisório é ponto de partida; as doses dos itens seguem a literatura de adultos saudáveis e devem ser adaptadas pelo avaliador. Código: `perfil.ts` (`PROXIMO_PASSO_DOMINIO`, `textoDominiosSemDado`), `planoCiencia.ts`, `plano.ts` (mesclar), `servicos.ts`, `supervisao.ts`, `AbaPlano.tsx` e o relatório técnico. 22 verificações novas. POP versão 1.7.
 
+## AJUSTE 31/10/2026 — PLANO PROVISÓRIO COM FISIOTERAPIA, MEDICINA CHINESA E MUSCULAÇÃO CONSCIENTE (decisão do profissional)
+
+Decisão: no plano provisório (poucos dados), entram **pelo menos a fisioterapia, a medicina chinesa e a musculação consciente** como ponto de partida, porque a anamnese e a dor já dão base para começar. Antes entrava só a musculação. Agora, quando a confiança do perfil não é alta e o serviço ainda não saiu por uma regra com achado, ele entra como **opcional, "começar agora" e marcado como provisório**: a **fisioterapia** como avaliação inicial (com a área ortopédica quando há dor musculoesquelética relatada), a **medicina chinesa** como apoio opcional se o paciente quiser, e a **musculação consciente** com a referência da OMS. A fisioterapia e a medicina chinesa de partida **não trazem evidência** (o sistema não tem referência conferida para elas sem achado) e dizem isso; quando há achado, valem as regras de sempre, com prioridade "indicado" e as referências. **Psicologia e Pilates continuam só com achado.** O nome do serviço passou a ser **"Musculação consciente"**. **O Recovery não foi incluído** (ainda não faz parte dos serviços); as perguntas novas na anamnese também ficaram para depois. 6 verificações novas no teste de serviços. POP versão 1.8.
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 8 — Relatório e Devolutiva** (Etapas 7 e 8 do prompt-mestre): como transformar o Perfil Integrado e o Plano de Intervenção em um relatório compreensível ao paciente e tecnicamente adequado ao profissional, seguindo o roteiro de conversa RECONHECER → MOSTRAR → EXPLICAR → PRIORIZAR → PROJETAR → PLANEJAR, sem linguagem alarmista.

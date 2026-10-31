@@ -35,7 +35,7 @@ export const ORDEM_SERVICOS: ServicoId[] = ["fisioterapia", "psicologia", "muscu
 
 export const NOME_SERVICO: Record<ServicoId, string> = {
   fisioterapia: "Fisioterapia",
-  musculacao: "Musculação",
+  musculacao: "Musculação consciente",
   pilates: "Pilates",
   rpg: "RPG (Reeducação Postural Global)",
   mtc: "Medicina Tradicional Chinesa (acupuntura)",
@@ -518,31 +518,68 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
     );
   }
 
-  // Poucos dados e nenhum serviço com achado que o justifique (plano provisório): a OMS recomenda força em 2 ou mais dias
-  // por semana a todos os adultos, então a musculação entra como OPÇÃO de partida, dita como tal. Os demais serviços só
-  // entram quando houver achado; a supervisão da Nina continua listando o que falta coletar.
-  if (saida.length === 0 && perfil.confianca !== "alta") {
-    add(
-      "musculacao",
-      "opcional",
-      ["ainda há poucos dados para indicar outros serviços; a base de todo plano é a força em 2 ou mais dias por semana (OMS)"],
-      [
-        { horizonte: "30", texto: prefixo("Iniciar a musculação supervisionada como ponto de partida; o profissional define o treino, as cargas e a progressão.") },
-        { horizonte: "90", texto: "Reavaliar a força e renovar o treino; rever os serviços quando a avaliação estiver completa." },
-      ],
-      {
-        evidencia: {
-          resumo: "A OMS recomenda atividade de fortalecimento dos grandes grupos musculares em 2 ou mais dias por semana para todos os adultos.",
-          certeza: "Diretriz (OMS 2020).",
-          ressalva: "Sugestão provisória, sem achado específico: ao completar a avaliação, o sistema pode indicar outros serviços ou mudar esta indicação.",
-          referencias: [REF.OMS_2020],
-        },
-        ressalva: avisoMedico,
-        beneficios: ["ganhar força e massa muscular", "facilitar as tarefas do dia a dia e a autonomia"],
-      }
-    );
+  // Plano provisório (poucos dados, confiança não alta): por decisão do profissional (31/10/2026), entram ao menos a
+  // fisioterapia, a medicina chinesa e a musculação consciente como PONTO DE PARTIDA, sempre opcionais e ditas provisórias,
+  // porque a anamnese e a dor já dão base para começar. Quando já há achado que as justifique, valem as regras acima (com a
+  // evidência e a prioridade de cada uma). Psicologia, Pilates e as demais continuam só com achado. O Recovery ainda não
+  // faz parte dos serviços. A supervisão da Nina continua listando o que falta coletar.
+  if (perfil.confianca !== "alta") {
+    const tem = (k: ServicoId) => saida.some((x) => x.servico === k);
+    const dorTxt = s.temDor ? `dor ${s.regioes.length > 0 ? `em ${lista(s.regioes)}` : "relatada"}${s.maxNrs !== null ? ` (até ${s.maxNrs}/10)` : ""}` : null;
+    const provisoria = "Sugestão provisória, sem achado específico além da anamnese: ao completar a avaliação o sistema pode confirmar, mudar a prioridade ou tirar esta indicação.";
+    if (!tem("fisioterapia")) {
+      add(
+        "fisioterapia",
+        "opcional",
+        [dorTxt ? `${dorTxt}: ponto de partida do plano provisório` : "ponto de partida do plano provisório: ainda há poucos dados, e uma avaliação inicial ajuda a definir a conduta"],
+        [
+          { horizonte: "30", texto: prefixo("Avaliação inicial com o fisioterapeuta, que define se há necessidade de tratamento e em qual área.") },
+          { horizonte: "60", texto: "Reavaliar com os dados completos: manter, indicar uma área específica ou dar alta." },
+        ],
+        {
+          ressalva: [provisoria, avisoMedico].filter(Boolean).join(" "),
+          areas: dorTxt && s.mskQualquer ? [{ chave: "ortopedica", nome: ATUACAO_AREA.ortopedica.nome, atuacao: ATUACAO_AREA.ortopedica.atuacao, motivos: [dorTxt] }] : [],
+          beneficios: ["avaliar o movimento e a dor", "orientar se há necessidade de tratamento e em qual área da fisioterapia"],
+        }
+      );
+    }
+    if (!tem("mtc")) {
+      add(
+        "mtc",
+        "opcional",
+        [dorTxt ? `${dorTxt}: apoio opcional no plano provisório` : "ponto de partida do plano provisório: apoio opcional ao alívio de dor, tensão, estresse e sono, se o paciente quiser"],
+        [
+          { horizonte: "30", texto: prefixo("Avaliação inicial pela medicina tradicional chinesa, se o paciente quiser; o profissional define a conduta e o número de sessões.") },
+          { horizonte: "60", texto: "Avaliar a resposta e decidir se continua: manter só se houver benefício que o paciente perceba." },
+        ],
+        {
+          ressalva: `${provisoria} O sistema não tem referência conferida para a acupuntura sem dor crônica: é apoio opcional, nunca tratamento principal.${avisoMedico ? ` ${avisoMedico}` : ""}`,
+          beneficios: ["apoio ao alívio da dor e da tensão", "relaxamento, estresse e sono (sem referência conferida pelo sistema)"],
+        }
+      );
+    }
+    if (!tem("musculacao")) {
+      add(
+        "musculacao",
+        "opcional",
+        ["ponto de partida do plano provisório: a base de todo plano é a força em 2 ou mais dias por semana (OMS); ainda há poucos dados para indicar com mais precisão"],
+        [
+          { horizonte: "30", texto: prefixo("Iniciar a musculação consciente supervisionada como ponto de partida; o profissional define o treino, as cargas e a progressão.") },
+          { horizonte: "90", texto: "Reavaliar a força e renovar o treino; rever os serviços quando a avaliação estiver completa." },
+        ],
+        {
+          evidencia: {
+            resumo: "A OMS recomenda atividade de fortalecimento dos grandes grupos musculares em 2 ou mais dias por semana para todos os adultos.",
+            certeza: "Diretriz (OMS 2020).",
+            ressalva: provisoria,
+            referencias: [REF.OMS_2020],
+          },
+          ressalva: avisoMedico,
+          beneficios: ["ganhar força e massa muscular", "facilitar as tarefas do dia a dia e a autonomia"],
+        }
+      );
+    }
   }
-
   // RPG e massoterapia não são mais sugeridos como serviços à parte (30/10/2026): o RPG é área da fisioterapia (coluna e
   // postura) e a massoterapia não é oferecida pela clínica.
 
