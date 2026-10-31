@@ -20,6 +20,7 @@ import {
   analisarComposicao,
   CORTE_FFMI,
   classificarMassaMagraPct,
+  avisoAlvoMassaMagra,
   carenciasPorLimite,
   limitesMassaMagraPct,
   compararMetodosGordura,
@@ -263,6 +264,7 @@ export function AbaFisica({
   const limitesMM = limitesMassaMagraPct(sexoNorm);
   const pctIdealDigitado = paraNumero(d.massa_magra_pct_ideal);
   const carenciasLimites = carenciasPorLimite(composicaoAtual.pg, peso, sexoNorm);
+  const avisoAlvo = avisoAlvoMassaMagra(composicaoAtual.carenciaMuscular?.pctIdeal ?? null, sexoNorm);
   const carenciaMuscular = composicaoAtual.carenciaMuscular;
   const carenciaMuscularKg = carenciaMuscular ? carenciaMuscular.kg : null;
 
@@ -701,6 +703,12 @@ export function AbaFisica({
                 : "Informe o sexo para ver a faixa da tabela."}
               {pctIdealDigitado !== null && limitesMM.length > 0 && (pctIdealDigitado < limitesMM[0].pct || pctIdealDigitado > limitesMM[2].pct) ? " O valor digitado está fora da faixa da tabela." : ""}
             </p>
+            {avisoAlvo && (
+              <p className="rounded-lg border border-warn bg-warn-soft px-3 py-2 text-xs text-ink leading-relaxed" role="alert">
+                <strong className="text-warn">Atenção: </strong>
+                {avisoAlvo}
+              </p>
+            )}
           </div>
           <ValorCalculado label="Carência muscular" valor={carenciaMuscularKg !== null ? `${carenciaMuscularKg.toFixed(1)} kg` : null}>
             <p className="text-xs text-muted mt-1">

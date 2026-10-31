@@ -565,6 +565,16 @@ export function limitesMassaMagraPct(sexo: SexoComp): LimiteMassaMagra[] {
   ];
 }
 
+// Aviso para o avaliador quando o alvo é o FIM da faixa ideal ou passa dele (31/10/2026): é meta ousada (gordura de cerca de
+// 8% nos homens e 12% nas mulheres) e aparece ao aluno como "o fim da faixa ideal". Null para os demais alvos.
+export function avisoAlvoMassaMagra(pctAlvo: number | null, sexo: SexoComp): string | null {
+  if (pctAlvo === null || !Number.isFinite(pctAlvo)) return null;
+  const lim = limitesMassaMagraPct(sexo);
+  if (lim.length === 0 || pctAlvo < lim[2].pct) return null;
+  const pg = 100 - pctAlvo;
+  return `O alvo de ${pctAlvo.toString().replace(".", ",")}% ${pctAlvo > lim[2].pct ? "passa do" : "é o"} fim da faixa ideal e equivale a cerca de ${pg.toFixed(0)}% de gordura: é uma meta ousada, que o aluno vê no relatório como "o fim da faixa ideal". Para a maioria, o começo do ideal (${lim[1].pct}%) é o ponto de partida mais realista; confira com o aluno antes de imprimir ou enviar.`;
+}
+
 // Carência (kg) até cada limite da tabela, para o avaliador comparar antes de escolher o alvo.
 export function carenciasPorLimite(pg: number | null, pesoKg: number | null, sexo: SexoComp): (LimiteMassaMagra & { kg: number })[] {
   return limitesMassaMagraPct(sexo)
