@@ -5,7 +5,7 @@
 // pontos dourados lembra a leitura de postura do próprio aplicativo. Tudo roda no aparelho, sem imagem nem vídeo.
 
 import { useEffect, useRef } from "react";
-import { MEDIDORES, caminhoFaixa, lerp, mistura, progressoNoCiclo, valorDoMedidor } from "@/lib/abertura/avatar";
+import { MEDIDORES, caminhoFaixa, corDaGordura, lerp, mistura, progressoNoCiclo, valorDoMedidor } from "@/lib/abertura/avatar";
 
 const CIANO = "#7DD3FC";
 
@@ -47,6 +47,7 @@ export function AvatarEvolucao() {
   const els = useRef<Record<string, SVGElement | null>>({});
   const valores = useRef<Record<string, HTMLElement | null>>({});
   const barras = useRef<Record<string, HTMLElement | null>>({});
+  const corRotulo = useRef<HTMLElement | null>(null);
   const reg = (k: string) => (e: SVGElement | null) => {
     els.current[k] = e;
   };
@@ -87,12 +88,28 @@ export function AvatarEvolucao() {
         set(`ponto${i}`, "cy", y.toFixed(1));
       });
 
+      // A cor da figura acompanha o %G do exemplo: vermelha quando alto, laranja ao diminuir, azul-claro no fim.
+      const pgAtual = valorDoMedidor(MEDIDORES.find((m) => m.chave === "gordura")!, p);
+      const cor = corDaGordura(pgAtual);
+      set("corpoGrupo", "stroke", cor);
+      set("gradTopo", "stop-color", cor);
+      set("gradBase", "stop-color", cor);
+      set("anel1", "stroke", cor);
+      set("anel2", "stroke", cor);
+      if (corRotulo.current) corRotulo.current.style.color = cor;
+
       for (const m of MEDIDORES) {
         const v = valorDoMedidor(m, p);
         const el = valores.current[m.chave];
-        if (el) el.textContent = `${Math.round(v)}${m.unidade}`;
+        if (el) {
+          el.textContent = `${Math.round(v)}${m.unidade}`;
+          if (m.chave === "gordura") el.style.color = cor;
+        }
         const b = barras.current[m.chave];
-        if (b) b.style.width = `${Math.max(0, Math.min(100, (v / m.max) * 100)).toFixed(1)}%`;
+        if (b) {
+          b.style.width = `${Math.max(0, Math.min(100, (v / m.max) * 100)).toFixed(1)}%`;
+          if (m.chave === "gordura") b.style.background = cor;
+        }
       }
     }
 
@@ -123,8 +140,8 @@ export function AvatarEvolucao() {
         <svg viewBox="0 0 200 340" className="h-52 w-auto shrink-0 sm:h-72" fill="none">
           <defs>
             <linearGradient id="avatar-corpo" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor={CIANO} stopOpacity="0.32" />
-              <stop offset="1" stopColor={CIANO} stopOpacity="0.05" />
+              <stop ref={reg("gradTopo")} offset="0" stopColor={CIANO} stopOpacity="0.32" />
+              <stop ref={reg("gradBase")} offset="1" stopColor={CIANO} stopOpacity="0.05" />
             </linearGradient>
             <linearGradient id="avatar-varredura" x1="0" y1="0" x2="1" y2="0">
               <stop offset="0" stopColor={CIANO} stopOpacity="0" />
@@ -139,11 +156,11 @@ export function AvatarEvolucao() {
           <rect x="0" y="0" width="200" height="340" rx="14" fill="url(#avatar-grade)" />
 
           {/* plataforma */}
-          <ellipse cx="100" cy="326" rx="62" ry="9" stroke={CIANO} strokeOpacity="0.55" strokeWidth="1" />
-          <ellipse cx="100" cy="326" rx="84" ry="13" stroke={CIANO} strokeOpacity="0.3" strokeWidth="0.8" className="avatar-anel" />
+          <ellipse ref={reg("anel1")} cx="100" cy="326" rx="62" ry="9" stroke={CIANO} strokeOpacity="0.55" strokeWidth="1" />
+          <ellipse ref={reg("anel2")} cx="100" cy="326" rx="84" ry="13" stroke={CIANO} strokeOpacity="0.3" strokeWidth="0.8" className="avatar-anel" />
 
           {/* corpo */}
-          <g stroke={CIANO} strokeWidth="1.3" strokeLinejoin="round" fill="url(#avatar-corpo)">
+          <g ref={reg("corpoGrupo")} stroke={CIANO} strokeWidth="1.3" strokeLinejoin="round" fill="url(#avatar-corpo)">
             <path ref={reg("pernaE")} />
             <path ref={reg("pernaD")} />
             <path ref={reg("bracoE")} />

@@ -52,10 +52,40 @@ export function caminhoFaixa(centros: number[], ys: number[], meiasLarguras: num
 // Valores de exemplo dos medidores (antes e depois). Ilustrativos.
 export const MEDIDORES = [
   { chave: "musculo", rotulo: "Massa muscular", unidade: "%", antes: 31, depois: 42, max: 60 },
-  { chave: "gordura", rotulo: "Gordura corporal", unidade: "%", antes: 32, depois: 21, max: 60 },
+  { chave: "gordura", rotulo: "Gordura corporal", unidade: "%", antes: 32, depois: 20, max: 60 },
   { chave: "condicionamento", rotulo: "Condicionamento", unidade: "", antes: 40, depois: 78, max: 100 },
 ] as const;
 
 export function valorDoMedidor(m: { antes: number; depois: number }, p: number): number {
   return lerp(m.antes, m.depois, p);
+}
+
+// Cor da figura conforme o %G do exemplo (31/10/2026, pedido do profissional): acima de ~30% fica vermelha e, ao diminuir,
+// passa por laranja e âmbar até chegar ao azul-claro de origem (20% ou menos). Ilustração de exemplo: os cortes não são
+// critério de saúde nem classificação de ninguém.
+export const CORES_GORDURA: { pg: number; cor: string }[] = [
+  { pg: 30, cor: "#EF4444" }, // vermelho (30% ou mais)
+  { pg: 26, cor: "#F97316" }, // laranja
+  { pg: 23, cor: "#FBBF24" }, // âmbar
+  { pg: 20, cor: "#7DD3FC" }, // azul-claro (20% ou menos)
+];
+
+const hexParaRgb = (h: string): [number, number, number] => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const rgbParaHex = (c: number[]) => "#" + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).toUpperCase().padStart(2, "0")).join("");
+
+// Mistura gradual entre os pontos de CORES_GORDURA (do maior %G para o menor).
+export function corDaGordura(pg: number): string {
+  const pts = CORES_GORDURA;
+  if (!Number.isFinite(pg) || pg >= pts[0].pg) return pts[0].cor;
+  const ultimo = pts[pts.length - 1];
+  if (pg <= ultimo.pg) return ultimo.cor;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1];
+    if (pg <= a.pg && pg >= b.pg) {
+      const k = (a.pg - pg) / (a.pg - b.pg);
+      const ca = hexParaRgb(a.cor), cb = hexParaRgb(b.cor);
+      return rgbParaHex(ca.map((v, j) => v + (cb[j] - v) * k));
+    }
+  }
+  return ultimo.cor;
 }
