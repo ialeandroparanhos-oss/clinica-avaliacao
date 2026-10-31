@@ -20,6 +20,8 @@ import {
   analisarComposicao,
   CORTE_FFMI,
   classificarMassaMagraPct,
+  carenciasPorLimite,
+  limitesMassaMagraPct,
   compararMetodosGordura,
   conferirBioimpedancia,
   ORIENTACAO_BIOIMPEDANCIA,
@@ -144,6 +146,7 @@ export function AbaFisica({
       percentual_gordura: dados?.percentual_gordura ?? "",
       percentual_gordura_ideal: dados?.percentual_gordura_ideal ?? "",
       massa_magra_ideal_kg: dados?.massa_magra_ideal_kg ?? "",
+      massa_magra_pct_ideal: dados?.massa_magra_pct_ideal ?? "",
       observacoes: dados?.observacoes ?? "",
     };
     for (const s of TODOS_SITIOS_DOBRA) base[s.chave] = dados?.[s.chave] ?? "";
@@ -257,8 +260,11 @@ export function AbaFisica({
 
   const massaMagraIdealSugerida = peso !== null && percentualIdealSugerido !== null ? peso * (1 - percentualIdealSugerido / 100) : null;
   const massaMagraIdealEfetiva = paraNumero(d.massa_magra_ideal_kg) ?? massaMagraIdealSugerida;
-  const carenciaMuscularKg =
-    massaMagraIdealEfetiva !== null && massaMagraKg !== null ? Math.max(0, massaMagraIdealEfetiva - massaMagraKg) : null;
+  const limitesMM = limitesMassaMagraPct(sexoNorm);
+  const pctIdealDigitado = paraNumero(d.massa_magra_pct_ideal);
+  const carenciasLimites = carenciasPorLimite(composicaoAtual.pg, peso, sexoNorm);
+  const carenciaMuscular = composicaoAtual.carenciaMuscular;
+  const carenciaMuscularKg = carenciaMuscular ? carenciaMuscular.kg : null;
 
   const pesoIdealKg =
     massaMagraKg !== null && percentualIdealEfetivo !== null && percentualIdealEfetivo < 100
@@ -666,8 +672,49 @@ export function AbaFisica({
                 : null
             }
           />
-          <ValorCalculado label="Meta de recomposição muscular" valor={carenciaMuscularKg !== null ? `${carenciaMuscularKg.toFixed(1)} kg` : null}>
-            <p className="text-xs text-muted mt-1">Massa magra a ganhar para chegar ao %G ideal mantendo o peso (troca de gordura por músculo). É meta de composição, não déficit medido: com o campo de massa magra ideal vazio, coincide com a gordura excedente.</p>
+          <div className="space-y-1.5">
+            <NumField label="% de massa magra ideal (alvo da carência)" suffix="%" value={d.massa_magra_pct_ideal} onChange={(v) => set("massa_magra_pct_ideal", v)} />
+            {limitesMM.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                <span className="text-muted">Usar:</span>
+                {limitesMM.map((l) => (
+                  <button
+                    key={l.chave}
+                    type="button"
+                    onClick={() => set("massa_magra_pct_ideal", String(l.pct))}
+                    aria-pressed={pctIdealDigitado === l.pct}
+                    className={`rounded-full border px-2.5 py-1 transition ${pctIdealDigitado === l.pct ? "border-accent bg-accent text-white" : "border-border bg-surface text-ink hover:border-accent"}`}
+                  >
+                    {l.rotulo} ({l.pct}%)
+                  </button>
+                ))}
+                {d.massa_magra_pct_ideal && (
+                  <button type="button" onClick={() => set("massa_magra_pct_ideal", "")} className="text-muted hover:text-danger">
+                    limpar
+                  </button>
+                )}
+              </div>
+            )}
+            <p className="text-xs text-muted leading-relaxed">
+              {limitesMM.length > 0
+                ? `Faixa da tabela: do início do saudável (${limitesMM[0].pct}%) ao fim do ideal (${limitesMM[2].pct}%). Em branco, o sistema usa o início do ideal (${limitesMM[1].pct}%).`
+                : "Informe o sexo para ver a faixa da tabela."}
+              {pctIdealDigitado !== null && limitesMM.length > 0 && (pctIdealDigitado < limitesMM[0].pct || pctIdealDigitado > limitesMM[2].pct) ? " O valor digitado está fora da faixa da tabela." : ""}
+            </p>
+          </div>
+          <ValorCalculado label="Carência muscular" valor={carenciaMuscularKg !== null ? `${carenciaMuscularKg.toFixed(1)} kg` : null}>
+            <p className="text-xs text-muted mt-1">
+              {carenciaMuscular
+                ? `((% de massa magra ideal − % encontrada) × massa magra em kg) ÷ 100 = ((${carenciaMuscular.pctIdeal.toFixed(1)}% − ${carenciaMuscular.pctAtual.toFixed(1)}%) × ${carenciaMuscular.massaMagraKg.toFixed(1)} kg) ÷ 100. A % ideal vem ${
+                    carenciaMuscular.fonteIdeal === "pct_ideal_informado" ? "da % de massa magra ideal que você digitou (alvo)" : carenciaMuscular.fonteIdeal === "massa_magra_ideal_informada" ? "da massa magra ideal que você digitou" : carenciaMuscular.fonteIdeal === "pg_ideal_informado" ? "do %G ideal que você digitou (100 − %G ideal)" : "do limite inferior da faixa ideal da tabela de massa magra (homens 87%, mulheres 83%)"
+                  }. Zero quando já está no alvo ou acima. Regra do sistema, sem validação publicada.`
+                : "Precisa de peso, %G e sexo (ou uma massa magra ideal digitada)."}
+            </p>
+            {carenciasLimites.length > 0 && (
+              <p className="text-xs text-muted mt-1">
+                Até cada limite da tabela: {carenciasLimites.map((c) => `${c.rotulo} (${c.pct}%): ${c.kg.toFixed(1)} kg`).join(" · ")}.
+              </p>
+            )}
           </ValorCalculado>
           <ValorCalculado
             label="Carência de massa magra pelo índice (teste)"

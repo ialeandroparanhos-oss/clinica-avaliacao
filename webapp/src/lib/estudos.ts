@@ -77,7 +77,7 @@ export const PENDENCIAS: Pendencia[] = [
   { agente: "Dr. Marco", item: "Soma de dobras acima de 120 mm como alerta de cautela", situacao: "Fonte secundária, não encontrada no PubMed." },
   { agente: "Dr. Marco", item: "Equação de Weltman (homens obesos) e 'Esportes Mulheres'", situacao: "Fonte não encontrada; equação de Weltman para mulheres obesas confirmada (Am J Clin Nutr 1988) e ainda não implementada." },
   { agente: "Dr. Marco", item: "Faixas saudáveis de %G de Gallagher 2000", situacao: "Provisórias (derivadas do IMC, amostra com IMC até 35)." },
-  { agente: "Dr. Marco", item: "Meta de recomposição muscular e carência de massa magra pelo índice", situacao: "Regra do sistema; o índice está em teste desde 11/10/2026." },
+  { agente: "Dr. Marco", item: "Carência muscular (fórmula do profissional) e carência de massa magra pelo índice", situacao: "Regra do sistema; o índice está em teste desde 11/10/2026." },
   { agente: "Dra. Íris", item: "Triagem de sarcopenia: regra 'massa magra < 90% da meta' e panturrilha < 31 cm", situacao: "Regra sem validação publicada; panturrilha vem de amostra pequena e hospitalar." },
   { agente: "Dra. Rita", item: "Chair Stand e Arm Curl: limites do Senior Fitness Test", situacao: "Tabelas do manual conferidas em fonte secundária; padrões criteriais ainda não usados." },
   { agente: "Dra. Rita", item: "Teste de caminhada de 6 minutos: corte de classificação", situacao: "Não adotado (o resumo da equação brasileira não traz o limite inferior)." },

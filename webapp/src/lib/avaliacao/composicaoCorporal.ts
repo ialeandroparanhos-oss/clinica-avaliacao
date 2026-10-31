@@ -298,6 +298,7 @@ export type AnaliseComposicao = {
   // Teste (09/10/2026): quanto falta de massa magra para o índice chegar ao corte GLIM (17 kg/m² homens,
   // 15 mulheres). Independe do %G porque considera a altura. 0 quando o índice já atinge o corte.
   carenciaIndiceKg: number | null;
+  carenciaMuscular: CarenciaMuscular | null; // carência muscular (fórmula do profissional, 31/10/2026)
   cintura: number | null;
   rcq: number | null;
   rcest: number | null;
@@ -378,6 +379,7 @@ export function analisarComposicao(fisica: Record<string, any> | undefined, idad
   return {
     imc, pg, fontePg, faixa, pgStatus, pgStatusGallagher, nivelPW, massaMagraTabela, pgIdeal, nivelAlvo,
     massaGordaKg, massaMagraKg, ffmi, ffmiBaixo, massaMagraIdealKg, massaMagraPctDaMeta, carenciaIndiceKg,
+    carenciaMuscular: calcularCarenciaMuscular(pg, peso, sexo, { pctIdeal: paraNumero(f.massa_magra_pct_ideal), massaMagraIdealKg: idealInformado, pgIdeal: paraNumero(f.percentual_gordura_ideal) }),
     cintura, rcq, rcest, adiposidade, classeCintura, padrao,
   };
 }
@@ -506,6 +508,69 @@ export const TABELA_MASSA_MAGRA_PCT: Record<"masculino" | "feminino", { saudavel
   masculino: { saudavel: [81, 86], ideal: [87, 92] },
   feminino: { saudavel: [77, 82], ideal: [83, 88] },
 };
+
+// Carência muscular (fórmula do profissional, 31/10/2026):
+//   carência (kg) = ((% massa magra ideal − % massa magra encontrada) × massa magra encontrada em kg) / 100
+// A massa magra encontrada (kg) é peso × (100 − %G) / 100. A % de massa magra ideal vem, nesta ordem, de: % de massa magra
+// ideal digitada pelo avaliador (o alvo; atalhos nos limites da tabela, abaixo); massa magra ideal em kg digitada (÷ peso);
+// %G ideal digitado (100 − %G ideal); senão o LIMITE INFERIOR da faixa "ideal" da
+// tabela de massa magra em % do peso (homens 87%, mulheres 83%), isto é, o mínimo para entrar na faixa ideal. Zero quando
+// a massa magra já está na faixa ideal ou acima. É regra do sistema, sem validação publicada.
+export type CarenciaMuscular = {
+  pctAtual: number; // % de massa magra encontrada
+  pctIdeal: number; // % de massa magra ideal usada
+  fonteIdeal: "pct_ideal_informado" | "massa_magra_ideal_informada" | "pg_ideal_informado" | "tabela";
+  massaMagraKg: number;
+  kg: number;
+};
+
+export function calcularCarenciaMuscular(
+  pg: number | null,
+  pesoKg: number | null,
+  sexo: SexoComp,
+  informados: { pctIdeal?: number | null; massaMagraIdealKg?: number | null; pgIdeal?: number | null } = {}
+): CarenciaMuscular | null {
+  if (pg === null || pesoKg === null || !Number.isFinite(pg) || !(pesoKg > 0)) return null;
+  const pctAtual = 100 - pg;
+  const massaMagraKg = (pesoKg * pctAtual) / 100;
+  let pctIdeal: number | null = null;
+  let fonteIdeal: CarenciaMuscular["fonteIdeal"] = "tabela";
+  if (informados.pctIdeal != null && informados.pctIdeal > 0 && informados.pctIdeal < 100) {
+    pctIdeal = informados.pctIdeal;
+    fonteIdeal = "pct_ideal_informado";
+  } else if (informados.massaMagraIdealKg != null && informados.massaMagraIdealKg > 0) {
+    pctIdeal = (informados.massaMagraIdealKg / pesoKg) * 100;
+    fonteIdeal = "massa_magra_ideal_informada";
+  } else if (informados.pgIdeal != null && informados.pgIdeal >= 0 && informados.pgIdeal < 100) {
+    pctIdeal = 100 - informados.pgIdeal;
+    fonteIdeal = "pg_ideal_informado";
+  } else if (sexo !== "desconhecido") {
+    pctIdeal = TABELA_MASSA_MAGRA_PCT[sexo].ideal[0];
+  }
+  if (pctIdeal === null) return null;
+  return { pctAtual, pctIdeal, fonteIdeal, massaMagraKg, kg: Math.max(0, ((pctIdeal - pctAtual) * massaMagraKg) / 100) };
+}
+
+// Limites da tabela de massa magra em % do peso, para o avaliador escolher o alvo (31/10/2026): do INÍCIO da faixa saudável
+// ao FIM da faixa ideal (homens 81 a 92%; mulheres 77 a 88%).
+export type LimiteMassaMagra = { chave: "inicio_saudavel" | "inicio_ideal" | "fim_ideal"; rotulo: string; pct: number };
+
+export function limitesMassaMagraPct(sexo: SexoComp): LimiteMassaMagra[] {
+  if (sexo === "desconhecido") return [];
+  const t = TABELA_MASSA_MAGRA_PCT[sexo];
+  return [
+    { chave: "inicio_saudavel", rotulo: "início do saudável", pct: t.saudavel[0] },
+    { chave: "inicio_ideal", rotulo: "início do ideal", pct: t.ideal[0] },
+    { chave: "fim_ideal", rotulo: "fim do ideal", pct: t.ideal[1] },
+  ];
+}
+
+// Carência (kg) até cada limite da tabela, para o avaliador comparar antes de escolher o alvo.
+export function carenciasPorLimite(pg: number | null, pesoKg: number | null, sexo: SexoComp): (LimiteMassaMagra & { kg: number })[] {
+  return limitesMassaMagraPct(sexo)
+    .map((l) => ({ ...l, kg: calcularCarenciaMuscular(pg, pesoKg, sexo, { pctIdeal: l.pct })?.kg }))
+    .filter((x): x is LimiteMassaMagra & { kg: number } => typeof x.kg === "number");
+}
 
 export type ClassificacaoMassaMagra = {
   pct: number;
