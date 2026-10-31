@@ -18,7 +18,8 @@ import { mesclarComPadrao } from "@/lib/anamnese/defaults";
 import { calcularPerfilIntegrado, type Classificacao } from "@/lib/integracao/perfil";
 import { HORIZONTES, HORIZONTE_LEGADO, itemAprovado, type ItemPlano, type Plano } from "@/lib/integracao/plano";
 import { INDICADORES, extrairSerie, type LinhaHistorico } from "@/lib/integracao/historico";
-import { COMBINADOS, FONTE_PORQUE, PORQUE_VALE_A_PENA, servicosParaPaciente, ROTULO_SITUACAO, TEXTO_DOMINIO, TEXTO_FASE, frentesPrioritarias, objetivoDoPaciente, primeiroNome } from "@/lib/integracao/devolutiva";
+import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
+import { alvoMassaMagraParaPaciente, COMBINADOS, FONTE_PORQUE, PORQUE_VALE_A_PENA, servicosParaPaciente, ROTULO_SITUACAO, TEXTO_DOMINIO, TEXTO_FASE, frentesPrioritarias, objetivoDoPaciente, primeiroNome } from "@/lib/integracao/devolutiva";
 import { mensagemPaciente } from "@/lib/avaliacao/whatsapp";
 import { ASSINATURA_PROFISSIONAL } from "@/lib/marca";
 import { LogoEAssinatura } from "@/components/LogoEAssinatura";
@@ -87,6 +88,7 @@ export default function RelatorioPaciente() {
     Array.from(new Set((plano?.itens ?? []).filter((it) => it.horizonte === chave && itemAprovado(it)).map(tituloFrente)));
   const fases = [...HORIZONTES, ...((plano?.itens ?? []).some((i) => i.horizonte === "180" && itemAprovado(i)) ? [HORIZONTE_LEGADO] : [])];
 
+  const alvoMassaMagra = alvoMassaMagraParaPaciente(paciente.fisica, idadeEfetiva(paciente), sexoEfetivo(paciente));
   const servicosPaciente = servicosParaPaciente(plano);
   const indicadoresComDados = INDICADORES.filter((ind) => INDICADORES_PACIENTE.includes(ind.chave))
     .map((ind) => ({ ind, serie: extrairSerie(historico, ind) }))
@@ -153,6 +155,13 @@ export default function RelatorioPaciente() {
             <p className="text-sm text-muted mt-3">Ainda vamos conhecer melhor: {naoAvaliados.map((d) => TEXTO_DOMINIO[d.chave].nome.toLowerCase()).join(", ")}.</p>
           )}
         </Secao>
+
+        {alvoMassaMagra && (
+          <Secao titulo="O seu alvo de massa magra" subtitulo="Uma referência para acompanharmos a sua evolução juntos.">
+            <p className="text-[15px] text-ink leading-relaxed">{alvoMassaMagra.texto}</p>
+            <p className="text-sm text-muted mt-2">Não é nota nem promessa: é um ponto de referência que podemos ajustar conforme o seu caminho.</p>
+          </Secao>
+        )}
 
         {principais.length > 0 && (
           <Secao titulo="Por onde vamos começar" subtitulo="Para não sobrecarregar, começamos pelo que mais pesa na sua saúde e no que você quer conquistar.">

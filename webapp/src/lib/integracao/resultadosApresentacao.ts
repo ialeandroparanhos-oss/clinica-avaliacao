@@ -18,7 +18,7 @@ import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { paraNumero } from "@/lib/numeros";
 import { itemAprovado, type Plano } from "./plano";
 import type { DomainKey, PerfilIntegrado } from "./perfil";
-import { TEXTO_DOMINIO } from "./devolutiva";
+import { TEXTO_DOMINIO, alvoMassaMagraParaPaciente } from "./devolutiva";
 
 export type Leitura = "ok" | "atencao" | "info";
 
@@ -104,6 +104,18 @@ export function resultadosParaApresentacao(paciente: PacienteRow, perfil: Perfil
           `saudável: ${mm.faixaSaudavel[0]} a ${mm.faixaSaudavel[1]}% · ideal: ${mm.faixaIdeal[0]} a ${mm.faixaIdeal[1]}%`,
           mm.nivel === "baixa" ? "atencao" : "ok",
           mm.nivel === "baixa" ? "abaixo do saudável" : mm.nivel === "saudavel" ? "saudável" : mm.nivel === "ideal" ? "ideal" : "muito alta (conferir)"
+        )
+      );
+    }
+    const alvoMM = alvoMassaMagraParaPaciente(f, idade, sexo);
+    if (alvoMM) {
+      L.push(
+        linha(
+          "Alvo de massa magra",
+          `${f1(alvoMM.alvoPct, 0)}% do peso`,
+          `hoje: ${f1(alvoMM.hojePct, 0)}% · alvo: ${alvoMM.descricaoAlvo}`,
+          "info",
+          alvoMM.atingido ? "você já está no alvo: manter" : `cerca de ${f1(alvoMM.kg)} kg de massa magra a ganhar, aos poucos`
         )
       );
     }

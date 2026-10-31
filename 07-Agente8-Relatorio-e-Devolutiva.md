@@ -166,6 +166,10 @@ Pedido do profissional: os documentos e mensagens que saem para o paciente, alun
 
 Nada de cálculo, classificação ou texto clínico mudou. Testado: assinatura nas duas mensagens e no link do WhatsApp (5 verificações) e o cabeçalho conferido no navegador numa página de teste (removida). As telas reais dos relatórios exigem login e não foram abertas no teste.
 
+## ATUALIZAÇÃO 31/10/2026 — ALVO DE MASSA MAGRA NO RELATÓRIO E NOS SLIDES DO ALUNO (pedido do profissional)
+
+O alvo de massa magra escolhido na aba Física agora fica **registrado para o aluno**. Na **versão para o paciente** há a seção "O seu alvo de massa magra" e, nos **slides**, a linha "Alvo de massa magra" no grupo de composição do corpo. O texto é em linguagem simples: o quanto a massa magra (músculos, ossos e órgãos) representa hoje do peso, o alvo combinado e o que ele é ("o começo da faixa saudável", "o começo da faixa ideal", "o fim da faixa ideal" ou "um valor definido junto com você"), e quanto isso equivale em kg, "aos poucos, junto com o treino de força e a alimentação, no ritmo do seu corpo". Quando o aluno já está no alvo, a frase diz que o foco é manter. A seção avisa que **não é nota nem promessa**. Sem %G ou sem peso, nada aparece; sem alvo digitado, vale o começo da faixa ideal da tabela. Os termos técnicos (carência, índice, corte GLIM) não aparecem para o aluno. Código: `alvoMassaMagraParaPaciente` em `lib/integracao/devolutiva.ts` (11 verificações). POP versão 2.1.
+
 ## FECHAMENTO DESTA RODADA
 
 Com este documento, os oito agentes da arquitetura (Seção 21 do prompt-mestre) estão especificados em um primeiro nível de profundidade — da Coordenação (00) até o Relatório e Devolutiva (07), cobrindo o ciclo completo de uma avaliação, do primeiro contato até a entrega dos resultados ao paciente:

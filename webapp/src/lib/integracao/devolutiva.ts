@@ -12,6 +12,8 @@ import { conectarObjetivo } from "./objetivo";
 import type { Classificacao, DomainKey, DomainResult, PerfilIntegrado } from "./perfil";
 import { itemAprovado, type Horizonte, type ItemPlano, type Plano } from "./plano";
 import { NOME_SERVICO, TEXTO_SERVICO_PACIENTE, type ServicoId } from "./servicos";
+import { analisarComposicao, limitesMassaMagraPct } from "@/lib/avaliacao/composicaoCorporal";
+import type { SexoComp } from "@/lib/avaliacao/composicaoCorporal";
 
 export type TextoDominio = {
   nome: string; // como o paciente lê o nome da área
@@ -217,4 +219,39 @@ export function servicosParaPaciente(plano: Pick<Plano, "servicos"> | undefined)
       };
     })
     .sort((a, b) => Number(a.opcional) - Number(b.opcional));
+}
+
+// Alvo de massa magra, em linguagem do paciente (31/10/2026, pedido do profissional): o que a pessoa tem hoje, o alvo que o
+// avaliador registrou (ou, sem registro, o começo da faixa ideal da tabela) e quanto isso equivale em kg. É uma referência
+// para acompanhar a evolução, não uma nota nem uma promessa; sem %G ou sem peso, não há o que mostrar.
+export type AlvoMassaMagraPaciente = {
+  hojePct: number;
+  alvoPct: number;
+  descricaoAlvo: string; // "o começo da faixa ideal", "o fim da faixa ideal", "o começo da faixa saudável" ou "um valor definido junto com você"
+  kg: number; // quanto falta, em kg (0 quando já está no alvo)
+  atingido: boolean;
+  texto: string; // frase pronta para o paciente
+};
+
+export function alvoMassaMagraParaPaciente(fisica: Record<string, any> | undefined, idade: number | null, sexo: SexoComp): AlvoMassaMagraPaciente | null {
+  const c = analisarComposicao(fisica, idade, sexo).carenciaMuscular;
+  if (!c) return null;
+  const limite = limitesMassaMagraPct(sexo).find((l) => l.pct === c.pctIdeal);
+  const descricaoAlvo =
+    c.fonteIdeal === "pct_ideal_informado" || c.fonteIdeal === "tabela"
+      ? limite?.chave === "inicio_ideal"
+        ? "o começo da faixa ideal"
+        : limite?.chave === "fim_ideal"
+          ? "o fim da faixa ideal"
+          : limite?.chave === "inicio_saudavel"
+            ? "o começo da faixa saudável"
+            : "um valor definido junto com você"
+      : "um valor definido junto com você";
+  const f0 = (n: number) => String(Math.round(n));
+  const f1 = (n: number) => n.toFixed(1).replace(".", ",");
+  const atingido = c.kg <= 0;
+  const texto = atingido
+    ? `Hoje a sua massa magra (músculos, ossos e órgãos) é cerca de ${f0(c.pctAtual)}% do seu peso. O alvo combinado é ${f0(c.pctIdeal)}% (${descricaoAlvo}), e você já está nele: o foco é manter.`
+    : `Hoje a sua massa magra (músculos, ossos e órgãos) é cerca de ${f0(c.pctAtual)}% do seu peso. O alvo combinado é ${f0(c.pctIdeal)}% (${descricaoAlvo}). Isso equivale a ganhar cerca de ${f1(c.kg)} kg de massa magra, aos poucos, junto com o treino de força e a alimentação, no ritmo do seu corpo.`;
+  return { hojePct: c.pctAtual, alvoPct: c.pctIdeal, descricaoAlvo, kg: c.kg, atingido, texto };
 }
