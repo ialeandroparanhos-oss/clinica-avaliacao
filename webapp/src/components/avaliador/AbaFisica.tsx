@@ -709,7 +709,7 @@ export function AbaFisica({
               </p>
             )}
           </div>
-          <ValorCalculado label="Massa magra a ganhar até o alvo" valor={carenciaMuscularKg !== null ? `${carenciaMuscularKg.toFixed(1)} kg` : null}>
+          <ValorCalculado label="Carência muscular estimada" valor={carenciaMuscularKg !== null ? `${carenciaMuscularKg.toFixed(1)} kg` : null}>
             <p className="text-xs text-muted mt-1">
               {carenciaMuscular
                 ? `((% de massa magra ideal − % encontrada) × massa magra em kg) ÷ 100 = ((${carenciaMuscular.pctIdeal.toFixed(1)}% − ${carenciaMuscular.pctAtual.toFixed(1)}%) × ${carenciaMuscular.massaMagraKg.toFixed(1)} kg) ÷ 100. A % ideal vem ${

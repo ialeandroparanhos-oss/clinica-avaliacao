@@ -280,6 +280,10 @@ A massa magra encontrada (kg) é o peso × (100 − %G) ÷ 100. A **% de massa m
 1. **Retirada** da "Carência de massa magra pelo índice (teste, corte GLIM)" da aba Física, do relatório técnico e do parecer do Dr. Marco. O **índice de massa magra (kg/m²) e o corte GLIM continuam** como leitura de "massa magra baixa" no parecer e no relatório (agora só como índice, sem o cálculo de quantos kg faltam).
 2. **Novo nome** da carência muscular: **"Massa magra a ganhar até o alvo"** (sugestão aceita por ter a mesma conta e dizer o que o número significa: quantos kg de massa magra faltam para chegar ao alvo escolhido). A fórmula e o alvo não mudaram. O campo do alvo passou a se chamar "% de massa magra ideal (alvo)". No parecer a frase é "faltam X kg de massa magra para chegar ao alvo" (ou "já está no alvo de massa magra"). Para o aluno o termo "carência" nunca apareceu. Nomes internos do código (`calcularCarenciaMuscular`) foram mantidos para não mexer no que já funciona. POP versão 2.3.
 
+## AJUSTE 31/10/2026 (5) — NOME FINAL: "CARÊNCIA MUSCULAR ESTIMADA" (escolha do profissional)
+
+O profissional não aprovou "Massa magra a ganhar até o alvo" e escolheu, entre as opções com a palavra "carência", **"Carência muscular estimada"** (lembra que o número vem de dobras ou bioimpedância). Vale na aba Física, no relatório técnico e no parecer do Dr. Marco ("carência muscular estimada: faltam X kg de massa magra para chegar ao alvo", ou "nenhuma, já está no alvo"). A fórmula e o campo do alvo não mudaram; a "carência pelo índice (teste)" continua retirada. Para o aluno o termo não aparece (ele vê "alvo de massa magra"). POP versão 2.4.
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 4 — Avaliação Postural e Biomecânica** (Etapa 5 do prompt-mestre): protocolo fotográfico padronizado (vistas anterior, posterior, lateral direita e esquerda), pontos anatômicos de referência, instrumentos (câmera, tripé, simetrógrafo, prumo, goniômetro, inclinômetro), e a linguagem científica obrigatória para não transformar achado postural isolado em causa de dor.

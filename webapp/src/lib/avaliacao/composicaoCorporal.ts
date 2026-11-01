@@ -295,7 +295,7 @@ export type AnaliseComposicao = {
   ffmiBaixo: boolean | null;
   massaMagraIdealKg: number | null;
   massaMagraPctDaMeta: number | null;
-  // Massa magra a ganhar até o alvo (fórmula do profissional, 31/10/2026; antes chamada "carência muscular"). A "carência
+  // Massa magra a ganhar até o alvo (fórmula do profissional, 31/10/2026; nome na tela: "carência muscular estimada"). A "carência
   // pelo índice (teste)" foi retirada em 31/10/2026 por decisão do profissional.
   carenciaMuscular: CarenciaMuscular | null;
   cintura: number | null;
@@ -507,7 +507,7 @@ export const TABELA_MASSA_MAGRA_PCT: Record<"masculino" | "feminino", { saudavel
   feminino: { saudavel: [77, 82], ideal: [83, 88] },
 };
 
-// Massa magra a ganhar até o alvo (fórmula do profissional, 31/10/2026; nome antigo: "carência muscular"):
+// Carência muscular estimada (fórmula do profissional, 31/10/2026): kg de massa magra que faltam para o alvo.
 //   kg = ((% massa magra ideal − % massa magra encontrada) × massa magra encontrada em kg) / 100
 // A massa magra encontrada (kg) é peso × (100 − %G) / 100. A % de massa magra ideal vem, nesta ordem, de: % de massa magra
 // ideal digitada pelo avaliador (o alvo; atalhos nos limites da tabela, abaixo); massa magra ideal em kg digitada (÷ peso);

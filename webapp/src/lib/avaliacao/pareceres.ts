@@ -269,7 +269,7 @@ function leituraMarco(p: PacienteRow, estilo: EstiloParecer): string[] {
     const corte = sexo !== "desconhecido" ? CORTE_FFMI[sexo] : null;
     L.push(
       `Massa magra absoluta: ${fmt(c.massaMagraKg, 1, "kg")}${c.ffmi !== null ? `, índice ${fmt(c.ffmi, 1)} kg/m²` : ""}${corte !== null && c.ffmi !== null ? ` (corte de massa reduzida GLIM: ${corte} kg/m²): ${c.ffmiBaixo ? "BAIXA" : "adequada"}` : ""}${
-        c.carenciaMuscular !== null ? `; ${c.carenciaMuscular.kg > 0 ? `faltam ${fmt(c.carenciaMuscular.kg, 1, "kg")} de massa magra para chegar ao alvo` : "já está no alvo de massa magra"} (massa magra ${fmt(c.carenciaMuscular.pctAtual, 1, "%")} do peso; alvo ${fmt(c.carenciaMuscular.pctIdeal, 1, "%")}; fórmula do profissional, regra do sistema sem validação publicada)` : ""
+        c.carenciaMuscular !== null ? `; carência muscular estimada: ${c.carenciaMuscular.kg > 0 ? `faltam ${fmt(c.carenciaMuscular.kg, 1, "kg")} de massa magra para chegar ao alvo` : "nenhuma, já está no alvo de massa magra"} (massa magra ${fmt(c.carenciaMuscular.pctAtual, 1, "%")} do peso; alvo ${fmt(c.carenciaMuscular.pctIdeal, 1, "%")}; fórmula do profissional, regra do sistema sem validação publicada)` : ""
       }. O índice é a única leitura de massa magra independente do %G, porque considera a altura.`
     );
   }  const padraoTxt: Record<string, string> = {

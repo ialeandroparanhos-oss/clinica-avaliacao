@@ -350,7 +350,7 @@ export default function RelatorioTecnico() {
             <L label="%G ideal / %G excedente" value={percentualIdealEfetivo !== null ? `${percentualIdealEfetivo.toFixed(1)}% / ${percentualExcedente !== null ? percentualExcedente.toFixed(1) : "–"}%` : null} />
             <L label="Massa gorda / magra (calculadas)" value={massaGordaKg !== null && massaMagraKg !== null ? `${massaGordaKg.toFixed(1)} kg / ${massaMagraKg.toFixed(1)} kg` : null} />
             <L label="Gordura excedente" value={gorduraExcedenteKg !== null ? `${gorduraExcedenteKg.toFixed(1)} kg` : null} />
-            <L label="Massa magra ideal / massa magra a ganhar até o alvo" value={massaMagraIdealEfetiva !== null || carenciaMuscularKg !== null ? `${massaMagraIdealEfetiva !== null ? `${massaMagraIdealEfetiva.toFixed(1)} kg` : "–"} / ${carenciaMuscularKg !== null ? `${carenciaMuscularKg.toFixed(1)} kg` : "–"}` : null} />
+            <L label="Massa magra ideal / carência muscular estimada" value={massaMagraIdealEfetiva !== null || carenciaMuscularKg !== null ? `${massaMagraIdealEfetiva !== null ? `${massaMagraIdealEfetiva.toFixed(1)} kg` : "–"} / ${carenciaMuscularKg !== null ? `${carenciaMuscularKg.toFixed(1)} kg` : "–"}` : null} />
             <L label="Índice de massa magra (corte GLIM)" value={compRel.ffmi !== null ? `${compRel.ffmi.toFixed(1)} kg/m²${sexoNorm !== "desconhecido" ? ` (corte ${CORTE_FFMI[sexoNorm]} kg/m²)` : ""}` : null} />
             <L label="Peso ideal (calculado)" value={pesoIdealKg !== null ? `${pesoIdealKg.toFixed(1)} kg` : null} />
             <L label="Observações" value={paciente.fisica?.observacoes} />
