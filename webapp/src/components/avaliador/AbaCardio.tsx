@@ -15,6 +15,7 @@ import { PainelParecer, lerParecer, type ParecerSalvo } from "./PainelParecer";
 import { decidirLiberacao, ROTULO_NIVEL_LIBERACAO, situacaoParaLiberacao, type NivelLiberacao, type ResultadoLiberacao } from "@/lib/avaliacao/liberacaoTeste";
 import { gerarParecerAgente, type EstiloParecer } from "@/lib/avaliacao/pareceres";
 import { RotuloComInfo } from "./instrucoes";
+import { CapacidadeFuncional } from "./CapacidadeFuncional";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { paraNumero } from "@/lib/numeros";
 import {
@@ -337,6 +338,7 @@ export function AbaCardio({ pacienteId, dados, paciente, onSalvo }: { pacienteId
         <TextArea value={comum.observacoes} onChange={(e) => setComumCampo("observacoes", e.target.value)} />
       </Field>
 
+      <CapacidadeFuncional paciente={{ ...paciente, cardio: dadosAtuais }} />
       <PainelParecer agente="caio" valor={parecer} onChange={setParecer} gerar={gerarParecerCardio} mensagemVazia="Registre ao menos um teste para o Caio redigir o parecer." />
       <SalvarBar salvando={salvando} ok={ok} onSalvar={() => salvar(dadosAtuais).then(onSalvo)} auto={estadoAuto} />
     </div>

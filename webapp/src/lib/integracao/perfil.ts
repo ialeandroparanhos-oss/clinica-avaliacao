@@ -17,6 +17,7 @@ import { avaliarForca as avaliarForcaIntegrada } from "@/lib/avaliacao/forca";
 import { analisarComposicao, CORTE_FFMI, classificarRCEst } from "@/lib/avaliacao/composicaoCorporal";
 import { avaliarMobilidadeObjetiva } from "@/lib/avaliacao/mobilidade";
 import { avaliarVO2max, ROTULO_CLASSE_VO2, vo2maxDeRegistro, type ClasseVO2 } from "@/lib/avaliacao/cardiorrespiratoria";
+import { CORTE_TC6_PCT_DO_PREVISTO, lerTC6 } from "@/lib/avaliacao/tc6";
 
 export type Classificacao = "adequado" | "atencao" | "prioridade" | "investigar";
 
@@ -125,13 +126,14 @@ function avaliarEquilibrio(p: PacienteRow): DomainResult {
 
 // ---------------------------------------------------------------------------
 // 4. Capacidade cardiorrespiratória — VO2máx do teste de esteira/Cooper
-//    (classificado por idade e sexo) + velocidade de marcha; TC6 exige
-//    equação de referência que o sistema ainda não calcula
+//    (classificado por idade e sexo) + velocidade de marcha + TC6 pelo % do
+//    previsto brasileiro (corte prático de 80%, regra do sistema). Basta UM
+//    dos testes (Cooper/esteira ou TC6) para a capacidade ser lida.
 //
 //    Denominador comum: cada indicador com corte de referência vira uma nota
 //    de 0 (adequado), 1 (atenção) ou 2 (prioridade); o resultado do domínio
 //    é a MÉDIA das notas (< 0,5 adequado; < 1,5 atenção; >= 1,5 prioridade).
-//    Indicadores sem corte (TC6) aparecem na justificativa mas não entram na
+//    Indicadores sem como comparar aparecem na justificativa mas não entram na
 //    média. Se os indicadores divergirem, a justificativa avisa.
 // ---------------------------------------------------------------------------
 const CLASSE_VO2_NOTA: Record<ClasseVO2, number> = { muito_fraco: 2, fraco: 2, regular: 1, bom: 0, excelente: 0 };
@@ -171,7 +173,20 @@ function avaliarCardio(p: PacienteRow): DomainResult {
     notas.push({ nome: `velocidade de marcha ${vel} m/s (${faixa})`, nota });
   }
 
-  if (tc6 !== null) extras.push(`TC6 ${tc6} m (sem corte aplicado - comparar com a equação de valor previsto)`);
+  if (tc6 !== null) {
+    // TC6 (05/11/2026): com idade, sexo, IMC e corredor de 30 m, entra como indicador pelo % do previsto (Britto 2013) com o
+    // corte prático de 80% (regra do sistema, sem validação publicada); sem isso, só aparece na justificativa.
+    const comp = analisarComposicao(p.fisica, idadeEfetiva(p), sexoEfetivo(p));
+    const lido = lerTC6(p.funcional, idadeEfetiva(p), sexoEfetivo(p), comp.imc);
+    if (lido) {
+      notas.push({
+        nome: `TC6 ${tc6} m = ${Math.round(lido.pct)}% do previsto (${Math.round(lido.previsto)} m, equação brasileira de Britto 2013; corte prático do sistema de ${CORTE_TC6_PCT_DO_PREVISTO}% do previsto, sem validação publicada - ${lido.leitura === "ok" ? "dentro do esperado" : "abaixo do esperado"})`,
+        nota: lido.leitura === "ok" ? 0 : 1,
+      });
+    } else {
+      extras.push(`TC6 ${tc6} m (sem comparação: faltam idade, sexo, IMC ou o corredor de 30 m para o valor previsto)`);
+    }
+  }
 
   if (notas.length === 0) {
     if (extras.length > 0) return resultado(chave, "investigar", `${extras.join("; ")}. Nenhum indicador com corte de referência para classificar.`);

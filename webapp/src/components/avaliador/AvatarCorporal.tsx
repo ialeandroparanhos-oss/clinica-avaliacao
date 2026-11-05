@@ -2,7 +2,10 @@
 
 // Avatar esquemático (não anatômico) com o resumo por região: circunferência
 // e massa magra relativa. Apoio visual rápido - os números oficiais ficam nas
-// tabelas do formulário.
+// tabelas do formulário. O contorno muda de cor com o %G (vermelho quando alto, laranja, âmbar e verde ao diminuir; pontos da
+// tabela da própria pessoa, ver lib/avaliacao/corGordura.ts): apoio visual, não diagnóstico.
+
+import type { CorGordura } from "@/lib/avaliacao/corGordura";
 
 const DX = 130; // desloca o corpo para o centro, deixando espaço para os rótulos
 const X = (x: number) => x + DX;
@@ -28,24 +31,27 @@ const MARCADORES: Marcador[] = [
   { id: "panturrilha", titulo: "Panturrilha", mx: 139, my: 410, lado: "esq", ly: 402 },
 ];
 
-export function AvatarCorporal({ linhas }: { linhas: Record<string, string[]> }) {
-  const contorno = "fill-none stroke-border";
+export function AvatarCorporal({ linhas, cor, pg }: { linhas: Record<string, string[]>; cor?: CorGordura | null; pg?: number | null }) {
+  const contorno = cor ? "" : "fill-none stroke-border";
+  // Com cor: contorno na cor do %G e um leve preenchimento da mesma cor.
+  const estiloCor = cor ? { stroke: cor.cor, fill: cor.cor, fillOpacity: 0.12 } : undefined;
+  const escala = cor ? `linear-gradient(to right, ${[...cor.pontos].reverse().map((p) => p.cor).join(", ")})` : null;
   return (
     <div className="overflow-x-auto">
       <svg viewBox="0 0 580 480" className="w-full min-w-[460px] max-w-xl mx-auto" role="img" aria-label="Resumo corporal por região">
-        <circle cx={X(160)} cy={35} r={26} className={contorno} strokeWidth={2} />
-        <rect x={X(150)} y={58} width={20} height={14} className={contorno} strokeWidth={2} />
-        <rect x={X(120)} y={75} width={80} height={70} rx={16} className={contorno} strokeWidth={2} />
-        <rect x={X(124)} y={145} width={72} height={65} rx={14} className={contorno} strokeWidth={2} />
-        <rect x={X(118)} y={210} width={84} height={40} rx={14} className={contorno} strokeWidth={2} />
-        <rect x={X(75)} y={80} width={38} height={85} rx={16} className={contorno} strokeWidth={2} />
-        <rect x={X(65)} y={165} width={34} height={85} rx={14} className={contorno} strokeWidth={2} />
-        <rect x={X(207)} y={80} width={38} height={85} rx={16} className={contorno} strokeWidth={2} />
-        <rect x={X(221)} y={165} width={34} height={85} rx={14} className={contorno} strokeWidth={2} />
-        <rect x={X(122)} y={250} width={34} height={115} rx={16} className={contorno} strokeWidth={2} />
-        <rect x={X(126)} y={365} width={26} height={95} rx={13} className={contorno} strokeWidth={2} />
-        <rect x={X(164)} y={250} width={34} height={115} rx={16} className={contorno} strokeWidth={2} />
-        <rect x={X(168)} y={365} width={26} height={95} rx={13} className={contorno} strokeWidth={2} />
+        <circle cx={X(160)} cy={35} r={26} className={contorno} style={estiloCor} strokeWidth={2} />
+        <rect x={X(150)} y={58} width={20} height={14} className={contorno} style={estiloCor} strokeWidth={2} />
+        <rect x={X(120)} y={75} width={80} height={70} rx={16} className={contorno} style={estiloCor} strokeWidth={2} />
+        <rect x={X(124)} y={145} width={72} height={65} rx={14} className={contorno} style={estiloCor} strokeWidth={2} />
+        <rect x={X(118)} y={210} width={84} height={40} rx={14} className={contorno} style={estiloCor} strokeWidth={2} />
+        <rect x={X(75)} y={80} width={38} height={85} rx={16} className={contorno} style={estiloCor} strokeWidth={2} />
+        <rect x={X(65)} y={165} width={34} height={85} rx={14} className={contorno} style={estiloCor} strokeWidth={2} />
+        <rect x={X(207)} y={80} width={38} height={85} rx={16} className={contorno} style={estiloCor} strokeWidth={2} />
+        <rect x={X(221)} y={165} width={34} height={85} rx={14} className={contorno} style={estiloCor} strokeWidth={2} />
+        <rect x={X(122)} y={250} width={34} height={115} rx={16} className={contorno} style={estiloCor} strokeWidth={2} />
+        <rect x={X(126)} y={365} width={26} height={95} rx={13} className={contorno} style={estiloCor} strokeWidth={2} />
+        <rect x={X(164)} y={250} width={34} height={115} rx={16} className={contorno} style={estiloCor} strokeWidth={2} />
+        <rect x={X(168)} y={365} width={26} height={95} rx={13} className={contorno} style={estiloCor} strokeWidth={2} />
 
         {MARCADORES.map((m) => {
           const esq = m.lado === "esq";
@@ -68,6 +74,20 @@ export function AvatarCorporal({ linhas }: { linhas: Record<string, string[]> })
           );
         })}
       </svg>
+      {cor && (
+        <div className="mx-auto mt-2 max-w-md space-y-1" aria-label="Escala de cor pelo percentual de gordura">
+          <div className="relative h-2.5 rounded-full" style={{ background: escala ?? undefined }}>
+            <span className="absolute w-1 rounded bg-ink" style={{ left: `calc(${(cor.posicao * 100).toFixed(1)}% - 2px)`, height: "18px", top: "-4px" }} aria-hidden="true" />
+          </div>
+          <div className="flex justify-between text-[11px] text-muted">
+            <span>menor %G (verde)</span>
+            <span>maior %G (vermelho)</span>
+          </div>
+          <p className="text-xs text-muted leading-relaxed">
+            Cor do contorno pelo %G{pg !== null && pg !== undefined ? ` de ${pg.toFixed(1).replace(".", ",")}%` : ""}: vermelho a partir de {cor.pontos[0].rotulo}, laranja em {cor.pontos[1].rotulo}, âmbar em {cor.pontos[2].rotulo} e verde em {cor.pontos[3].rotulo}, conforme a {cor.referencia}. Apoio visual: não substitui o número nem a sua leitura.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

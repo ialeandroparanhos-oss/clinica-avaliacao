@@ -13,7 +13,7 @@ import { NIVEIS_POLLOCK_WILMORE, ROTULO_PACIENTE_NIVEL_PW, analisarComposicao, C
 import { corteDinamometriaKgf, limite5stsPorIdade, limitesRikli, CORTE_5STS_SEG } from "@/lib/avaliacao/forca";
 import { avaliarVO2max, ROTULO_CLASSE_VO2, vo2maxDeRegistro } from "@/lib/avaliacao/cardiorrespiratoria";
 import { avaliarMobilidadeObjetiva, diferencaEntreLados, LIMITE_ASSIMETRIA_GRAUS, paresDeMobilidade } from "@/lib/avaliacao/mobilidade";
-import { percentualDoPrevisto, tc6Previsto } from "@/lib/avaliacao/tc6";
+import { CORTE_TC6_PCT_DO_PREVISTO, percentualDoPrevisto, tc6Previsto } from "@/lib/avaliacao/tc6";
 import { idadeEfetiva, sexoEfetivo } from "@/lib/avaliacao/identificacao";
 import { paraNumero } from "@/lib/numeros";
 import { itemAprovado, type Plano } from "./plano";
@@ -237,7 +237,7 @@ export function resultadosParaApresentacao(paciente: PacienteRow, perfil: Perfil
       const formato = fu.tc6_formato;
       const prev = !formato || formato === "Corredor de 30 m (padrão)" ? tc6Previsto(idade, sexo, imc) : null;
       const pct = percentualDoPrevisto(tc6, prev);
-      L.push(linha("Caminhada de 6 minutos", `${f1(tc6, 0)} m`, prev !== null ? `previsto ≈ ${Math.round(prev)} m${pct !== null ? ` (você fez ${Math.round(pct)}%)` : ""}` : "acompanhamos a evolução", "info", prev !== null ? "referência brasileira" : undefined));
+      L.push(linha("Caminhada de 6 minutos", `${f1(tc6, 0)} m`, prev !== null ? `previsto ≈ ${Math.round(prev)} m${pct !== null ? ` (você fez ${Math.round(pct)}%)` : ""}` : "acompanhamos a evolução", pct !== null ? (pct >= CORTE_TC6_PCT_DO_PREVISTO ? "ok" : "atencao") : "info", prev !== null && pct !== null ? (pct >= CORTE_TC6_PCT_DO_PREVISTO ? "dentro do esperado" : undefined) : prev !== null ? "referência brasileira" : undefined));
     }
     if (L.length > 0) {
       grupos.push({

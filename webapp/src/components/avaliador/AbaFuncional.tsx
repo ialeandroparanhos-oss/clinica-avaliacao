@@ -15,7 +15,8 @@ import { avaliarForca, corteDinamometriaKgf, limite5stsPorIdade, limitesRikli } 
 import { paraNumero } from "@/lib/numeros";
 import { calcularTagsPerfil, gruposRecomendados, ROTULOS_GRUPO, type GrupoTesteFuncional } from "@/lib/integracao/tagsPerfil";
 import { avaliarMobilidadeObjetiva, diferencaEntreLados, LIMITE_ASSIMETRIA_GRAUS, paresDeMobilidade } from "@/lib/avaliacao/mobilidade";
-import { percentualDoPrevisto, tc6Previsto } from "@/lib/avaliacao/tc6";
+import { CORTE_TC6_PCT_DO_PREVISTO, percentualDoPrevisto, tc6Previsto } from "@/lib/avaliacao/tc6";
+import { CapacidadeFuncional } from "./CapacidadeFuncional";
 
 const TOM_CLASSIFICACAO: Record<"adequado" | "atencao" | "prioridade" | "investigar", TomSelo> = {
   adequado: "ok",
@@ -427,10 +428,12 @@ export function AbaFuncional({ pacienteId, dados, paciente, onSalvo }: { pacient
             )}
           </p>
           <p className="text-xs text-muted">
-            Informativo, sem corte de classificação (o estudo não traz o limite inferior da normalidade no resumo). Vale para o corredor de 30 m. Idade {idadeAtual}, IMC {tc6Info.imc.toFixed(1).replace(".", ",")}.
+            Leitura prática do sistema: {CORTE_TC6_PCT_DO_PREVISTO}% do previsto ou mais = dentro do esperado; abaixo = pede atenção (o estudo não traz o limite inferior da normalidade no resumo, então este corte não tem validação publicada). Vale para o corredor de 30 m. Idade {idadeAtual}, IMC {tc6Info.imc.toFixed(1).replace(".", ",")}.
           </p>
         </div>
       )}
+
+      <CapacidadeFuncional paciente={{ ...paciente, funcional: { ...(paciente.funcional ?? {}), ...d } }} />
 
       <div className="pt-4 border-t border-border">
         <h4 className="font-display text-base text-ink mb-1">

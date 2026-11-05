@@ -258,6 +258,17 @@ Entrou na base científica da Dra. Rita o estudo de **Wu MC et al., JAMA Netw Op
 
 Em "Estabilidade do core - o que você observou?" (e em todo grupo de botões marcáveis) um toque no espaço entre os botões, ou na borda de um botão, era repassado pelo navegador ao primeiro botão do grupo ("Mantém o alinhamento", que exclui as demais) e apagava as outras marcações, dando a impressão de que só cabia uma opção. Corrigido em `components/avaliador/cliques.tsx` (o clique fora dos botões não é mais repassado). Marcar várias continua permitido; só "Mantém o alinhamento" exclui as outras, por ser o oposto delas.
 
+## AJUSTE 05/11/2026 — CAPACIDADE FUNCIONAL COM UM DOS TESTES: TESTE DE 12 MINUTOS (COOPER) OU TC6 (pedido do profissional)
+
+**Pergunta:** fazendo só o teste de 12 minutos, ele já serviria como TC6? **Resposta:** não por conversão. O Cooper é uma **corrida até o limite** (resultado em VO2máx estimado) e o TC6 é uma **caminhada em ritmo próprio** (resultado em metros, comparado com o previsto brasileiro). Não achei no PubMed uma conversão validada de um para o outro (a busca trouxe só um estudo de 20 pessoas com TC6 em esteira, que não serve), e o sistema não inventa uma. O que o profissional quer, que a capacidade funcional apareça com **um ou outro**, foi feito assim:
+
+1. **O Cooper** continua dando a capacidade pelo VO2máx estimado, classificado por idade e sexo (já era assim).
+2. **O TC6** agora também **classifica** a capacidade: pelo **% do previsto** (equação brasileira de Britto 2013, PMID 24271092) com um **corte prático de 80%**: 80% ou mais = dentro do esperado; abaixo = pede atenção (nunca "prioridade" sozinho). O corte é **regra do sistema, sem validação publicada** (o resumo do artigo não traz o limite inferior da normalidade). Só vale com corredor de 30 m (ou formato em branco), idade, sexo e IMC; sem isso o TC6 só acompanha o próprio paciente.
+3. **Com os dois testes**, o domínio faz a média das notas e avisa se divergem.
+4. **Cartão "Capacidade funcional"** nas abas **Funcional** e **Cardio**: mostra a classificação e o que a motivou, e diz que vale com um dos testes; o avaliador escolhe conforme o caso. Os slides do aluno mostram o TC6 como "dentro do esperado" ou "pede atenção".
+
+Código: `lerTC6` e `CORTE_TC6_PCT_DO_PREVISTO` em `lib/avaliacao/tc6.ts`, `avaliarCardio` em `lib/integracao/perfil.ts`, `components/avaliador/CapacidadeFuncional.tsx` (18 verificações). POP versão 2.5.
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 6 — Integração e Interpretação** (Etapa 7 do prompt-mestre): como cruzar os dados de todos os agentes anteriores para construir o Perfil Integrado de Saúde e Capacidade Funcional, identificar potencialidades/limitações/riscos/prioridades, e montar o Painel Integrado de Saúde (Seção 16) com critérios de classificação explícitos.

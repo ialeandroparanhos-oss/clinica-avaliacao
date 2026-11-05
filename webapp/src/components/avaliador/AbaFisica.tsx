@@ -9,6 +9,7 @@ import { CampoComSugestao, NumField, SalvarBar, SelectField, Selo, ValorCalculad
 import { PainelParecer, lerParecer, type ParecerSalvo } from "./PainelParecer";
 import { gerarParecerAgente, type EstiloParecer } from "@/lib/avaliacao/pareceres";
 import { AvatarCorporal } from "./AvatarCorporal";
+import { corDoAvatar } from "@/lib/avaliacao/corGordura";
 import { normalizarDecimal, paraNumero } from "@/lib/numeros";
 import {
   SITIOS_FAULKNER,
@@ -865,7 +866,7 @@ export function AbaFisica({
 
       <div className="pt-4 border-t border-border">
         <h3 className="font-display text-lg text-ink mb-3">Avatar - resumo visual por região</h3>
-        <AvatarCorporal linhas={linhasAvatar} />
+        <AvatarCorporal linhas={linhasAvatar} cor={corDoAvatar(composicaoAtual.pg, idadeNum, sexoNorm)} pg={composicaoAtual.pg} />
       </div>
 
       <Field label="Observações do avaliador">
