@@ -31,6 +31,7 @@ import {
   type Plano,
   type StatusItem,
 } from "@/lib/integracao/plano";
+import { mesclarEstrategia, sugerirEstrategia, textoEstrategia, type EstrategiaPlano } from "@/lib/integracao/estrategia";
 import { NOME_SERVICO, PROFISSOES, ROTULO_PRIORIDADE_SERVICO, inicioDoServico, rotuloServico, type EtapaServico, type PrioridadeServico, type ServicoPlano } from "@/lib/integracao/servicos";
 
 const ORDEM_CATEGORIA: Categoria[] = ["seguranca", "encaminhamento", "intervencao", "orientacao", "reavaliacao"];
@@ -94,6 +95,118 @@ function BotoesDecisao({ status, onConcordo, onDiscordo, onEditar }: { status: S
 function primeiraFrase(t: string): string {
   const i = t.search(/[.:;]\s/);
   return i > 10 ? t.slice(0, i) : t.replace(/\.$/, "");
+}
+
+// Estratégia inicial: por onde começar, objetivos em 30, 90 e 180 dias, a explicação e a decisão do avaliador.
+function PainelEstrategia({
+  estrategia,
+  atualizar,
+  recalcular,
+}: {
+  estrategia: EstrategiaPlano | null;
+  atualizar: (patch: Partial<EstrategiaPlano>) => void;
+  recalcular: () => void;
+}) {
+  const [editando, setEditando] = useState(false);
+  const [rascunho, setRascunho] = useState<{ titulo: string; marcos: string[]; explicacao: string }>({ titulo: "", marcos: [], explicacao: "" });
+  const status: StatusItem = estrategia?.status ?? "sugerido";
+
+  function abrir() {
+    if (!estrategia) return;
+    setRascunho({ titulo: estrategia.titulo, marcos: estrategia.marcos.map((m) => m.objetivos.join("\n")), explicacao: estrategia.explicacao.join("\n") });
+    setEditando(true);
+  }
+  function salvar() {
+    if (!estrategia) return;
+    const linhas = (t: string) => t.split("\n").map((x) => x.trim()).filter(Boolean);
+    atualizar({
+      titulo: rascunho.titulo.trim() || estrategia.titulo,
+      marcos: estrategia.marcos.map((m, i) => ({ ...m, objetivos: linhas(rascunho.marcos[i] ?? "") })),
+      explicacao: linhas(rascunho.explicacao),
+      status: "editado",
+    });
+    setEditando(false);
+  }
+
+  return (
+    <div className="rounded-2xl border-2 border-gold bg-surface p-5 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h4 className="font-display text-base text-ink">Estratégia inicial do plano</h4>
+        <button type="button" onClick={recalcular} className="text-xs font-medium text-accent hover:underline">
+          atualizar com o plano atual
+        </button>
+      </div>
+      {!estrategia ? (
+        <p className="text-sm text-muted">Ainda não há estratégia. Use "Sugerir a partir dos resultados" (ou "atualizar com o plano atual"): o sistema propõe por onde começar e os objetivos em 30, 90 e 180 dias.</p>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <Selo tom={TOM_STATUS[status]}>{ROTULO_STATUS[status]}</Selo>
+            {estrategia.provisoria && <Selo tom="atencao">Plano provisório</Selo>}
+          </div>
+          {editando ? (
+            <div className="space-y-3">
+              <label className="block text-xs text-ink">
+                Por onde começar
+                <TextInput value={rascunho.titulo} onChange={(e) => setRascunho((r) => ({ ...r, titulo: e.target.value }))} />
+              </label>
+              {estrategia.marcos.map((m, i) => (
+                <label key={m.marco} className="block text-xs text-ink">
+                  {m.titulo} (um objetivo por linha)
+                  <TextArea value={rascunho.marcos[i] ?? ""} onChange={(e) => setRascunho((r) => ({ ...r, marcos: r.marcos.map((x, k) => (k === i ? e.target.value : x)) }))} />
+                </label>
+              ))}
+              <label className="block text-xs text-ink">
+                Explicação (uma frase por linha)
+                <TextArea value={rascunho.explicacao} onChange={(e) => setRascunho((r) => ({ ...r, explicacao: e.target.value }))} />
+              </label>
+              <div className="flex gap-3 text-sm">
+                <button type="button" onClick={salvar} className="font-medium text-accent hover:underline">
+                  Concluir edição
+                </button>
+                <button type="button" onClick={() => setEditando(false)} className="text-muted hover:underline">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm font-medium text-ink">{estrategia.titulo}.</p>
+              <div className="grid gap-3 lg:grid-cols-3">
+                {estrategia.marcos.map((m) => (
+                  <div key={m.marco} className="rounded-xl border border-border bg-bg p-3">
+                    <p className="text-sm font-medium text-ink mb-1.5">{m.titulo}</p>
+                    <ul className="list-disc pl-4 space-y-1 text-xs text-ink">
+                      {m.objetivos.map((o, i) => (
+                        <li key={i}>{o}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+              <div className="rounded-xl bg-bg p-3 text-xs text-ink space-y-1.5">
+                <p className="font-semibold">Por que esta estratégia</p>
+                {estrategia.explicacao.map((x, i) => (
+                  <p key={i} className="leading-relaxed">
+                    {x}
+                  </p>
+                ))}
+              </div>
+            </>
+          )}
+          {status === "discordo" && (
+            <Field label="Por que você discorda? (opcional - fica registrado)">
+              <TextInput value={estrategia.comentario ?? ""} onChange={(e) => atualizar({ comentario: e.target.value })} />
+            </Field>
+          )}
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-sm font-medium text-ink">Concordamos com esta estratégia?</span>
+            <BotoesDecisao status={status} onConcordo={() => atualizar({ status: "concordo" })} onDiscordo={() => atualizar({ status: "discordo" })} onEditar={abrir} />
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 // Serviços da clínica sugeridos: linha do tempo (quando entra cada um) + cartões com o porquê, a
@@ -292,6 +405,7 @@ export function AbaPlano({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo
   const [itens, setItens] = useState<ItemPlano[]>(planoSalvo.itens ?? []);
   const [encaminhamentos, setEncaminhamentos] = useState<Encaminhamento[]>(planoSalvo.encaminhamentos ?? []);
   const [servicos, setServicos] = useState<ServicoPlano[]>(planoSalvo.servicos ?? []);
+  const [estrategia, setEstrategia] = useState<EstrategiaPlano | null>(planoSalvo.estrategia ?? null);
   const [editandoServico, setEditandoServico] = useState<string | null>(null);
   const atualizarServico = (id: string, patch: Partial<ServicoPlano>) => setServicos((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
   const [editandoId, setEditandoId] = useState<string | null>(null);
@@ -318,6 +432,7 @@ export function AbaPlano({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo
     const sugestao = sugerirPlano(perfil, paciente);
     const mesclado = mesclarSugestoes({ itens, encaminhamentos, servicos }, sugestao);
     const novos = mesclado.itens.length - itens.length + (mesclado.encaminhamentos.length - encaminhamentos.length) + (mesclado.servicos.length - servicos.length);
+    setEstrategia(mesclarEstrategia(estrategia, sugerirEstrategia(perfil, mesclado.itens, mesclado.servicos)));
     setItens(mesclado.itens);
     setEncaminhamentos(mesclado.encaminhamentos);
     setServicos(mesclado.servicos);
@@ -373,6 +488,7 @@ export function AbaPlano({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo
       itens,
       encaminhamentos,
       servicos,
+      estrategia,
       avaliador: userData.user?.email ?? null,
       atualizado_em: new Date().toISOString(),
       versao: 2,
@@ -385,7 +501,7 @@ export function AbaPlano({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo
   }
 
   // Rascunho automático: o plano é gravado sozinho (preservando metas e pareceres).
-  const estadoAuto = useAutoSalvar({ itens, encaminhamentos, servicos }, (v) => mesclarNoPlano(supabase, paciente.id, (plano) => ({ ...plano, itens: v.itens, encaminhamentos: v.encaminhamentos, servicos: v.servicos, versao: 2 })));
+  const estadoAuto = useAutoSalvar({ itens, encaminhamentos, servicos, estrategia }, (v) => mesclarNoPlano(supabase, paciente.id, (plano) => ({ ...plano, itens: v.itens, encaminhamentos: v.encaminhamentos, servicos: v.servicos, estrategia: v.estrategia, versao: 2 })));
 
   const todos = [...itens, ...encaminhamentos, ...servicos];
   const contagem = {
@@ -397,6 +513,7 @@ export function AbaPlano({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo
 
   function resumoAprovado(): string {
     const linhas: string[] = ["PLANO DE INTERVENÇÃO (itens aprovados)"];
+    if (estrategia && (estrategia.status === "concordo" || estrategia.status === "editado")) linhas.push("", textoEstrategia(estrategia));
     for (const h of horizontesVisiveis) {
       const doHorizonte = itens.filter((i) => i.horizonte === h.chave && itemAprovado(i));
       if (doHorizonte.length === 0) continue;
@@ -457,6 +574,12 @@ export function AbaPlano({ paciente, onSalvo }: { paciente: PacienteRow; onSalvo
         )}
         {mensagem && <p className="text-sm text-accent-dark">{mensagem}</p>}
       </div>
+
+      <PainelEstrategia
+        estrategia={estrategia}
+        atualizar={(patch) => setEstrategia((e) => (e ? { ...e, ...patch } : e))}
+        recalcular={() => setEstrategia(sugerirEstrategia(calcularPerfilIntegrado(paciente), itens, servicos))}
+      />
 
       <PainelServicos
         servicos={servicos}

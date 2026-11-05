@@ -13,6 +13,7 @@ import type { PacienteRow } from "@/lib/anamnese/types";
 import type { DomainKey, PerfilIntegrado } from "./perfil";
 import { sugerirItensComCiencia } from "./planoCiencia";
 import { sugerirServicos, type ServicoPlano } from "./servicos";
+import type { EstrategiaPlano } from "./estrategia";
 
 // "180" existe só para planos salvos antes desta versão.
 export type Horizonte = "30" | "60" | "90" | "180" | "365";
@@ -91,6 +92,8 @@ export type Plano = {
   encaminhamentos: Encaminhamento[];
   // Serviços da clínica sugeridos (fisioterapia, musculação, Pilates...), com o momento de entrada.
   servicos?: ServicoPlano[];
+  // Estratégia inicial (por onde começar e objetivos em 30, 90 e 180 dias), com a decisão do avaliador.
+  estrategia?: EstrategiaPlano | null;
   metas?: Record<string, string>;
   // Pareceres dos agentes sem ficha própria (anamnese e perfil), guardados com o plano.
   pareceres?: Record<string, { texto: string; estilo?: string; automatico?: string; revisado?: boolean }>;

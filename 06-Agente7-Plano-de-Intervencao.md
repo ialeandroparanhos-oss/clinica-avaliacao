@@ -238,6 +238,18 @@ POP versão 1.9.
 
 A descrição da profissão "Medicina Tradicional Chinesa" passou a listar o que a clínica realiza: **acupuntura, ventosaterapia, moxabustão, auriculoterapia e tuiná** (massagem chinesa), mais **orientação de qi gong e de dietoterapia chinesa**. O nome do serviço ficou "Medicina Tradicional Chinesa" (sem "(acupuntura)"), o texto para o aluno cita as técnicas, e as etapas dizem que **o profissional escolhe as técnicas e o número de sessões**. **A evidência conferida no PubMed é só da acupuntura** (revisão de revisões, Hempen 2025, com a divergência da diretriz NICE); para as outras práticas o sistema **não tem referência conferida** e o cartão diz isso, mantendo o serviço como **apoio opcional**. POP versão 2.6.
 
+## AJUSTE 05/11/2026 (2) — ESTRATÉGIA INICIAL DO PLANO: POR ONDE COMEÇAR, OBJETIVOS EM 30, 90 E 180 DIAS E A DECISÃO (pedido do profissional)
+
+**Pedido:** diante de todas as informações, sugerir primeiro **quais intervenções** (por exemplo, fisioterapia primeiro e depois musculação, ou medicina chinesa e musculação), **quais objetivos** trabalhar em **30, 90 e 180 dias** (interpretado como dias), e logo abaixo a **explicação** e se **concordamos**.
+
+**O que foi feito.** No topo da aba Plano há o quadro **"Estratégia inicial do plano"**, gerado junto com "Sugerir a partir dos resultados" (ou por "atualizar com o plano atual"):
+1. **Por onde começar:** uma frase com a sequência dos serviços, por exemplo "Começar por Fisioterapia e Medicina chinesa (opcional); depois entram Pilates, opcional (a partir de 60 dias) e Musculação consciente (a partir de 90 dias)". Sai dos serviços sugeridos e do momento de início de cada um; o que o avaliador recusou não entra.
+2. **Objetivos em 30, 90 e 180 dias**, em três colunas. 30 dias: segurança, adaptação e primeiros passos (liberação médica quando houver, serviços que começam agora, objetivo de cada domínio em foco e, no plano provisório, completar a avaliação). 90 dias: serviços que entram, objetivos de consolidação e a reavaliação completa. 180 dias: manter e progredir, reavaliar a continuidade de cada serviço e atualizar as metas (o horizonte anual segue no plano). Os objetivos são metas de resultado por domínio (dor, força, mobilidade, equilíbrio, condicionamento, composição, estilo de vida, sono, bem-estar e funcionalidade), **sem prescrever exercício**.
+3. **Por que esta estratégia:** o motivo de cada serviço que começa agora, por que a musculação consciente espera a fisioterapia (quando há dor ou inflamação a controlar), a ressalva de liberação médica, a medicina chinesa como apoio opcional e, se for o caso, o aviso de plano provisório.
+4. **Decisão:** "Concordamos com esta estratégia?" com **Concordo, Discordo (com o motivo) e Editar** (título, objetivos de cada marco e explicação). Nasce "a revisar"; se decidida, não muda ao gerar de novo; se ainda a revisar, acompanha a sugestão mais recente. Aprovada ou editada, entra no resumo copiável do plano.
+
+Dado do 180 dias: o plano tem horizontes de 30, 60, 90 dias e anual; o marco de 180 dias é só desta estratégia. Código: `lib/integracao/estrategia.ts`, `AbaPlano.tsx` (30 verificações). POP versão 2.7.
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 8 — Relatório e Devolutiva** (Etapas 7 e 8 do prompt-mestre): como transformar o Perfil Integrado e o Plano de Intervenção em um relatório compreensível ao paciente e tecnicamente adequado ao profissional, seguindo o roteiro de conversa RECONHECER → MOSTRAR → EXPLICAR → PRIORIZAR → PROJETAR → PLANEJAR, sem linguagem alarmista.
