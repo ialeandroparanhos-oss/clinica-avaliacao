@@ -106,6 +106,7 @@ export type ServicoPlano = {
   regra: string;
   status?: StatusItem;
   comentario?: string;
+  momento?: string; // por que este serviço entra NESTE momento (e não antes nem depois)
   areas?: AreaFisio[]; // só na fisioterapia: áreas indicadas para este quadro
   beneficios?: string[]; // em que este serviço ajuda no quadro desta pessoa
 };
@@ -250,9 +251,9 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
     prioridade: PrioridadeServico,
     motivos: string[],
     etapas: EtapaServico[],
-    extra: { evidencia?: Evidencia; ressalva?: string; areas?: AreaFisio[]; beneficios?: string[] } = {}
+    extra: { evidencia?: Evidencia; ressalva?: string; areas?: AreaFisio[]; beneficios?: string[]; momento?: string } = {}
   ) =>
-    saida.push({ id: gerarId(), servico, prioridade, motivos, etapas, evidencia: extra.evidencia, ressalva: extra.ressalva, areas: extra.areas, beneficios: extra.beneficios, regra: `servico|${servico}`, status: "sugerido" });
+    saida.push({ id: gerarId(), servico, prioridade, motivos, etapas, evidencia: extra.evidencia, ressalva: extra.ressalva, areas: extra.areas, beneficios: extra.beneficios, momento: extra.momento, regra: `servico|${servico}`, status: "sugerido" });
 
   // Texto das condições e da queixa (só o que está escrito: o sistema não diagnostica; o avaliador confirma).
   const textoCond = normalizar([s.a.historico_saude.doencas, s.a.historico_saude.outras_condicoes, s.a.motivo.queixa_principal, s.a.motivo.motivo_procura].filter(Boolean).join(" "));
@@ -262,9 +263,15 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
   const bem = s.dom("bem_estar")?.classificacao;
   const humorAlterado = bem === "prioridade" || bem === "atencao" || humorSinalizado;
 
-  // Fase inicial "delicada": dor forte, inflamação ou sinal de alerta -> a musculação começa depois da fisioterapia.
-  const faseInicial = s.temDor && ((s.maxNrs ?? 0) >= 7 || s.inflamacao || s.bandeiras);
+  // Fase inicial "delicada": dor forte (7/10 ou mais, ou crônica de 5/10 ou mais), inflamação ou sinal de alerta -> a fisioterapia
+  // vem primeiro e a musculação consciente depois. Regra do profissional (05/11/2026): quem JÁ TREINA e tem dor AGUDA que não é
+  // forte pode seguir direto na musculação consciente (a fisioterapia fica opcional); dor muito crônica, intensa ou forte começa
+  // pela fisioterapia, e a musculação vem em seguida.
+  const treina = s.a.atividade_fisica.pratica_atual === true;
+  const dorForte = s.temDor && ((s.maxNrs ?? 0) >= 7 || (s.dorCronica && (s.maxNrs ?? 0) >= 5));
+  const faseInicial = s.temDor && (dorForte || s.inflamacao || s.bandeiras);
   const aguardarMedico = s.bandeiras || s.liberacao.nivel === "liberacao_necessaria";
+  const iniciaPorMusculacao = treina && s.temDor && s.maxNrs !== null && !s.dorCronica && !dorForte && !s.inflamacao && !s.bandeiras && !aguardarMedico;
   const avisoMedico = aguardarMedico ? "Há sinal de alerta: inicie os serviços com exercício só depois da avaliação e liberação médica." : undefined;
   const prefixo = (t: string) => (aguardarMedico ? `Após liberação médica: ${t}` : t);
 
@@ -314,7 +321,12 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
   if (s.dom("equilibrio")?.classificacao === "prioridade") motFisio.push("risco de queda");
   const motivosFisio = motFisio.length > 0 ? motFisio : areas.flatMap((a) => a.motivos);
   if (motFisio.length > 0 || areas.length > 0) {
-    const indicado = (s.temDor && ((s.maxNrs ?? 0) >= 4 || s.inflamacao)) || s.dom("equilibrio")?.classificacao === "prioridade" || s.lesoes || s.quedas || areas.some((a) => a.chave === "neurofuncional");
+    const indicado = !iniciaPorMusculacao && ((s.temDor && ((s.maxNrs ?? 0) >= 4 || s.inflamacao)) || s.dom("equilibrio")?.classificacao === "prioridade" || s.lesoes || s.quedas || areas.some((a) => a.chave === "neurofuncional"));
+    const momentoFisio = iniciaPorMusculacao
+      ? "Como a pessoa já treina e a dor é recente (aguda) e não é forte, a fisioterapia fica opcional: o treino segue, ajustado e com proteção das articulações, e a avaliação com o fisioterapeuta é para o caso de a dor não melhorar em algumas semanas, piorar ou a pessoa preferir."
+      : faseInicial
+        ? "Como a dor é forte ou persistente, ou há inflamação ou sinal de alerta, a fisioterapia começa primeiro (controle da dor e da inflamação); a musculação consciente entra depois, quando a dor estiver controlada e o fisioterapeuta liberar."
+        : undefined;
     const rpgLombar = areas.some((a) => a.chave === "coluna_postura") && s.lombar.length > 0 && s.dorCronica;
     const referencias = s.joelho.length > 0 ? [REF.FRANSEN_2015, REF.NICE_NG59] : [REF.NICE_NG59, REF.FRANSEN_2015];
     if (rpgLombar) referencias.push(REF.GONZALEZ_2021);
@@ -324,11 +336,16 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
       "fisioterapia",
       indicado ? "indicado" : "opcional",
       motivosFisio,
-      [
-        { horizonte: "30", texto: prefixo("Iniciar nas primeiras semanas: avaliação, controle da dor e da inflamação, e exercícios terapêuticos (frequência definida pelo fisioterapeuta).") },
-        { horizonte: "60", texto: "Reavaliar a continuidade: manter, espaçar as sessões ou dar alta, conforme a evolução da dor e da função." },
-        { horizonte: "90", texto: "Alta ou manutenção, com transição para o treino de força e o Pilates." },
-      ],
+      iniciaPorMusculacao
+        ? [
+            { horizonte: "30", texto: "Opcional: avaliação com o fisioterapeuta, se a pessoa quiser ou se a dor não melhorar em algumas semanas ou piorar; enquanto isso o treino segue ajustado." },
+            { horizonte: "60", texto: "Se a fisioterapia foi usada, reavaliar a continuidade: manter, espaçar as sessões ou dar alta, conforme a dor e a função." },
+          ]
+        : [
+            { horizonte: "30", texto: prefixo("Iniciar nas primeiras semanas: avaliação, controle da dor e da inflamação, e exercícios terapêuticos (frequência definida pelo fisioterapeuta).") },
+            { horizonte: "60", texto: "Reavaliar a continuidade: manter, espaçar as sessões ou dar alta, conforme a evolução da dor e da função." },
+            { horizonte: "90", texto: "Alta ou manutenção, com transição para o treino de força e o Pilates." },
+          ],
       {
         evidencia: {
           resumo:
@@ -344,6 +361,7 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
         ressalva: avisoMedico ?? (areas.some((a) => a.chave === "cardiorrespiratoria") ? "Condição do coração ou do pulmão: a fisioterapia cardiorrespiratória começa com liberação médica." : undefined),
         areas,
         beneficios: Array.from(new Set([...areas.map((a) => ATUACAO_AREA[a.chave].beneficio), ...(areas.length === 0 ? ["reduzir a dor e recuperar movimento e função"] : [])])),
+        momento: momentoFisio,
       }
     );
   }
@@ -411,12 +429,18 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
   if (s.precisa("composicao_corporal")) motMusc.push("composição corporal com atenção (preservar massa magra)");
   if (s.sedentario) motMusc.push("sedentarismo (a OMS recomenda força em 2 ou mais dias por semana)");
   const articular = s.articulacoesMsk.length > 0 || s.lesoes || s.osteoParq;
+  if (iniciaPorMusculacao) motMusc.unshift("já treina e a dor é recente (aguda) e não é forte: o treino continua, ajustado e com proteção das articulações");
   if (articular && s.temDor) motMusc.push("dor, lesão ou problema articular: a musculação consciente trabalha a força com proteção das articulações");
   if (humorAlterado) motMusc.push("humor ou ansiedade na triagem: o treino de força é uma das formas de exercício associadas a menos sintomas depressivos, como apoio ao cuidado psicológico (não o substitui)");
   const idoso = s.idade !== null && s.idade >= 60;
   if (motMusc.length > 0 || idoso) {
     if (motMusc.length === 0) motMusc.push("base de todo plano: força em 2 ou mais dias por semana (OMS)");
-    const indicado = forca === "prioridade" || forca === "atencao" || (s.sarcopenia.classificacao !== "sem_sinais" && s.sarcopenia.classificacao !== "dados_insuficientes");
+    const indicado = iniciaPorMusculacao || forca === "prioridade" || forca === "atencao" || (s.sarcopenia.classificacao !== "sem_sinais" && s.sarcopenia.classificacao !== "dados_insuficientes");
+    const momentoMusc = iniciaPorMusculacao
+      ? "Como já treina e a dor é recente (aguda) e não é forte, o treino pode continuar desde já, ajustado pelo profissional e com proteção das articulações; se a dor persistir ou piorar, a fisioterapia (opcional) entra."
+      : faseInicial
+        ? "A musculação consciente entra depois porque, no início, o fortalecimento acontece dentro da fisioterapia (dor forte ou persistente, ou inflamação a controlar); ela começa quando o fisioterapeuta liberar e a dor estiver sob controle."
+        : undefined;
     const etapas: EtapaServico[] = faseInicial
       ? [
           { horizonte: "30", texto: "Neste início, o fortalecimento acontece dentro da fisioterapia (exercícios terapêuticos); a musculação ainda não.", semInicio: true },
@@ -424,7 +448,7 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
           { horizonte: "365", texto: "Manter o treino de força com acompanhamento e reavaliar a força a cada 90 dias." },
         ]
       : [
-          { horizonte: "30", texto: prefixo("Iniciar a musculação supervisionada; o profissional define o treino, as cargas e a progressão.") },
+          { horizonte: "30", texto: prefixo(iniciaPorMusculacao ? "Continuar a musculação consciente já, com os exercícios ajustados pelo profissional à dor e com proteção das articulações; reavaliar a dor em 30 dias." : "Iniciar a musculação supervisionada; o profissional define o treino, as cargas e a progressão.") },
           { horizonte: "60", texto: "Reavaliar o treino com o profissional conforme a técnica e a resposta." },
           { horizonte: "90", texto: "Reavaliar a força e renovar o treino." },
           { horizonte: "365", texto: "Manter o treino de força com acompanhamento." },
@@ -445,6 +469,7 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
       },
       ressalva: avisoMedico,
       beneficios: benMusc,
+      momento: momentoMusc,
     });
   }
 
@@ -467,13 +492,13 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
       "pilates",
       "opcional",
       motPil,
-      faseInicial || motFisio.length > 0
+      faseInicial || (motFisio.length > 0 && !iniciaPorMusculacao)
         ? [
             { horizonte: "60", texto: prefixo("Acrescentar o Pilates junto da reavaliação da continuidade da fisioterapia; o instrutor define os exercícios e a frequência.") },
             { horizonte: "90", texto: "Avaliar a continuidade: o Pilates pode seguir como manutenção do controle motor e da mobilidade." },
           ]
         : [
-            { horizonte: "30", texto: prefixo("Iniciar o Pilates, com foco em controle do tronco e mobilidade; o instrutor define os exercícios e a frequência.") },
+            { horizonte: "30", texto: prefixo("Opção para a cliente decidir: Pilates, com foco em controle do tronco e mobilidade, sozinho ou junto da musculação consciente; o instrutor define os exercícios e a frequência.") },
             { horizonte: "90", texto: "Reavaliar a mobilidade e o controle motor; manter ou ajustar." },
           ],
       {
@@ -484,7 +509,10 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
           referencias: [REF.YAMATO_2015],
         },
         ressalva: avisoMedico,
-        beneficios: ["melhorar o controle do tronco e a mobilidade", "ganhar consciência corporal e postura", ...(s.lombar.length > 0 || dorsal.length > 0 || s.cervical.length > 0 ? ["apoio à dor nas costas e no pescoço"] : []), ...(s.temDor && motFisio.length > 0 ? ["dar continuidade à reabilitação depois da fisioterapia"] : [])],
+        momento: faseInicial || (motFisio.length > 0 && !iniciaPorMusculacao)
+          ? "O Pilates entra depois da fisioterapia, como continuidade do controle motor e da mobilidade; é opção para a cliente decidir."
+          : "O Pilates é opção para a cliente decidir: serve também para pessoas jovens com má postura ou dor nas costas e pode andar junto da musculação consciente, desde já.",
+        beneficios: ["melhorar o controle do tronco e a mobilidade", "ganhar consciência corporal e postura", "serve também para pessoas jovens com má postura ou dor nas costas", ...(s.lombar.length > 0 || dorsal.length > 0 || s.cervical.length > 0 ? ["apoio à dor nas costas e no pescoço"] : []), ...(s.temDor && motFisio.length > 0 ? ["dar continuidade à reabilitação depois da fisioterapia"] : [])],
       }
     );
   }
@@ -501,6 +529,14 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
     const benMtc: string[] = [];
     if (dorMtc) benMtc.push("apoio ao alívio da dor persistente");
     if (motMtc.length > (dorMtc ? 1 : 0) || !dorMtc) benMtc.push("relaxamento e redução da tensão", "apoio ao sono e ao estresse");
+    // Por que a medicina chinesa entra NESTE momento (sempre opcional, só se a pessoa quiser).
+    const enquanto = faseInicial ? "a fisioterapia trata a causa" : iniciaPorMusculacao || treina ? "o treino segue ajustado" : "o exercício é retomado aos poucos";
+    const estresseSonoHumor = (typeof s.estresse === "number" && s.estresse >= 5) || s.dom("sono")?.classificacao === "prioridade" || humorAlterado;
+    const momentoMtc = dorMtc
+      ? `${s.dorCronica ? "A dor é persistente" : "A dor é intensa"}: a medicina chinesa entra como apoio opcional ao alívio da dor e da tensão enquanto ${enquanto}, para a pessoa se mexer com mais conforto. Só se ela quiser; não substitui o exercício nem o cuidado médico.`
+      : estresseSonoHumor
+        ? "O estresse, o sono ou o humor podem atrapalhar a recuperação e a regularidade nos treinos: a medicina chinesa entra como apoio opcional ao relaxamento, se a pessoa quiser. O sistema não tem referência conferida para este uso."
+        : "A dor descrita como peso ou aperto sugere tensão muscular: a medicina chinesa entra como apoio opcional ao relaxamento, se a pessoa quiser; não substitui o exercício nem o cuidado médico.";
     add(
       "mtc",
       "opcional",
@@ -522,6 +558,7 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
           : undefined,
         ressalva: dorMtc ? avisoMedico : "O sistema não tem referência conferida para a medicina chinesa (acupuntura, ventosas, moxabustão, auriculoterapia, tuiná, qi gong e dietoterapia) em estresse, sono ou humor: sugerida só como opção do paciente, nunca como tratamento principal." + (avisoMedico ? ` ${avisoMedico}` : ""),
         beneficios: benMtc,
+        momento: momentoMtc,
       }
     );
   }
@@ -546,6 +583,7 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
         ],
         {
           ressalva: [provisoria, avisoMedico].filter(Boolean).join(" "),
+          momento: "No plano provisório (poucos dados), a avaliação com o fisioterapeuta é um ponto de partida opcional para definir se há necessidade de tratamento e em qual área.",
           areas: dorTxt && s.mskQualquer ? [{ chave: "ortopedica", nome: ATUACAO_AREA.ortopedica.nome, atuacao: ATUACAO_AREA.ortopedica.atuacao, motivos: [dorTxt] }] : [],
           beneficios: ["avaliar o movimento e a dor", "orientar se há necessidade de tratamento e em qual área da fisioterapia"],
         }
@@ -563,6 +601,7 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
         {
           ressalva: `${provisoria} O sistema não tem referência conferida para a medicina chinesa sem dor crônica: é apoio opcional, nunca tratamento principal.${avisoMedico ? ` ${avisoMedico}` : ""}`,
           beneficios: ["apoio ao alívio da dor e da tensão", "relaxamento, estresse e sono (sem referência conferida pelo sistema)"],
+          momento: "No plano provisório (poucos dados), a medicina chinesa entra como apoio opcional ao alívio da dor, da tensão, do estresse e do sono, só se a pessoa quiser.",
         }
       );
     }
@@ -584,6 +623,7 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
           },
           ressalva: avisoMedico,
           beneficios: ["ganhar força e massa muscular", "facilitar as tarefas do dia a dia e a autonomia"],
+          momento: "No plano provisório (poucos dados), a musculação consciente é o ponto de partida: a base de todo plano é a força em 2 ou mais dias por semana.",
         }
       );
     }

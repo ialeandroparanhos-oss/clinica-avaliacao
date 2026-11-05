@@ -250,6 +250,17 @@ A descrição da profissão "Medicina Tradicional Chinesa" passou a listar o que
 
 Dado do 180 dias: o plano tem horizontes de 30, 60, 90 dias e anual; o marco de 180 dias é só desta estratégia. Código: `lib/integracao/estrategia.ts`, `AbaPlano.tsx` (30 verificações). POP versão 2.7.
 
+## AJUSTE 05/11/2026 (3) — QUEM JÁ TREINA COM DOR AGUDA, DOR FORTE OU CRÔNICA, MEDICINA CHINESA E PILATES (regras do profissional)
+
+Regras clínicas informadas pelo profissional e aplicadas aos serviços e à estratégia inicial:
+
+1. **Já treina (hábito) e tem dor ou desconforto AGUDO, que não é forte** (menos de 3 meses, intensidade abaixo de 7/10, sem inflamação, sem sinal de alerta e sem necessidade de liberação médica): a **musculação consciente começa já** (continua o treino, ajustado pelo profissional e com proteção das articulações) e a **fisioterapia vira opcional** (avaliação se a dor não melhorar em algumas semanas, piorar ou se a pessoa preferir).
+2. **Dor muito crônica, intensa ou forte** (7/10 ou mais, ou crônica de 5/10 ou mais), **inflamação ou sinal de alerta**: **começa pela fisioterapia** e a musculação consciente vem em seguida (a partir de 90 dias, quando a dor estiver controlada e o fisioterapeuta liberar), mesmo que a pessoa já treine. Sem intensidade informada, a regra do item 1 não se aplica. Quem não treina segue a regra de antes.
+3. **Medicina chinesa: sempre opcional**, e cada cartão traz **"Por que neste momento"**: com dor, ela entra como apoio ao alívio da dor e da tensão enquanto a fisioterapia trata a causa (ou o treino segue ajustado, ou o exercício é retomado); com estresse, sono ou humor, como apoio ao relaxamento, dizendo que o sistema não tem referência conferida para esse uso; com dor de peso ou aperto, como apoio à tensão muscular. Só se a pessoa quiser.
+4. **Pilates:** serve também para **jovens com má postura ou dor nas costas** (e na coluna em geral). Quando não há fisioterapia primeiro, o Pilates pode começar já, junto da musculação consciente, como **opção para a cliente decidir**; com fisioterapia primeiro, entra depois dela. A explicação da estratégia diz que musculação e Pilates podem andar juntos ou ser escolhidos um de cada vez, **por decisão da cliente**.
+
+Os cartões de serviço (fisioterapia, musculação, Pilates e medicina chinesa) ganharam o campo **"Por que neste momento"**, que também alimenta a explicação da **Estratégia inicial** (mesmo texto, sem repetir). Ficam fora do sistema, por serem do profissional de cada serviço, o tipo de exercício, a carga e a frequência. Código: `lib/integracao/servicos.ts` (`iniciaPorMusculacao`, `dorForte`, `momento`) e `estrategia.ts` (23 verificações novas). POP versão 2.8.
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 8 — Relatório e Devolutiva** (Etapas 7 e 8 do prompt-mestre): como transformar o Perfil Integrado e o Plano de Intervenção em um relatório compreensível ao paciente e tecnicamente adequado ao profissional, seguindo o roteiro de conversa RECONHECER → MOSTRAR → EXPLICAR → PRIORIZAR → PROJETAR → PLANEJAR, sem linguagem alarmista.

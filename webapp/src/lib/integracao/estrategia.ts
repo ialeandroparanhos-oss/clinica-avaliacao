@@ -126,18 +126,31 @@ export function sugerirEstrategia(perfil: PerfilIntegrado, itens: ItemPlano[], s
   if (agora.length > 0) {
     explicacao.push(`Por que começar por ${lista(agora.map(nome))}: ${agora.map((s) => `${nome(s)} (${s.motivos.slice(0, 2).join("; ")})`).join(" · ")}.`);
   }
+  // Por que cada serviço entra NESTE momento (campo "momento" do serviço); sem ele, uma frase de reserva.
   const fisioAgora = agora.some((s) => s.servico === "fisioterapia");
   const musculacaoDepois = depois.find(({ s }) => s.servico === "musculacao");
-  if (fisioAgora && musculacaoDepois) {
-    explicacao.push("A musculação consciente entra depois porque, no início, o fortalecimento acontece dentro da fisioterapia (há dor ou inflamação a controlar); ela começa quando o fisioterapeuta liberar e a dor estiver sob controle.");
+  const ordemMomento = [...agora, ...depois.map(({ s }) => s)];
+  const vistos = new Set<string>();
+  for (const s of ordemMomento) {
+    const texto =
+      s.momento ??
+      (s.servico === "musculacao" && fisioAgora && musculacaoDepois
+        ? "A musculação consciente entra depois porque, no início, o fortalecimento acontece dentro da fisioterapia (há dor ou inflamação a controlar); ela começa quando o fisioterapeuta liberar e a dor estiver sob controle."
+        : s.servico === "mtc"
+          ? "A medicina chinesa entra como apoio opcional, só se o paciente quiser; não substitui o exercício nem o cuidado médico."
+          : depois.some(({ s: d }) => d.id === s.id)
+            ? `${nome(s)} entra ${QUANDO[inicioDoServico(s).horizonte ?? "90"]}: ${s.motivos.slice(0, 2).join("; ")}.`
+            : null);
+    if (texto && !vistos.has(texto)) {
+      vistos.add(texto);
+      explicacao.push(texto);
+    }
   }
-  depois
-    .filter(({ s }) => !(fisioAgora && s.servico === "musculacao"))
-    .forEach(({ s, c }) => explicacao.push(`${nome(s)} entra ${QUANDO[c]}: ${s.motivos.slice(0, 2).join("; ")}.`));
-  if (serv.some((s) => /liberação médica/.test(`${s.ressalva ?? ""} ${s.etapas.map((e) => e.texto).join(" ")}`))) {
+  if (serv.some((s) => s.servico === "musculacao") && serv.some((s) => s.servico === "pilates")) {
+    explicacao.push("Musculação consciente e Pilates podem andar juntos ou ser escolhidos um de cada vez: a decisão é da cliente.");
+  }  if (serv.some((s) => /liberação médica/.test(`${s.ressalva ?? ""} ${s.etapas.map((e) => e.texto).join(" ")}`))) {
     explicacao.push("Há sinal de alerta: os serviços com exercício só começam depois da avaliação e da liberação médica.");
   }
-  if (serv.some((s) => s.servico === "mtc")) explicacao.push("A medicina chinesa entra como apoio opcional, só se o paciente quiser; não substitui o exercício nem o cuidado médico.");
   if (provisoria) explicacao.push("O plano é provisório (poucos dados): esta sequência é um ponto de partida e deve ser revista quando a avaliação estiver completa; a supervisão da Dra. Nina continua listando o que falta.");
   explicacao.push("É uma sugestão do sistema: a decisão é do avaliador e do paciente, e o profissional de cada serviço define a conduta e o treino.");
 

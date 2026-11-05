@@ -306,6 +306,11 @@ function PainelServicos({
                   <p className="text-xs text-muted">
                     <strong>Por que:</strong> {s.motivos.join("; ")}.
                   </p>
+                  {s.momento && (
+                    <p className="text-xs text-ink">
+                      <strong>Por que neste momento:</strong> {s.momento}
+                    </p>
+                  )}
                   {s.areas && s.areas.length > 0 && (
                     <div className="rounded-lg bg-bg p-3 text-xs space-y-1.5">
                       <p className="font-semibold text-ink">Áreas da fisioterapia indicadas para este quadro</p>
