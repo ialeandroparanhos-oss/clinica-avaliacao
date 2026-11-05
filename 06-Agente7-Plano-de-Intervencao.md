@@ -234,6 +234,10 @@ Decisão: no plano provisório (poucos dados), entram **pelo menos a fisioterapi
 
 POP versão 1.9.
 
+## AJUSTE 05/11/2026 — O QUE A MEDICINA CHINESA FAZ NA CLÍNICA (informado pelo profissional)
+
+A descrição da profissão "Medicina Tradicional Chinesa" passou a listar o que a clínica realiza: **acupuntura, ventosaterapia, moxabustão, auriculoterapia e tuiná** (massagem chinesa), mais **orientação de qi gong e de dietoterapia chinesa**. O nome do serviço ficou "Medicina Tradicional Chinesa" (sem "(acupuntura)"), o texto para o aluno cita as técnicas, e as etapas dizem que **o profissional escolhe as técnicas e o número de sessões**. **A evidência conferida no PubMed é só da acupuntura** (revisão de revisões, Hempen 2025, com a divergência da diretriz NICE); para as outras práticas o sistema **não tem referência conferida** e o cartão diz isso, mantendo o serviço como **apoio opcional**. POP versão 2.6.
+
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 8 — Relatório e Devolutiva** (Etapas 7 e 8 do prompt-mestre): como transformar o Perfil Integrado e o Plano de Intervenção em um relatório compreensível ao paciente e tecnicamente adequado ao profissional, seguindo o roteiro de conversa RECONHECER → MOSTRAR → EXPLICAR → PRIORIZAR → PROJETAR → PLANEJAR, sem linguagem alarmista.

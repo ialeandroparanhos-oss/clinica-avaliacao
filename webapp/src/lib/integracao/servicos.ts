@@ -1,6 +1,7 @@
 // Agente 7 — Dr. Theo: serviços da clínica sugeridos a partir da avaliação e da anamnese.
 //
-// Serviços da clínica (decisão do profissional, 30/10/2026): psicologia, medicina tradicional chinesa (acupuntura),
+// Serviços da clínica (decisão do profissional, 30/10/2026): psicologia, medicina tradicional chinesa (acupuntura, ventosaterapia,
+// moxabustão, auriculoterapia, tuiná e orientação de qi gong e de dietoterapia chinesa),
 // fisioterapia e suas áreas (ortopédica, coluna e postura com RPG, geriátrica e prevenção de quedas, neurofuncional,
 // cardiorrespiratória e pélvica), musculação e Pilates. RPG e massoterapia deixaram de ser serviços à parte (o RPG é
 // uma técnica da fisioterapia; a massoterapia não é oferecida), mas planos antigos que os tenham continuam abrindo.
@@ -38,7 +39,7 @@ export const NOME_SERVICO: Record<ServicoId, string> = {
   musculacao: "Musculação consciente",
   pilates: "Pilates",
   rpg: "RPG (Reeducação Postural Global)",
-  mtc: "Medicina Tradicional Chinesa (acupuntura)",
+  mtc: "Medicina Tradicional Chinesa",
   massoterapia: "Massoterapia",
   psicologia: "Psicologia",
 };
@@ -49,7 +50,7 @@ export const TEXTO_SERVICO_PACIENTE: Record<ServicoId, string> = {
   musculacao: "ganhar força e disposição com treino acompanhado, protegendo as suas articulações e no ritmo que o seu corpo permitir",
   pilates: "melhorar controle do corpo, postura e mobilidade com exercícios de solo ou aparelhos",
   rpg: "trabalhar postura e alongamento global, em sessões individuais",
-  mtc: "acupuntura como apoio ao alívio da dor, se você quiser",
+  mtc: "um cuidado de apoio pela medicina chinesa, se você quiser: acupuntura, ventosas, moxabustão, auriculoterapia, tuiná (massagem chinesa) e orientações de qi gong e de alimentação",
   massoterapia: "alívio da tensão muscular e relaxamento, junto com o exercício",
   psicologia: "um espaço de apoio para estresse, ansiedade, humor ou para lidar melhor com a dor",
 };
@@ -76,8 +77,8 @@ export const PROFISSOES: Record<ServicoId, { profissional: string; atuacao: stri
     beneficios: ["apoio emocional e estratégias para lidar com estresse, ansiedade e humor rebaixado", "lidar melhor com a dor persistente e com o medo de se mexer", "melhorar o sono e a rotina", "sustentar a motivação e a regularidade nos hábitos e no treino"],
   },
   mtc: {
-    profissional: "Profissional de medicina tradicional chinesa (acupuntura)",
-    atuacao: "faz a avaliação pela medicina tradicional chinesa e utiliza a acupuntura e técnicas relacionadas como apoio ao cuidado, em geral para dor, tensão, estresse e sono. É um apoio: não substitui o exercício nem o tratamento médico.",
+    profissional: "Profissional de medicina tradicional chinesa",
+    atuacao: "faz a avaliação pela medicina tradicional chinesa e conduz, conforme o caso, a acupuntura, a ventosaterapia, a moxabustão, a auriculoterapia e o tuiná (massagem chinesa), além de orientações de qi gong e de dietoterapia chinesa, em geral como apoio para dor, tensão, estresse e sono. É um apoio: não substitui o exercício nem o tratamento médico. Quem escolhe as técnicas e o número de sessões é o profissional.",
     beneficios: ["apoio ao alívio da dor persistente", "relaxamento e redução da tensão", "apoio ao sono e ao estresse (sem referência conferida pelo sistema para este uso)"],
   },
   musculacao: {
@@ -488,7 +489,7 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
     );
   }
 
-  // 5) Medicina Tradicional Chinesa (acupuntura): apoio opcional para dor persistente ou intensa, tensão, estresse e sono.
+  // 5) Medicina Tradicional Chinesa (acupuntura, ventosas, moxabustão, auriculoterapia, tuiná, qi gong e dietoterapia): apoio opcional para dor persistente ou intensa, tensão, estresse e sono.
   const motMtc: string[] = [];
   const dorMtc = s.temDor && s.mskQualquer && (s.dorCronica || (s.maxNrs ?? 0) >= 7);
   if (dorMtc) motMtc.push(`${s.dorCronica ? "dor crônica" : "dor intensa"} musculoesquelética (${lista(s.regioes)}${s.maxNrs !== null ? `, até ${s.maxNrs}/10` : ""})`);
@@ -505,7 +506,7 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
       "opcional",
       motMtc,
       [
-        { horizonte: "30", texto: prefixo("Ciclo inicial de acupuntura como apoio, se o paciente quiser (número de sessões definido pelo profissional).") },
+        { horizonte: "30", texto: prefixo("Ciclo inicial de terapias da medicina chinesa (por exemplo, acupuntura) como apoio, se o paciente quiser; o profissional escolhe as técnicas e o número de sessões.") },
         { horizonte: "60", texto: "Avaliar a resposta (dor 0 a 10, sono e estresse) e decidir se continua: manter só se houver benefício que o paciente perceba." },
       ],
       {
@@ -515,11 +516,11 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
                 "Uma revisão de revisões sistemáticas de 2017 a 2022 classificou a acupuntura como de efeito positivo para dor crônica, dor lombar e artrose de joelho. As diretrizes divergem: por exemplo, a NICE (NG59, 2016) não recomenda acupuntura para dor lombar.",
               certeza: "Divergente: revisão de revisões positiva, com qualidade variável dos ensaios; diretriz NICE contrária para dor lombar.",
               ressalva:
-                "Os autores da revisão são ligados a uma sociedade de medicina chinesa e apontam falta de ensaios de alta qualidade em vários casos. É um apoio opcional, nunca substitui o exercício, e a decisão é do paciente." + (s.dorCronica ? "" : " A revisão conferida é sobre dor crônica; para dor intensa recente o sistema não tem referência conferida."),
+                "Os autores da revisão são ligados a uma sociedade de medicina chinesa e apontam falta de ensaios de alta qualidade em vários casos. É um apoio opcional, nunca substitui o exercício, e a decisão é do paciente." + (s.dorCronica ? "" : " A revisão conferida é sobre dor crônica; para dor intensa recente o sistema não tem referência conferida.") + " A evidência conferida é só da acupuntura: para ventosas, moxabustão, auriculoterapia, tuiná, qi gong e dietoterapia chinesa o sistema não tem referência conferida.",
               referencias: [REF.HEMPEN_2025, REF.NICE_NG59],
             }
           : undefined,
-        ressalva: dorMtc ? avisoMedico : "O sistema não tem referência conferida para a acupuntura em estresse, sono ou humor: sugerida só como opção do paciente, nunca como tratamento principal." + (avisoMedico ? ` ${avisoMedico}` : ""),
+        ressalva: dorMtc ? avisoMedico : "O sistema não tem referência conferida para a medicina chinesa (acupuntura, ventosas, moxabustão, auriculoterapia, tuiná, qi gong e dietoterapia) em estresse, sono ou humor: sugerida só como opção do paciente, nunca como tratamento principal." + (avisoMedico ? ` ${avisoMedico}` : ""),
         beneficios: benMtc,
       }
     );
@@ -560,7 +561,7 @@ export function sugerirServicos(perfil: PerfilIntegrado, paciente: PacienteRow):
           { horizonte: "60", texto: "Avaliar a resposta e decidir se continua: manter só se houver benefício que o paciente perceba." },
         ],
         {
-          ressalva: `${provisoria} O sistema não tem referência conferida para a acupuntura sem dor crônica: é apoio opcional, nunca tratamento principal.${avisoMedico ? ` ${avisoMedico}` : ""}`,
+          ressalva: `${provisoria} O sistema não tem referência conferida para a medicina chinesa sem dor crônica: é apoio opcional, nunca tratamento principal.${avisoMedico ? ` ${avisoMedico}` : ""}`,
           beneficios: ["apoio ao alívio da dor e da tensão", "relaxamento, estresse e sono (sem referência conferida pelo sistema)"],
         }
       );
