@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Alerta } from "@/lib/anamnese/types";
 import { situacaoAvaliacao, type SituacaoAvaliacao } from "@/lib/avaliacao/situacaoLista";
 import { idadeDaDataNascimento } from "@/lib/avaliacao/identificacao";
+import { EnviarAnamnese } from "@/components/avaliador/EnviarAnamnese";
 
 type LinhaPaciente = {
   id: string;
@@ -116,6 +117,8 @@ export default function DashboardAvaliador() {
           </Link>
         </div>
       </div>
+
+      <EnviarAnamnese />
 
       {loading ? (
         <p className="text-muted text-sm">Carregando...</p>

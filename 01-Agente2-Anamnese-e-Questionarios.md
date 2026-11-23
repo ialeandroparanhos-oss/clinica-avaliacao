@@ -313,3 +313,7 @@ O bloco dourado **"Perguntar agora"** lista o que falta e mudaria o treino: obje
 ## PRÓXIMO PASSO SUGERIDO
 
 Detalhar o **Agente 3 — Avaliação Física e Antropométrica** (Etapa 4 do prompt-mestre): sinais vitais, peso, altura, IMC, circunferências, composição corporal — cada medida com objetivo, instrumento, calibração, preparação, execução passo a passo, registro, valores de referência, interpretação, erros comuns e referências, conforme o padrão da Seção 11 do prompt-mestre.
+
+
+### Envio rápido da anamnese pelo WhatsApp (23/11/2026)
+No painel inicial do avaliador (/avaliador) há o cartão **Enviar a anamnese ao paciente**: mostra o link público do questionário (/paciente, em produção https://clinica-avaliacao.vercel.app/paciente), com o botão **Enviar pelo WhatsApp** (mensagem pronta com a assinatura; o telefone é opcional - sem ele o WhatsApp deixa escolher o contato) e o botão **Copiar link**. Nada sai sozinho: quem aperta enviar é o profissional.
