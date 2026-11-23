@@ -75,6 +75,35 @@ Cada rodada é feita por quem a executa em nome da Dra. Nina (assistente de IA),
 
 **Novo pedido (19/10/2026): toda proposta traz a opinião do agente** (recomenda aprovar, recusar ou adiar, e por quê), e o profissional pode perguntar e receber a recomendação. Já valem no protocolo e na tarefa agendada.
 
+## 2.2 Rodada de 23/11/2026
+
+**Resumo:** a rodada anterior registrada era de 19/10 (ajustes até 26/10); houve um intervalo de cerca de 4 semanas sem rodada. Sem erro técnico: `tsc --noEmit` sem erros, repositório sem pendências, HEAD igual a origin/main (55f28cb) e último deploy de produção READY na Vercel; revisão da literatura em 52 de 180 dias. Não havia conjunto de testes de lógica disponível na sessão (só o tsc foi rodado), e as dependências locais estavam incompletas e foram reinstaladas (`npm install`, nenhum arquivo versionado mudou).
+
+**Uso agregado (sem dados individuais):** 18 pacientes na base (eram 4 em 19/10); 16 anamneses concluídas e 2 em andamento; 12 com alertas; 4 com avaliação física; 3 com avaliação postural, funcional, cardiorrespiratória e plano; 4 com protocolo de dobras e 1 com %G por bioimpedância preenchido; análise de movimento em 2 pacientes; vídeo em 2 pacientes (4 registros no histórico, todos com adequação registrada; vereditos contados só por busca de texto); 1 registro com nome de teste; última atividade em 11/11/2026.
+
+**Candidato a referência (existência conferida no PubMed e resumo lido; texto completo não lido; não adotado):**
+
+| PMID | Estudo | Agente | O que o resumo diz | Limite |
+|---|---|---|---|---|
+| 42976294 | Yue X, et al. JMIR Rehabil Assist Technol 2026;13:e102399. Pose de câmera única (BlazePose) para ângulo do joelho | Paula | 15 adultos saudáveis; ICC 0,77 no agachamento, 0,63 ao levantar da cadeira e 0,14 no apoio unipodal; 15,7% das medições falharam no critério de confiança; não apoia substituir a goniometria nem decisões longitudinais precisas | Joelho, saudáveis, condições controladas; não valida o nosso motor |
+
+**Descartados:** triagem em atletas com canalopatias (Sports Med 2026); índice de massa gorda em idosos sauditas (Front Nutr 2026); cortes de força de preensão em turcos de 20 a 39 anos (Ir J Med Sci 2026); fragilidade em insuficiência cardíaca (Curr Heart Fail Rep 2026); meta-análise de treino de equilíbrio e cognição (Arch Gerontol Geriatr 2027): fora do público da clínica ou sem efeito sobre as regras. As buscas de PHQ-2/GAD-2, comunicação de resultados e percentis de VO2máx não trouxeram nada novo utilizável.
+
+**Propostas novas (aguardando decisão):**
+
+| Id | Agente | Proposta | Opinião do agente | Risco |
+|---|---|---|---|---|
+| N2 | Nina | Conferir e apagar, pelo profissional, o registro de teste da base | Recomenda aprovar (se for mesmo de teste); a rodada não apaga dado de paciente | Baixo |
+| P3 | Paula | Incluir Yue 2026 como referência de cautela para o vídeo | Recomenda aprovar só como referência; não mexer nos limites por causa dele (isso depende da P2) | Baixo |
+
+**Propostas anteriores:** sem mudança de status (N1, S1, P1, R1, C1, I1 feitas; I2 aprovada; M1 recusada; M2 adiada há 35 dias; P2 aprovada, em andamento). Sem mudança sugerida para Dra. Sofia, Dra. Rita, Dra. Íris, Dr. Theo, Dra. Clara, Dr. Caio e Dr. Marco (que apenas registra o primeiro uso de bioimpedância).
+
+**Lembretes ativos:** I2 (dizer quais condições revisou), P2 (vídeos reais de outros movimentos e fotos reais), N2 e P3 (decisão).
+
+**Próxima rodada:** 30/11/2026.
+
+---
+
 ## 3. Como registrar a decisão sobre uma proposta
 
 O profissional responde, por exemplo, "aprovo N1 e P1, recuso M1". A rodada seguinte (ou a sessão em que a resposta chegar) muda o **status** da proposta em `revisaoSemanal.ts` para aprovada ou recusada, implementa as aprovadas, atualiza os documentos afetados e marca como feita. Propostas recusadas não voltam a ser sugeridas sem fato novo.

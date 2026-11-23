@@ -58,26 +58,28 @@ export function revisaoSemanalAtrasada(r: RevisaoSemanal = ULTIMA_REVISAO_SEMANA
 }
 
 export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
-  data: "2026-10-19",
-  proxima: "2026-10-26",
+  data: "2026-11-23",
+  proxima: "2026-11-30",
   resumo: [
-    "Primeira revisão semanal. Sem erro técnico: 12 testes de lógica passaram, o repositório está sem pendências e a revisão da literatura está em dia (18 de 180 dias).",
-    "Dos pacientes na base, todos concluíram a anamnese, mas só metade tem avaliação física iniciada, e todo %G registrado veio de dobras (nenhum de bioimpedância).",
-    "A varredura de literatura (2025 em diante) achou 3 estudos úteis, sem nada que obrigue a mudar uma regra hoje. Das 10 propostas, o profissional decidiu 9 no mesmo dia: 6 feitas (S1, P1, N1, R1, C1 e I1), 1 recusada (M1), 1 adiada (M2, sem o livro) e 1 para ele fazer (P2); em 24/10/2026 o profissional também aprovou a I2 (etiqueta \"texto escrito por IA, ainda não revisado\" nas condições), e agora todas as propostas estão decididas.",
+    "Rodada de 23/11/2026 (a anterior registrada era de 19/10, com ajustes até 26/10: houve um intervalo de cerca de 4 semanas sem rodada). Sem erro técnico: tsc sem erros, repositório sem pendências, último envio (55f28cb) publicado e READY na Vercel; revisão da literatura em 52 de 180 dias.",
+    "Uso: a base cresceu de 4 para 18 pacientes (16 anamneses concluídas, 2 em andamento), mas só 4 têm avaliação física e 3 têm avaliação postural, funcional, cardiorrespiratória e plano: a fila de quem aguarda avaliação é grande. Há 2 pacientes com vídeo na análise de movimento e 1 registro com nome de teste na base.",
+    "Literatura (outubro/novembro de 2026): 1 estudo útil (validação de pose de câmera única, joelho), que reforça o aviso de margem de erro já existente; nada obriga a mudar regra. 2 propostas novas aguardam decisão (N2 e P3). Propostas anteriores sem mudança de status.",
   ],
   verificacoes: [
-    { rotulo: "Testes de lógica (12 conjuntos)", resultado: "todos passaram", ok: true },
-    { rotulo: "Repositório e publicação", resultado: "sem arquivos pendentes; último envio publicado", ok: true },
-    { rotulo: "Revisão da literatura por agente", resultado: "02/10/2026, 18 de 180 dias: em dia", ok: true },
-    { rotulo: "Dados de teste no banco", resultado: "nenhum registro de teste encontrado", ok: true },
-    { rotulo: "Itens a conferir (página Estudos)", resultado: "16 itens abertos, nenhum resolvido nesta semana", ok: false },
+    { rotulo: "Verificação de tipos (tsc --noEmit)", resultado: "sem erros (as dependências locais estavam incompletas e foram reinstaladas com npm install; nenhum arquivo versionado mudou)", ok: true },
+    { rotulo: "Repositório e publicação", resultado: "sem arquivos pendentes; HEAD igual a origin/main; último deploy de produção READY (commit 55f28cb)", ok: true },
+    { rotulo: "Revisão da literatura por agente", resultado: "02/10/2026, 52 de 180 dias: em dia", ok: true },
+    { rotulo: "Dados de teste no banco", resultado: "1 registro com nome de teste encontrado; não foi mexido (ver proposta N2)", ok: false },
+    { rotulo: "Itens a conferir (página Estudos)", resultado: "16 itens abertos, nenhum resolvido desde a rodada anterior (o mais antigo, M2, adiado há 35 dias)", ok: false },
+    { rotulo: "Testes de lógica em pasta de rascunho", resultado: "não havia conjunto de testes disponível nesta sessão; só o tsc foi rodado", ok: false },
   ],
   uso: [
-    "4 pacientes na base (6 em 15/10); 4 com anamnese concluída; 3 com algum alerta.",
-    "2 pacientes com avaliação física, postural, funcional, cardiorrespiratória e plano; os outros 2 ainda sem avaliação.",
-    "%G de referência registrado em 2 pacientes, os 2 por dobras; nenhuma bioimpedância registrada.",
-    "Análise de movimento usada em 1 paciente; nenhum vídeo enviado ainda.",
-    "Última atividade na base: 15/10/2026.",
+    "18 pacientes na base (4 em 19/10); 16 com anamnese concluída, 2 em andamento, nenhum não iniciado; 12 com algum alerta.",
+    "4 pacientes com avaliação física; 3 com avaliação postural, funcional, cardiorrespiratória e plano.",
+    "%G: 4 pacientes com protocolo de dobras registrado e 1 com %G por bioimpedância preenchido (2 têm campos de bioimpedância).",
+    "Análise de movimento usada em 2 pacientes; 2 pacientes com vídeo (4 registros de vídeo no histórico, todos com a adequação registrada). Contagem por busca de texto, sem separar os vereditos com segurança.",
+    "1 registro com nome de teste na base.",
+    "Última atividade na base: 11/11/2026.",
   ],
   agentes: [
     {
@@ -86,8 +88,19 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
       achados: [
         "Metade dos pacientes com anamnese concluída ainda não teve avaliação iniciada, e a lista de pacientes não mostra isso.",
         "A busca de triagem pré-exercício (2025 em diante) só trouxe estudos de eletrocardiograma em atletas, fora do público da clínica: sem mudança na triagem.",
+        "Rodada de 23/11: a base foi de 4 para 18 pacientes; 16 concluíram a anamnese, mas só 4 têm avaliação física. A coluna Avaliação (N1) já mostra essa fila. A busca nova de triagem trouxe só uma revisão sobre atletas com canalopatias genéticas (Sports Med, nov/2026): fora do público da clínica, descartada.",
+        "Há 1 registro com nome de teste na base (conferido só por contagem; não foi mexido).",
       ],
       sugestoes: [
+        {
+          id: "N2",
+          titulo: "Você conferir e retirar o registro de teste da base",
+          porque: "Um registro com nome de teste entra nas contagens de uso (18 pacientes) e pode confundir as próximas rodadas e a lista de pacientes.",
+          risco: "Baixo, mas é dado de paciente: só você deve apagar, depois de conferir que é mesmo de teste (não é de pessoa real).",
+          evidencia: "Contagem de uso desta semana (1 registro com nome de teste).",
+          opiniao: "Recomendo aprovar: confira o registro na lista de pacientes e, se for de teste, apague pela tela do avaliador. Eu não apago nem corrijo dado de paciente. Se for de uma pessoa real com nome parecido, recuse e me avise para eu ajustar o critério da contagem.",
+          status: "aguardando_decisao",
+        },
         {
           id: "N1",
           titulo: "Mostrar na lista de pacientes quem concluiu a anamnese e ainda não tem avaliação",
@@ -126,7 +139,8 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
       achados: [
         "Todo %G registrado veio de dobras. A proteção de divergência entre dobras e bioimpedância nunca dispara sem bioimpedância, e o maior controle de erro das dobras (várias leituras por ponto) não existe.",
         "Um estudo populacional turco de 2026 (Int J Obes) propôs corte de IMC de 28,8 para obesidade com base em bioimpedância, reforçando que o IMC varia por população: o sistema já usa o IMC só como triagem, sem mudança.",
-        "As tabelas Pollock & Wilmore e de massa magra continuam sem conferência no livro (pendência aberta).",
+        "As tabelas Pollock & Wilmore e de massa magra continuam sem conferência no livro (pendência aberta; M2 adiada há 35 dias).",
+        "Rodada de 23/11: já há 1 paciente com %G por bioimpedância preenchido, então a proteção contra divergência entre métodos (alerta de números que não fecham, 30/10) passou a ter uso real. A busca nova trouxe pontos de corte de índice de massa gorda em idosos sauditas por bioimpedância (Front Nutr 2026), população diferente: descartada, sem mudança.",
       ],
       sugestoes: [
         {
@@ -158,8 +172,19 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
         "Um estudo de validação de 2026 (PLoS One) com 46 pacientes comparou estimativa de pose em vídeo com captura de movimento no cotovelo: boa concordância na flexão, com erro mínimo detectável de cerca de 7°, e a avaliação visual foi melhor que o método automático na extensão.",
         "Os cortes práticos do sistema para fotos são 3° (discreta) e 6° (evidente), menores que esse erro mínimo de uma articulação diferente: para ângulos medidos por vídeo, o sistema pode estar sugerindo precisão que não tem.",
         "Nenhum vídeo foi enviado ainda: os limites de adequação do vídeo seguem sem calibração com casos reais.",
+        "Rodada de 23/11: já há 2 pacientes com vídeo na análise de movimento (4 registros de vídeo no histórico), mas só de poucos movimentos; a calibração dos limites (P2) segue aberta.",
+        "Um estudo de nov/2026 (JMIR Rehabil Assist Technol) com 15 adultos saudáveis testou pose de câmera única no joelho: a concordância dependeu do movimento (agachamento razoável, levantar da cadeira menor, apoio unipodal ruim) e 15,7% das medições falharam no critério de confiança; os autores não apoiam trocar a goniometria nem decidir com precisão no seguimento.",
       ],
       sugestoes: [
+        {
+          id: "P3",
+          titulo: "Incluir o estudo de 2026 sobre pose de câmera única (joelho) como referência de cautela para o vídeo",
+          porque: "Dá base publicada para dizer que a qualidade da medida por vídeo depende do movimento e da confiança da leitura de cada gravação, o que combina com o veredito de adequação já existente.",
+          risco: "Baixo: só entra na base científica da Dra. Paula; não muda nenhum limite nem cálculo.",
+          evidencia: "Yue et al., JMIR Rehabil Assist Technol 2026 (PMID 42976294); resumo lido, texto completo não lido.",
+          opiniao: "Recomendo aprovar como referência de apoio, só isso. Limite honesto: 15 adultos saudáveis, joelho, vista lateral, celulares e condições controladas; não valida o nosso motor nem o tronco. Não recomendo mexer nos limites de adequação por causa dele: isso depende dos seus vídeos reais (P2).",
+          status: "aguardando_decisao",
+        },
         {
           id: "P1",
           titulo: "Aviso de margem de erro nos ângulos medidos por vídeo",
@@ -188,6 +213,7 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
       achados: [
         "Uma coorte de 13.423 idosos de 65 anos ou mais em Taiwan (JAMA Netw Open 2026) associou melhor desempenho no levantar da cadeira, apoio unipodal, 8-foot up-and-go (parente do TUG) e teste do degrau de 2 minutos a menor mortalidade por todas as causas, de forma graduada (estudo observacional).",
         "A busca de sarcopenia e dinamometria só trouxe estudos em populações hospitalares e renais: sem base para mudar os cortes de força.",
+        "Rodada de 23/11: a busca nova de dinamometria trouxe cortes de força de preensão em turcos de 20 a 39 anos (Ir J Med Sci 2026), população e idade fora do público da clínica: descartada, sem mudança.",
       ],
       sugestoes: [
         {
@@ -209,6 +235,7 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
         "A triagem de sarcopenia usava o %G ideal antigo e a massa magra ideal salva: nas avaliações existentes, 1 de 2 era sinalizada por isso sem falta real de massa magra. Corrigido (I1): agora usa o índice de massa magra.",
         "O conteúdo das 30 condições da aba Condições de saúde foi escrito por IA e ainda não passou por revisão clínica; 10 condições seguem sem fonte conferida.",
         "A busca de diretrizes de exercício em doenças crônicas não trouxe nada que contradiga o conteúdo atual.",
+        "Rodada de 23/11: a revisão clínica das 30 condições (I2) segue com você; a busca nova trouxe só uma revisão de fragilidade em insuficiência cardíaca, que não muda o conteúdo atual.",
       ],
       sugestoes: [
         {
@@ -239,6 +266,7 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
       achados: [
         "Dos 4 pacientes, 2 têm plano; todos os planos mantêm o treino de força em 2 ou mais dias por semana.",
         "As buscas de treino de força e de exercício em câncer trouxeram revisões sem nada que mude as regras do plano.",
+        "Rodada de 23/11: 3 pacientes têm plano. Desde 26/10 o plano ganhou a sequência dos serviços da clínica e a estratégia inicial (30, 90 e 180 dias), com decisão do avaliador; sem proposta nova. A busca de treino de força em idosos trouxe apenas uma meta-análise de treino de equilíbrio e cognição, que não muda as regras: sem mudança sugerida.",
       ],
       sugestoes: [],
     },
@@ -273,10 +301,19 @@ export const ULTIMA_REVISAO_SEMANAL: RevisaoSemanal = {
     },
   ],
   lembretes: [
+    "N2 e P3 (novas, 23/11): aguardam a sua decisão. N2: conferir e apagar você mesmo o registro de teste da base.",
     "I2 (em andamento): a etiqueta já está nas 30 condições; a revisão clínica dos textos é sua. Diga quais condições você revisou (sugestão: hipertensão, diabetes, obesidade, dor lombar e artrose) e a etiqueta sai dessas, com seu nome e a data.",
     "P2 (de volta, em 26/10/2026): o vídeo voltou ao modo simples da aba Postural. Para calibrar os limites de adequação faltam vídeos reais de outros movimentos além da flexão (agachamento e, se usar, os do modo avançado), de lado e de frente, filmados como no guia de desenhos (POP, etapa 9). Também servem fotos e vídeos reais de pessoas para conferir as sugestões automáticas (graus nas fotos e observações nos movimentos), que até agora só foram testadas com pontos sintéticos. Quando enviar alguns, eu ajusto.",
   ],
   candidatos: [
+    {
+      pmid: "42976294",
+      citacao: "Yue X, Gu Y, Yu B. JMIR Rehabil Assist Technol 2026;13:e102399",
+      titulo: "Validation of Single-Camera MediaPipe BlazePose for Knee Joint Angle Measurement Across Multiple Functional Tasks",
+      agente: "paula",
+      oQueDiz: "15 adultos saudáveis, vista lateral com celular: a concordância com goniômetro/anotação em vídeo variou com a tarefa (ICC 0,77 no agachamento, 0,63 ao levantar da cadeira, 0,14 no apoio unipodal); 15,7% das medições falharam no critério de confiança; os autores dizem que os achados não sustentam substituir a goniometria nem decisões longitudinais precisas.",
+      limite: "Joelho, adultos saudáveis, condições controladas; não valida o motor do sistema nem o tronco. Texto completo não lido.",
+    },
     {
       pmid: "42490640",
       citacao: "Rode D, et al. PLoS One 2026;21:e0353801",
