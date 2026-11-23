@@ -317,3 +317,9 @@ Detalhar o **Agente 3 — Avaliação Física e Antropométrica** (Etapa 4 do pr
 
 ### Envio rápido da anamnese pelo WhatsApp (23/11/2026)
 No painel inicial do avaliador (/avaliador) há o cartão **Enviar a anamnese ao paciente**: mostra o link público do questionário (/paciente, em produção https://clinica-avaliacao.vercel.app/paciente), com o botão **Enviar pelo WhatsApp** (mensagem pronta com a assinatura; o telefone é opcional - sem ele o WhatsApp deixa escolher o contato) e o botão **Copiar link**. Nada sai sozinho: quem aperta enviar é o profissional.
+
+
+### Perguntas ''não ficou claro'' e parecer automático (23/11/2026)
+No quadro **Perguntar agora** da ficha, além do que **não está na anamnese**, o sistema aponta o que **está na anamnese mas não ficou claro**, com o motivo, por regras curtas (queda sem detalhe, dor sem local ou noturna, lesão, cirurgia, doença ou medicamento sem dizer qual, ''outra razão'' do PAR-Q+ sem explicação, treina mas o questionário de atividade está zerado, sono bom contra PSQI ruim, objetivo muito curto). Aparecem no máximo 5, o resto em ''ver mais''. É só para o avaliador.
+
+O parecer de cada agente (Sofia, Marco, Paula, Rita, Caio, Íris) é **redigido sozinho, em versão sucinta**, sempre que os dados mudam, em qualquer aba (lib/avaliacao/pareceresAuto.ts). O explicativo só sai pelo botão ''Pedir parecer mais explicativo''. Regras: texto ainda do sistema acompanha os dados; texto **editado ou aprovado nunca é trocado**, aparece o aviso **Dados novos** com o botão Atualizar; ao trocar o texto o ''revisado'' volta a ficar desmarcado. Uma **barra fixa no topo da ficha** mostra, sem rolar, o estado de cada parecer (aprovado, revisar, dados novos, sem parecer), com ponto colorido nas abas. A cascata (perfil, supervisão, plano) usa os mesmos dados e se recalcula a cada mudança.

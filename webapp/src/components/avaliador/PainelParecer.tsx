@@ -1,13 +1,13 @@
 "use client";
 
-// Cartão de parecer do agente, igual em todas as abas: o avaliador escolhe o
-// estilo (sucinto e objetivo / mais explicativo), o agente redige o rascunho,
-// e o avaliador edita e marca como revisado. O estilo escolhido é lembrado.
+// Cartão de parecer do agente, igual em todas as abas. O agente relê os dados e redige o parecer SUCINTO sozinho,
+// sempre que algo muda (se o texto ainda é do sistema); o avaliador só pede o explicativo se quiser, edita e aprova.
+// Texto editado à mão ou já aprovado nunca é trocado sozinho: aparece o aviso "dados novos", bem visível.
 
 import { useEffect, useMemo, useState } from "react";
 import { TextArea } from "@/components/forms";
 import { createClient } from "@/lib/supabase/client";
-import { gerarParecerAgente, ROTULO_ESTILO, type AgenteParecer, type EstiloParecer } from "@/lib/avaliacao/pareceres";
+import { gerarParecerAgente, type AgenteParecer, type EstiloParecer } from "@/lib/avaliacao/pareceres";
 import { AGENTES_SISTEMA, nomeComTitulo, revisaoVencida, textoRevisao, type AgenteId } from "@/lib/agentes";
 import AgenteAvatar from "./AgenteAvatar";
 import type { PacienteRow } from "@/lib/anamnese/types";
@@ -32,14 +32,6 @@ export function estiloPreferido(): EstiloParecer {
   return "sucinto";
 }
 
-function lembrarEstilo(e: EstiloParecer) {
-  try {
-    window.localStorage.setItem(CHAVE_ESTILO, e);
-  } catch {
-    // ignora
-  }
-}
-
 export function parecerVazio(estilo: EstiloParecer): ParecerSalvo {
   return { texto: "", estilo, automatico: "", revisado: false };
 }
@@ -61,7 +53,7 @@ export function PainelParecer({
   onChange,
   gerar,
   mensagemVazia = "Ainda não há dados para o agente redigir o parecer.",
-  linhas = 14,
+  linhas = 10,
 }: {
   agente: AgenteId;
   valor: ParecerSalvo | null;
@@ -70,39 +62,74 @@ export function PainelParecer({
   mensagemVazia?: string;
   linhas?: number;
 }) {
-  const [estiloInicial, setEstiloInicial] = useState<EstiloParecer>("sucinto");
-  useEffect(() => setEstiloInicial(estiloPreferido()), []);
-
-  const estilo = valor?.estilo ?? estiloInicial;
+  // O parecer automático é sempre o sucinto; o explicativo só quando o avaliador pede (e fica lembrado nesta ficha).
+  const estilo: EstiloParecer = valor?.estilo ?? "sucinto";
   const texto = valor?.texto ?? "";
   const editado = texto !== "" && texto !== (valor?.automatico ?? "");
   const automaticoAtual = useMemo(() => gerar(estilo), [gerar, estilo]);
   const desatualizado = !!valor && valor.automatico !== "" && automaticoAtual !== "" && automaticoAtual !== valor.automatico;
+  const nuncaGerado = !valor || (valor.texto === "" && valor.automatico === "");
+  const acompanhaDados = !!valor && texto !== "" && !editado && !valor.revisado && desatualizado;
 
   function aplicar(novoEstilo: EstiloParecer) {
     const novo = gerar(novoEstilo);
     onChange({ texto: novo, estilo: novoEstilo, automatico: novo, revisado: false });
   }
 
-  function escolherEstilo(novo: EstiloParecer) {
-    lembrarEstilo(novo);
+  // Redige sozinho: na primeira vez e sempre que os dados mudam e o texto ainda é do sistema.
+  useEffect(() => {
+    if (automaticoAtual === "" || (!nuncaGerado && !acompanhaDados)) return;
+    const t = setTimeout(() => aplicar(estilo), 900);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [automaticoAtual, nuncaGerado, acompanhaDados, estilo]);
+
+  function pedirEstilo(novo: EstiloParecer) {
     if (novo === estilo) return;
-    if (texto === "") {
-      setEstiloInicial(novo);
-      onChange({ ...(valor ?? parecerVazio(novo)), estilo: novo });
-      return;
-    }
     if (editado && !window.confirm("Trocar o estilo substitui o texto que você editou por um novo parecer. Continuar?")) return;
     aplicar(novo);
   }
 
-  function gerarOuAtualizar() {
-    if (editado && !window.confirm("Gerar de novo substitui o texto que você editou. Continuar?")) return;
+  function atualizarAgora() {
+    if (editado && !window.confirm("Atualizar substitui o texto que você editou. Continuar?")) return;
     aplicar(estilo);
   }
 
+  const aprovado = !!valor?.revisado;
+  // Faixa de situação no topo do cartão: o que o avaliador precisa fazer, sem rolar a tela.
+  let faixa: { tom: string; conteudo: React.ReactNode } | null = null;
+  if (texto !== "") {
+    if (desatualizado && (editado || aprovado)) {
+      faixa = {
+        tom: "border-warn bg-warn-soft text-warn",
+        conteudo: (
+          <>
+            <strong>Dados novos</strong> desde que você {aprovado ? "aprovou" : "editou"} este parecer.
+            <button type="button" onClick={atualizarAgora} className="ml-2 rounded-md bg-warn text-white font-medium px-3 py-1 text-xs">
+              Atualizar o parecer
+            </button>
+          </>
+        ),
+      };
+    } else if (aprovado) {
+      faixa = { tom: "border-ok bg-ok-soft text-ok-dark", conteudo: <><strong>✓ Revisado e aprovado por você.</strong></> };
+    } else {
+      faixa = {
+        tom: "border-info bg-info-soft text-info",
+        conteudo: (
+          <>
+            <strong>Atualizado automaticamente</strong> com os dados atuais. Falta você revisar.
+            <button type="button" onClick={() => onChange({ ...(valor as ParecerSalvo), revisado: true })} className="ml-2 rounded-md bg-accent text-white font-medium px-3 py-1 text-xs">
+              Revisei e aprovo
+            </button>
+          </>
+        ),
+      };
+    }
+  }
+
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5 space-y-3">
+    <div id={`parecer-${agente}`} className="rounded-2xl border border-border bg-surface p-5 space-y-3 scroll-mt-24">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <AgenteAvatar id={agente} tamanho={48} titulo={`Ilustração de ${nomeComTitulo(agente)}`} />
@@ -113,38 +140,26 @@ export function PainelParecer({
             <p className="text-xs text-muted">{AGENTES_SISTEMA[agente].especialidade}</p>
           </div>
         </div>
-        <div className="inline-flex rounded-lg border border-border overflow-hidden text-sm" role="group" aria-label="Estilo do parecer">
-          {(["sucinto", "explicativo"] as EstiloParecer[]).map((e) => (
-            <button
-              key={e}
-              type="button"
-              onClick={() => escolherEstilo(e)}
-              aria-pressed={estilo === e}
-              className={`px-3 py-1.5 transition ${estilo === e ? "bg-accent text-white" : "bg-surface text-muted hover:text-ink"}`}
-            >
-              {ROTULO_ESTILO[e]}
-            </button>
-          ))}
-        </div>
+        {texto !== "" && (
+          <button type="button" onClick={() => pedirEstilo(estilo === "sucinto" ? "explicativo" : "sucinto")} className="text-sm font-medium text-accent hover:underline">
+            {estilo === "sucinto" ? "Pedir parecer mais explicativo" : "Voltar ao parecer sucinto"}
+          </button>
+        )}
       </div>
+
+      {faixa && <div className={`rounded-lg border px-3 py-2 text-sm ${faixa.tom}`}>{faixa.conteudo}</div>}
 
       {texto === "" ? (
         <div className="space-y-2">
-          <p className="text-sm text-muted">{automaticoAtual === "" ? mensagemVazia : "O agente redige um rascunho com os dados atuais; você edita e aprova."}</p>
-          <button type="button" onClick={gerarOuAtualizar} disabled={automaticoAtual === ""} className="text-sm font-medium text-accent hover:underline disabled:opacity-50">
-            Gerar parecer
-          </button>
+          <p className="text-sm text-muted">{automaticoAtual === "" ? mensagemVazia : nuncaGerado ? "O agente está redigindo o parecer com os dados atuais..." : "Parecer apagado."}</p>
+          {automaticoAtual !== "" && !nuncaGerado && (
+            <button type="button" onClick={atualizarAgora} className="text-sm font-medium text-accent hover:underline">
+              Gerar parecer
+            </button>
+          )}
         </div>
       ) : (
         <>
-          {desatualizado && (
-            <p className="text-xs text-warn">
-              Os dados mudaram depois que este parecer foi gerado.{" "}
-              <button type="button" onClick={gerarOuAtualizar} className="font-medium underline">
-                Atualizar o parecer
-              </button>
-            </p>
-          )}
           <TextArea
             value={texto}
             onChange={(e) => onChange({ texto: e.target.value, estilo, automatico: valor?.automatico ?? "", revisado: false })}
@@ -152,17 +167,11 @@ export function PainelParecer({
             className="text-sm leading-relaxed"
           />
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <label className="inline-flex items-center gap-2 text-sm text-ink cursor-pointer">
-              <input type="checkbox" checked={valor?.revisado ?? false} onChange={(e) => onChange({ ...(valor as ParecerSalvo), revisado: e.target.checked })} />
-              Revisado e aprovado por mim
-            </label>
-            <button type="button" onClick={gerarOuAtualizar} className="text-sm font-medium text-accent hover:underline">
+            <p className="text-xs text-muted">Rascunho de um assistente de IA: você revisa, edita e responde pelo conteúdo. Não é diagnóstico. Aparece no relatório técnico, identificado como assistente de IA.</p>
+            <button type="button" onClick={atualizarAgora} className="text-sm font-medium text-accent hover:underline">
               Gerar de novo
             </button>
           </div>
-          <p className="text-xs text-muted">
-            Rascunho de um assistente de IA: você revisa, edita e responde pelo conteúdo. Não é diagnóstico. Fica guardado e aparece no relatório técnico, identificado como assistente de IA.
-          </p>
           <p className={`text-xs ${revisaoVencida() ? "text-warn" : "text-muted"}`}>
             {textoRevisao()}
             {revisaoVencida() && " A revisão está com mais de 6 meses: peça uma nova revisão da literatura à Dra. Nina antes de confiar nos cortes."}

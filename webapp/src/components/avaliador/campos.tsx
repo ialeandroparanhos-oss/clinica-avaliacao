@@ -25,7 +25,7 @@ export type SecaoPaciente = "fisica" | "postural" | "funcional" | "cardio" | "pl
 
 // Avisa a página do paciente do que foi gravado, para que ao voltar a uma aba
 // ela já abra com o dado mais recente (sem recarregar a página).
-function avisarRascunho(pacienteId: string, secao: SecaoPaciente, dados: Record<string, any>) {
+export function avisarRascunho(pacienteId: string, secao: SecaoPaciente, dados: Record<string, any>) {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent(EVENTO_RASCUNHO, { detail: { pacienteId, secao, dados } }));
 }
@@ -47,6 +47,28 @@ export async function mesclarNoPlano(supabase: Supabase, pacienteId: string, alt
   const { error } = await supabase.from("pacientes").update({ plano: novo, atualizado_em: new Date().toISOString() }).eq("id", pacienteId);
   if (error) throw error;
   avisarRascunho(pacienteId, "plano", novo);
+}
+
+// Grava só o parecer automático de uma seção, sem mexer no carimbo da avaliação (atualizado_em da seção) nem
+// na data de atualização do paciente: abrir a ficha não pode mudar a ordem da lista nem "iniciar" uma área.
+export async function gravarParecerAutomatico(supabase: Supabase, pacienteId: string, secao: "anamnese" | "perfil" | "fisica" | "funcional" | "cardio", valor: Record<string, any>) {
+  if (secao === "anamnese" || secao === "perfil") {
+    const { data, error: erroLeitura } = await supabase.from("pacientes").select("plano").eq("id", pacienteId).single();
+    if (erroLeitura) throw erroLeitura;
+    const plano = (data?.plano ?? {}) as Record<string, any>;
+    const novo = { ...plano, pareceres: { ...(plano.pareceres ?? {}), [secao]: valor } };
+    const { error } = await supabase.from("pacientes").update({ plano: novo }).eq("id", pacienteId);
+    if (error) throw error;
+    avisarRascunho(pacienteId, "plano", novo);
+    return;
+  }
+  const { data, error: erroLeitura } = await supabase.from("pacientes").select(secao).eq("id", pacienteId).single();
+  if (erroLeitura) throw erroLeitura;
+  const atual = ((data as unknown as Record<string, any>)?.[secao] ?? {}) as Record<string, any>;
+  const novo = { ...atual, parecer: valor };
+  const { error } = await supabase.from("pacientes").update({ [secao]: novo }).eq("id", pacienteId);
+  if (error) throw error;
+  avisarRascunho(pacienteId, secao, novo);
 }
 
 export function useAutoSalvar(valor: unknown, gravar: (valor: any) => Promise<void>, atrasoMs = 1500): EstadoAuto {

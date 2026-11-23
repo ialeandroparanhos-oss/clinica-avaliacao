@@ -16,9 +16,11 @@ import { liberacaoPara, ROTULO_NIVEL_LIBERACAO } from "@/lib/avaliacao/liberacao
 export type TomItem = "normal" | "atencao" | "alerta";
 export type ItemResumo = { rotulo: string; valor: string; tom: TomItem };
 export type SecaoResumo = { id: string; titulo: string; itens: ItemResumo[]; seguranca?: boolean };
+export type Esclarecimento = { pergunta: string; motivo: string };
 export type ResumoTreino = {
   secoes: SecaoResumo[];
   perguntar: string[]; // o que falta e faria diferença na prescrição
+  esclarecer: Esclarecimento[]; // o que está na anamnese, mas não ficou claro
   totalItens: number;
   anamneseConcluida: boolean;
 };
@@ -190,10 +192,29 @@ export function montarResumoTreino(paciente: PacienteRow): ResumoTreino {
   rec.push(item("Tabagismo", txt(ev.tabagismo)));
   secoes.push({ id: "recuperacao", titulo: "Recuperação e hábitos", itens: compactar(rec) });
 
+  // ---- 7. O que está na anamnese mas não ficou claro (regras curtas; o avaliador pergunta e decide)
+  const esclarecer: Esclarecimento[] = [];
+  const pedir = (pergunta: string, motivo: string) => esclarecer.push({ pergunta, motivo });
+  const hs = a.historico_saude;
+  if (hs.quedas_12m === true && txt(hs.quedas_detalhe) === "") pedir("Quantas quedas, quando e como aconteceram?", "relatou queda, sem detalhe");
+  if (a.dor.tem_dor === true && Object.keys(a.dor.por_regiao ?? {}).length === 0 && lista(a.dor.localizacoes).length === 0) pedir("Onde dói e em que movimento?", "relatou dor, sem dizer o local");
+  if (a.dor.tem_dor === true && (a.dor.dor_noturna === true || a.dor.dor_repouso === true)) pedir("Desde quando a dor aparece à noite ou em repouso, e como ela é?", "dor noturna ou em repouso pede esclarecer");
+  if (a.dor.tem_dor === true && Object.values(a.dor.por_regiao ?? {}).some((d) => txt(d.duracao) === "") && txt(a.dor.duracao) === "") pedir("Há quanto tempo sente essa dor?", "duração não informada");
+  if (hs.tem_lesoes === true && txt(hs.lesoes_fraturas) === "") pedir("Qual lesão ou fratura, quando foi e o que ainda limita?", "disse que teve, sem detalhe");
+  if (hs.tem_cirurgias === true && txt(hs.cirurgias) === "") pedir("Qual cirurgia e quando foi?", "disse que fez, sem detalhe");
+  if (hs.tem_doencas === true && txt(hs.doencas) === "") pedir("Qual doença e como está o acompanhamento?", "disse que tem, sem dizer qual");
+  if (a.medicamentos.usa_medicamentos === true && !a.medicamentos.lista.some((m) => txt(m.nome) !== "")) pedir("Quais medicamentos usa e para quê?", "usa, sem dizer quais");
+  if (a.prontidao.parq.other_reason === true && txt(a.prontidao.other_reason_detalhe) === "") pedir("Qual é a outra razão que impediria o exercício (PAR-Q+)?", "marcou 'outra razão', sem explicar");
+  if (af.pratica_atual === true && min === 0) pedir("Quantos dias e minutos por semana treina?", "diz que treina, mas o questionário de atividade está zerado");
+  if (psqi && psqi.global > 5 && sono.qualidade_percebida !== null && sono.qualidade_percebida >= 4) pedir("Como é o sono de fato (dormir, acordar, cansaço)?", "disse que dorme bem, mas o questionário de sono sugere piora");
+  const obj = txt(a.motivo.objetivos);
+  if (obj !== "" && obj.length < 15) pedir(`O que exatamente quer alcançar com "${obj}" e para quando?`, "objetivo muito curto");
+
   const cheias = secoes.filter((s) => s.itens.length > 0);
   return {
     secoes: cheias,
     perguntar,
+    esclarecer,
     totalItens: cheias.reduce((n, s) => n + s.itens.length, 0),
     anamneseConcluida: paciente.anamnese_status === "concluida",
   };

@@ -21,6 +21,8 @@ import { INDICADORES, extrairSerie, type LinhaHistorico } from "@/lib/integracao
 import { detectarDiscrepancias } from "@/lib/integracao/discrepancias";
 import { EVENTO_RASCUNHO, SalvarBar, mesclarNoPlano, useAutoSalvar } from "@/components/avaliador/campos";
 import { ParecerNoPlano } from "@/components/avaliador/PainelParecer";
+import { BarraPareceres, irParaParecer, situacoesPareceres, useParecerAutomatico } from "@/components/avaliador/BarraPareceres";
+import type { SecaoParecer, SituacaoParecer } from "@/lib/avaliacao/pareceresAuto";
 import { PainelSupervisao } from "@/components/avaliador/PainelSupervisao";
 import { AbaFisica } from "@/components/avaliador/AbaFisica";
 import { AbaCondicoes } from "@/components/avaliador/AbaCondicoes";
@@ -36,6 +38,14 @@ import { conectarObjetivo } from "@/lib/integracao/objetivo";
 import { triarSarcopeniaDinapenia } from "@/lib/integracao/sarcopenia";
 
 type Aba = "perfil" | "plano" | "reavaliacao" | "anamnese" | "condicoes" | "fisica" | "postural" | "funcional" | "cardio";
+
+// Ponto colorido na aba quando o parecer dela espera o avaliador (âmbar: dados novos ou sem parecer; azul: revisar).
+function pontoDaAba(aba: Aba, situacoes: Record<SecaoParecer, SituacaoParecer>): string | null {
+  const s = (["perfil", "anamnese", "fisica", "postural", "funcional", "cardio"] as string[]).includes(aba) ? situacoes[aba as SecaoParecer] : null;
+  if (s === "dados_novos" || s === "sem") return "bg-warn";
+  if (s === "revisar") return "bg-info";
+  return null;
+}
 
 export default function DetalhePaciente() {
   const { id } = useParams<{ id: string }>();
@@ -65,6 +75,10 @@ export default function DetalhePaciente() {
     setPaciente(data as PacienteRow);
     setCarregando(false);
   }
+
+  // Pareceres sempre em dia: o agente de cada área relê os dados e atualiza o sucinto sozinho (em qualquer aba).
+  useParecerAutomatico(paciente, aba);
+  const situacoes = useMemo(() => (paciente ? situacoesPareceres(paciente) : null), [paciente]);
 
   if (carregando) return <main className="max-w-4xl mx-auto px-6 py-10 text-muted text-sm">Carregando...</main>;
   if (!paciente) return <main className="max-w-4xl mx-auto px-6 py-10 text-danger text-sm">Paciente não encontrado.</main>;
@@ -123,7 +137,19 @@ export default function DetalhePaciente() {
         <ResumoTreino paciente={paciente} />
       </div>
 
-      <div className="flex gap-1 border-b border-border mb-6 overflow-x-auto">
+      <div className="sticky top-0 z-20 bg-bg pt-2 mb-6 border-b border-border">
+        {situacoes && (
+          <div className="pb-2">
+            <BarraPareceres
+              situacoes={situacoes}
+              aoAbrir={(s) => {
+                setAba(s);
+                irParaParecer(s);
+              }}
+            />
+          </div>
+        )}
+      <div className="flex gap-1 overflow-x-auto">
         {(
           [
             ["perfil", "Perfil Integrado"],
@@ -145,8 +171,10 @@ export default function DetalhePaciente() {
             }`}
           >
             {label}
+            {situacoes && pontoDaAba(key, situacoes) && <span className={`ml-1.5 inline-block h-2 w-2 rounded-full align-middle ${pontoDaAba(key, situacoes)}`} />}
           </button>
         ))}
+      </div>
       </div>
 
       {aba === "perfil" && <AbaPerfilIntegrado paciente={paciente} />}
