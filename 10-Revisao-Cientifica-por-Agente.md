@@ -335,3 +335,7 @@ Duas correções feitas nesta conferência estão marcadas nos itens "Agente 4" 
 - **Siri:** o app já usa a conversão de Siri (495/densidade − 450) nos protocolos de Pollock; não é protocolo à parte.
 - **Weltman mulheres obesas:** equação confirmada no PubMed (Weltman et al., Am J Clin Nutr 1988;48:1179–83, [DOI](https://doi.org/10.1093/ajcn/48.5.1179)): %G = 0,11077 × abdômen(médio) − 0,17666 × estatura + 0,14354 × peso + 51,03301 (SEE ± 2,9). É baseada em circunferências, não em dobras; unidades não constam no resumo (cm e kg são as plausíveis). **Weltman homens obesos:** equação ainda não encontrada. **"Esportes Mulheres":** autor desconhecido sem o livro.
 - **Escolhas clínicas restantes:** corte de classificação do TC6 e confirmação das faixas de percentil das classes de VO2máx.
+
+## ATUALIZAÇÃO 26/11/2026 — FONTES DAS AVALIAÇÕES FUNDAMENTAIS
+
+O quadro "Avaliações fundamentais para este paciente" (ver documento 00) cita apenas: EWGSOP2 2019 (PMID 30312372, doi:10.1093/ageing/afy169) para preensão, sentar e levantar, marcha e panturrilha em 60+; diretriz mundial de quedas 2022 (PMID 36178003, doi:10.1093/ageing/afac205) para TUG, equilíbrio e marcha em quem caiu; ACSM 2015 (PMID 26473759, doi:10.1249/MSS.0000000000000664) para a decisão sobre testes de esforço. Todas conferidas no PubMed em 26/11/2026. O restante é critério prático, marcado assim na tela.

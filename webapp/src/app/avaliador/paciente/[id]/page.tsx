@@ -23,6 +23,8 @@ import { EVENTO_RASCUNHO, SalvarBar, mesclarNoPlano, useAutoSalvar } from "@/com
 import { ParecerNoPlano } from "@/components/avaliador/PainelParecer";
 import { BarraPareceres, irParaParecer, situacoesPareceres, useParecerAutomatico } from "@/components/avaliador/BarraPareceres";
 import type { SecaoParecer, SituacaoParecer } from "@/lib/avaliacao/pareceresAuto";
+import { BarraFundamentais, QuadroFundamentais, irParaFundamentais } from "@/components/avaliador/AvaliacoesFundamentais";
+import { avaliacoesFundamentais, type SetorFundamental } from "@/lib/avaliacao/avaliacoesFundamentais";
 import { PainelSupervisao } from "@/components/avaliador/PainelSupervisao";
 import { AbaFisica } from "@/components/avaliador/AbaFisica";
 import { AbaCondicoes } from "@/components/avaliador/AbaCondicoes";
@@ -79,6 +81,8 @@ export default function DetalhePaciente() {
   // Pareceres sempre em dia: o agente de cada área relê os dados e atualiza o sucinto sozinho (em qualquer aba).
   useParecerAutomatico(paciente, aba);
   const situacoes = useMemo(() => (paciente ? situacoesPareceres(paciente) : null), [paciente]);
+  // Avaliações fundamentais (Dra. Nina): o que medir em cada setor para este caso, a partir da anamnese.
+  const fundamentais = useMemo(() => (paciente ? avaliacoesFundamentais(paciente) : []), [paciente]);
 
   if (carregando) return <main className="max-w-4xl mx-auto px-6 py-10 text-muted text-sm">Carregando...</main>;
   if (!paciente) return <main className="max-w-4xl mx-auto px-6 py-10 text-danger text-sm">Paciente não encontrado.</main>;
@@ -149,6 +153,17 @@ export default function DetalhePaciente() {
             />
           </div>
         )}
+        {fundamentais.length > 0 && (
+          <div className="pb-2">
+            <BarraFundamentais
+              itens={fundamentais}
+              aoAbrir={(s) => {
+                setAba(s);
+                irParaFundamentais(s);
+              }}
+            />
+          </div>
+        )}
       <div className="flex gap-1 overflow-x-auto">
         {(
           [
@@ -177,6 +192,7 @@ export default function DetalhePaciente() {
       </div>
       </div>
 
+      {(["anamnese", "fisica", "postural", "funcional", "cardio"] as string[]).includes(aba) && <QuadroFundamentais itens={fundamentais} setor={aba as SetorFundamental} />}
       {aba === "perfil" && <AbaPerfilIntegrado paciente={paciente} />}
       {aba === "plano" && <AbaPlano paciente={paciente} onSalvo={carregar} />}
       {aba === "reavaliacao" && <AbaReavaliacao paciente={paciente} onSalvo={carregar} />}
